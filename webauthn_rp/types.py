@@ -1,24 +1,20 @@
 from typing import Optional, Sequence, Union
 from enum import Enum
 
-from cryptography.hazmat.primitives.asymmetric.dh import DHPublicKey
 from cryptography.hazmat.primitives.asymmetric.dsa import DSAPublicKey
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.x448 import X448PublicKey
+from cryptography.x509 import Certificate
 
 from .utils import camel_to_snake_case
 
 
-PublicKey = Union[
-  DHPublicKey, DSAPublicKey, EllipticCurvePublicKey, Ed25519PublicKey,
-  Ed448PublicKey, RSAPublicKey, X25519PublicKey, X448PublicKey]
+PublicKey = Union[DSAPublicKey, EllipticCurvePublicKey, RSAPublicKey]
+TrustedPath = Optional[Sequence[Certificate]]
 
 
-class NameValueEnumsContainer:
+class NameValueEnumsContainer(type):
+
   def __call__(cls, value):
     if type(value) is int:
       return cls.Value(value)
@@ -210,7 +206,7 @@ class AuthenticatorTransport(Enum):
   INTERNAL = 'internal'
 
 
-class COSEAlgorithmIdentifier(NameValueEnumsContainer):
+class COSEAlgorithmIdentifier(metaclass=NameValueEnumsContainer):
   """
   A COSEAlgorithmIdentifier's value is a number identifying a cryptographic
   algorithm. The algorithm identifiers SHOULD be values registered in the
@@ -861,13 +857,15 @@ class Credential:
       The requirements for the identifier are distinct for each type of
       credential. It might represent a username for username/password tuples,
       for example.
+    type (str): Specifies the credential type represented by this object.
 
   References:
     * https://w3.org/TR/credential-management-1/#credential
   """
 
-  def __init__(self, *, id: str):
+  def __init__(self, *, id: str, type: str):
     self.id = id
+    self.type = type
 
 
 class PublicKeyCredential(Credential):
@@ -881,6 +879,7 @@ class PublicKeyCredential(Credential):
       The requirements for the identifier are distinct for each type of
       credential. It might represent a username for username/password tuples,
       for example.
+    type (str): Specifies the credential type represented by this object.
     raw_id (bytes): This attribute is the raw credential id.
     response (AuthenticatorResponse): This attribute contains the
       authenticator's response to the client’s request to either create a
@@ -897,9 +896,9 @@ class PublicKeyCredential(Credential):
   """
 
   def __init__(
-      self, *, id: str, raw_id: bytes,
+      self, *, id: str, type: str, raw_id: bytes,
       response: AuthenticatorResponse):
-    super().__init__(id=id)
+    super().__init__(id=id, type=type)
     self.raw_id = raw_id
     self.response = response
 
@@ -987,7 +986,8 @@ class AuthenticatorDataFlag(Enum):
   ED = 1 << 7
 
 
-class COSEKeyType(NameValueEnumsContainer):
+class COSEKeyType(metaclass=NameValueEnumsContainer):
+
   class Name(Enum):
     OKP = 'OKP'
     EC2 = 'EC2'
@@ -999,7 +999,8 @@ class COSEKeyType(NameValueEnumsContainer):
     SYMMETRIC = 4
 
 
-class COSEKeyOperation(NameValueEnumsContainer):
+class COSEKeyOperation(metaclass=NameValueEnumsContainer):
+
   class Name(Enum):
     SIGN = 'sign'
     VERIFY = 'verify'
@@ -1025,6 +1026,34 @@ class COSEKeyOperation(NameValueEnumsContainer):
     MAC_VERIFY = 10
 
 
+class EC2KeyType(metaclass=NameValueEnumsContainer):
+
+  class Name(Enum):
+    P_256 = 'P-256'
+    P_384 = 'P-384'
+    P_521 = 'P-521'
+
+  class Value(Enum):
+    P_256 = 1
+    P_384 = 2
+    P_521 = 3
+
+
+class OKPKeyType(metaclass=NameValueEnumsContainer):
+
+  class Name(Enum):
+    X25519 = 'X25519'
+    X448 = 'X448'
+    ED25519 = 'Ed25519'
+    ED448 = 'Ed448'
+
+  class Value(Enum):
+    X25519 = 4
+    X448 = 5
+    ED25519 = 6
+    ED448 = 7
+
+
 class CredentialPublicKey:
 
   def __init__(
@@ -1047,7 +1076,7 @@ class CredentialPublicKey:
     self.base_IV = base_IV
 
 
-class FIDOU2FCredentialPublicKey(CredentialPublicKey):
+class EC2CredentialPublicKey(CredentialPublicKey):
 
   def __init__(
       self, *, kty: Union[COSEKeyType.Name, COSEKeyType.Value],
@@ -1063,11 +1092,38 @@ class FIDOU2FCredentialPublicKey(CredentialPublicKey):
             Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]] = None,
       base_IV: Optional[bytes] = None,
       x: bytes,
-      y: bytes):
+      y: bytes,
+      crv: Union[EC2KeyType.Name, EC2KeyType.Value]):
     super().__init__(
       kty=kty, kid=kid, alg=alg, key_ops=key_ops, base_IV=base_IV)
     self.x = x
     self.y = y
+    self.crv = crv
+
+
+class OKPCredentialPublicKey(CredentialPublicKey):
+
+  def __init__(
+      self, *, kty: Union[COSEKeyType.Name, COSEKeyType.Value],
+      kid: Optional[bytes] = None,
+      alg:
+        Optional[
+          Union[
+            COSEAlgorithmIdentifier.Name,
+            COSEAlgorithmIdentifier.Value]] = None,
+      key_ops:
+        Optional[
+          Sequence[
+            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]] = None,
+      base_IV: Optional[bytes] = None,
+      crv: Union[OKPKeyType.Name, OKPKeyType.Value],
+      x: bytes,
+      d: bytes):
+    super().__init__(
+      kty=kty, kid=kid, alg=alg, key_ops=key_ops, base_IV=base_IV)
+    self.crv = crv
+    self.x = x
+    self.d = d
 
 
 class AttestedCredentialData:
@@ -1113,7 +1169,9 @@ class AttestationType(Enum):
 
 
 class AttestationStatement:
-  def __init__(self, *, alg: COSEAlgorithmIdentifier, sig: bytes):
+  def __init__(
+      self, *, alg: Optional[COSEAlgorithmIdentifier] = None,
+      sig: Optional[bytes] = None):
     self.alg = alg
     self.sig = sig
 

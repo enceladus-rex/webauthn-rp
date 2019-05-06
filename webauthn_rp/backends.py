@@ -1,4 +1,3 @@
-import base64
 import cbor
 import hashlib
 import json
@@ -7,6 +6,7 @@ from typing import Optional, Set, Sequence, cast
 
 from cryptography.hazmat.primitives.hashes import SHA256
 
+from .converters import cryptography_public_key, jsonify
 from .errors import (
   AuthenticationError,
   DecodingError,
@@ -14,6 +14,7 @@ from .errors import (
   ValidationError,
   VerificationError,
   NotFoundError,
+  RegistrationError,
   ParseError)
 from .parsers import parse_client_data, parse_attestation
 from .registrars import CredentialsRegistrar
@@ -30,23 +31,23 @@ from .types import (
   PublicKeyCredential,
   TokenBinding)
 from .verifiers import verify
+from .utils import url_base64_decode, extract_origin
 
 
 class CredentialsBackend:
 
   def __init__(self, registrar: CredentialsRegistrar):
     self.registrar = registrar
-  
 
   def handle_creation_options(
-      self, options: CredentialCreationOptions) -> bool:
-    return self.registrar.register_creation_options(options)
-
+      self, options: CredentialCreationOptions):
+    if not self.registrar.register_creation_options(options):
+      raise RegistrationError('Failed to register creation options')
 
   def handle_request_options(
-      self, options: CredentialRequestOptions) -> bool:
-    return self.registrar.register_request_options(options)
-
+      self, options: CredentialRequestOptions):
+    if not self.registrar.register_request_options(options):
+      raise RegistrationError('Failed to register request options')
 
   def handle_credential_creation(
       self, credential: PublicKeyCredential,
@@ -55,18 +56,19 @@ class CredentialsBackend:
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
-      **registrar_kwargs) -> bool:
+      **registrar_kwargs):
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
       raise ParseError('Could not parse the client data dictionary')
     
+    print('collected_client_data', jsonify(collected_client_data))
     if collected_client_data.type != 'webauthn.create':
       raise ValidationError('Invalid client data type {}'.format(
         collected_client_data.type))
 
     try:
-      challenge = base64.b64decode(collected_client_data.challenge)
+      challenge = url_base64_decode(collected_client_data.challenge)
       create_options_challenge = self.registrar.get_creation_options_challenge(
         user, rp, **registrar_kwargs
       )
@@ -77,10 +79,11 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    if collected_client_data.origin != rp.id:
+    rp_origin = rp_origin = extract_origin(collected_client_data.origin)
+    if rp_origin != rp.id:
       raise IntegrityError(
         'Given ({0}) and expected ({1}) RP origin don\'t match'.format(
-          str(collected_client_data.origin), rp.id))
+          rp_origin, rp.id))
     
     if token_binding is not None:
       if collected_client_data.token_binding is None:
@@ -102,18 +105,18 @@ class CredentialsBackend:
       raise IntegrityError('Unexpected Token Binding in client data')
     
     client_data_JSON_hash = hashlib.sha256(response.client_data_JSON)
-    rp_id_hash = hashlib.sha256(rp.id.encode('utf-8'))
+    rp_id_hash = hashlib.sha256(rp.id.encode('utf-8')).digest()
 
     attestation, raw_att_obj = parse_attestation(response.attestation_object)
-
+    print('rp_id_hash', attestation.auth_data.rp_id_hash, rp_id_hash)
     if attestation.auth_data.rp_id_hash != rp_id_hash:
       raise IntegrityError('RP ID hash does not match')
 
-    if not (AuthenticatorDataFlag.UP & attestation.auth_data.flags):
+    if not (AuthenticatorDataFlag.UP.value & attestation.auth_data.flags):
       raise ValidationError('User present flag must be set')
 
     if require_user_verification:
-      if not (AuthenticatorDataFlag.UV & attestation.auth_data.flags):
+      if not (AuthenticatorDataFlag.UV.value & attestation.auth_data.flags):
         raise ValidationError('User verification flag must be set')
     
     if expected_extensions is not None:
@@ -125,19 +128,24 @@ class CredentialsBackend:
             e.key) is None:
           raise ValidationError('Missing extension {}'.format(e.value))
 
+    print(type(attestation.att_stmt))
     att_type, trusted_path = verify(
       attestation.att_stmt,
       attestation.auth_data.attested_credential_data.credential_public_key,
       raw_att_obj['authData'],
       client_data_JSON_hash)
 
-    self.registrar.register_credential_creation(
-      credential=credential, att=attestation,
-      att_type=att_type, user=user, rp=rp,
-      trusted_path=trusted_path,
-      **registrar_kwargs
-    )
+    crypto_pk = cryptography_public_key(
+      attestation.auth_data.attested_credential_data.credential_public_key)
 
+    if not self.registrar.register_credential_creation(
+          credential=credential, att=attestation,
+          att_type=att_type, user=user, rp=rp,
+          cryptography_public_key=crypto_pk,
+          trusted_path=trusted_path,
+          **registrar_kwargs
+        ):
+      raise RegistrationError('Failed to create credential')
   
   def handle_credential_request(
       self, credential: PublicKeyCredential,
@@ -212,7 +220,7 @@ class CredentialsBackend:
         collected_client_data.type))
 
     try:
-      challenge = base64.b64decode(collected_client_data.challenge)
+      challenge = url_base64_decode(collected_client_data.challenge)
       request_options_challenge = self.registrar.get_request_options_challenge(
         user, rp, **registrar_kwargs)
 
@@ -222,10 +230,11 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    if collected_client_data.origin != rp.id:
+    rp_origin = extract_origin(collected_client_data.origin)
+    if rp_origin != rp.id:
       raise IntegrityError(
         'Given ({0}) and expected ({1}) RP origin don\'t match'.format(
-          str(collected_client_data.origin), rp.id))
+          rp_origin, rp.id))
     
     if token_binding is not None:
       if collected_client_data.token_binding is None:
@@ -255,11 +264,11 @@ class CredentialsBackend:
     if auth_data.rp_id_hash != rp_id_hash:
       raise IntegrityError('RP ID hash does not match')
 
-    if not (AuthenticatorDataFlag.UP & auth_data.flags):
+    if not (AuthenticatorDataFlag.UP.value & auth_data.flags):
       raise ValidationError('User present flag must be set')
 
     if require_user_verification:
-      if not (AuthenticatorDataFlag.UV & auth_data.flags):
+      if not (AuthenticatorDataFlag.UV.value & auth_data.flags):
         raise ValidationError('User verification flag must be set')
     
     if expected_extensions is not None:
@@ -286,9 +295,10 @@ class CredentialsBackend:
           raise SignatureCountError(
             'Detected a possible authenticator clone')
 
-    self.registrar.register_credential_request(
-      credential=credential,
-      authenticator_data=authenticator_data,
-      user=user, rp=rp,
-      **registrar_kwargs
-    )
+    if not self.registrar.register_credential_request(
+          credential=credential,
+          authenticator_data=authenticator_data,
+          user=user, rp=rp,
+          **registrar_kwargs
+        ):
+      raise RegistrationError('Failed to request credential')

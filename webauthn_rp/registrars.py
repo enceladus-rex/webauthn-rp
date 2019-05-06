@@ -2,6 +2,7 @@ from cryptography.x509 import Certificate
 
 from typing import Optional, Sequence, Union, NamedTuple
 
+from .errors import UnimplementedError
 from .types import (
   CredentialCreationOptions,
   CredentialRequestOptions,
@@ -15,6 +16,7 @@ from .types import (
   AuthenticatorData,
   PublicKeyCredential,
   PublicKey,
+  TrustedPath,
 )
 
 
@@ -41,7 +43,8 @@ class CredentialsRegistrar:
       att_type: AttestationType,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[Sequence[Certificate]] = None,
+      cryptography_public_key: PublicKey,
+      trusted_path: Optional[TrustedPath] = None,
       **kwargs) -> bool:
     raise UnimplementedError(
       'Must implement register_credential_creation')
@@ -58,14 +61,14 @@ class CredentialsRegistrar:
   def get_creation_options_challenge(
       self, user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      **kwargs) -> bytes:
+      **kwargs) -> Optional[bytes]:
     raise UnimplementedError(
       'Must implement get_creation_options_challenge')
 
   def get_request_options_challenge(
       self, user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      **kwargs) -> bytes:
+      **kwargs) -> Optional[bytes]:
     raise UnimplementedError(
       'Must implement get_request_options_challenge')
 
@@ -77,6 +80,6 @@ class CredentialsRegistrar:
   
   def check_user_owns_credential(
       self, user_handle: bytes, credential_id: bytes,
-      **kwargs) -> bool:
+      **kwargs) -> Optional[bool]:
     raise UnimplementedError(
       'Must implement check_user_owns_credential')

@@ -14,14 +14,13 @@ from typing import Tuple, Sequence, Optional
 from .errors import UnimplementedError, ValidationError, VerificationError
 from .types import (
   FIDOU2FAttestationStatement,
+  NoneAttestationStatement,
   AttestationStatement,
   CredentialPublicKey,
   AttestationObject,
   AttestationType,
+  TrustedPath,
 )
-
-
-TrustedPath = Sequence[Certificate]
 
 
 @singledispatch
@@ -29,11 +28,12 @@ def verify(
     att_stmt: AttestationStatement,
     att_obj: AttestationObject,
     auth_data: bytes,
-    client_data_hash: bytes) -> Tuple[AttestationType, Optional[TrustedPath]]:
-  raise UnimplementedError('Verification unimplemented')
+    client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
+  raise UnimplementedError(
+    '{} verification unimplemented'.format(type(att_stmt)))
 
 
-@verify.register
+@verify.register(FIDOU2FAttestationStatement)
 def verify_fido_u2f(
     att_stmt: FIDOU2FAttestationStatement,
     att_obj: AttestationObject,
@@ -72,3 +72,12 @@ def verify_fido_u2f(
     raise VerificationError('FIDO U2F verification failed: invalid signature')
   
   return AttestationType.UNCERTAIN, [att_cert_x509]
+
+
+@verify.register(NoneAttestationStatement)
+def verify_none(
+    att_stmt: NoneAttestationStatement,
+    att_obj: AttestationObject,
+    auth_data: bytes,
+    client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
+  return AttestationType.NONE, None

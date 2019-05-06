@@ -1,7 +1,9 @@
 import cbor
 import json
 import struct
+import io
 
+from functools import singledispatch
 from enum import Enum
 from typing import Optional, Union, Sequence, Any, Tuple, Set
 
@@ -20,14 +22,20 @@ from .types import (
   COSEKeyType,
   COSEAlgorithmIdentifier,
   COSEKeyOperation,
+  PublicKeyCredential,
 
   CredentialPublicKey,
-  FIDOU2FCredentialPublicKey,
+  EC2CredentialPublicKey,
 
   AuthenticationExtensionsClientOutputs,
   Coordinates,
   AttestedCredentialData,
+
   AttestationStatement,
+  FIDOU2FAttestationStatement,
+
+  AuthenticatorAttestationResponse,
+  AuthenticatorAssertionResponse,
   
   PackedAttestationStatement,
   PackedX509AttestationStatement,
@@ -40,7 +48,10 @@ from .types import (
   AndroidKeyAttestationStatement,
   AndroidSafetyNetAttestationStatement,
   FIDOU2FAttestationStatement,
-  NoneAttestationStatement
+  NoneAttestationStatement,
+
+  EC2KeyType,
+  OKPKeyType,
 )
 from . import validators
 
@@ -58,13 +69,84 @@ def parse_dictionary_field(
     if not required: return
     raise ValidationError(
       '{} is required in dictionary keys'.format(
-        field_name))
+        field_key))
 
   if type(field) not in valid_types:
     raise ValidationError(
-      '{} type must be one of {}'.format(field_name, str(valid_types)))
+      '{} type must be one of {} not {}'.format(field_key,
+        str(valid_types),
+        str(type(field))))
 
   return field
+
+
+def check_unsupported_keys(supported: Set[str], data: dict):
+  unsupported_keys = set(data.keys()).difference(supported)
+  if unsupported_keys:
+    raise ValidationError((
+      'Found unsupported keys in data {}').format(
+        str(unsupported_keys)))
+
+
+def bytes_from_array(arr: Sequence[Any]) -> bytes:
+  try:
+    return bytes(arr)
+  except TypeError:
+    raise ValidationError('Invalid array type')
+
+
+def parse_public_key_credential(data: dict) -> PublicKeyCredential:
+  check_unsupported_keys({'id', 'rawId', 'response', 'type'}, data)
+
+  id_ = parse_dictionary_field('id', str, data)
+  type_ = parse_dictionary_field('type', str, data)
+  raw_id = bytes_from_array(parse_dictionary_field(
+    'rawId', (list, tuple), data))
+  
+  response = parse_dictionary_field('response', dict, data)
+  client_data_JSON = bytes_from_array(parse_dictionary_field(
+    'clientDataJSON', (list, tuple), response))
+  
+  if 'attestationObject' in response:
+    # Parse AuthenticatorAttestationResponse
+    check_unsupported_keys({'clientDataJSON', 'attestationObject'}, response)
+
+    attestation_object = bytes_from_array(parse_dictionary_field(
+      'attestationObject', (list, tuple), response))
+
+    return PublicKeyCredential(
+      id=id_,
+      type=type_,
+      raw_id=raw_id,
+      response=AuthenticatorAttestationResponse(
+        client_data_JSON=client_data_JSON,
+        attestation_object=attestation_object)
+    )
+  else:
+    # Parse AuthenticatorAssertionResponse
+    check_unsupported_keys(
+      {'clientDataJSON', 'authenticatorData', 'signature'}, response)
+    
+    authenticator_data = bytes_from_array(parse_dictionary_field(
+      'authenticatorData', (list, tuple), response))
+    signature = bytes_from_array(parse_dictionary_field(
+      'signature', (list, tuple), response))
+    user_handle_array = parse_dictionary_field(
+      'userHandle', (list, tuple), response, False)
+    user_handle = None
+    if user_handle_array is not None:
+      user_handle = bytes_from_array(user_handle_array)
+    
+    return PublicKeyCredential(
+      id=id_,
+      type=type_,
+      raw_id=raw_id,
+      response=AuthenticatorAssertionResponse(
+        client_data_JSON=client_data_JSON,
+        authenticator_data=authenticator_data,
+        signature=signature,
+        user_handle=user_handle)
+    )
 
 
 def parse_credential_public_key_kty(
@@ -85,7 +167,7 @@ def parse_credential_public_key_alg(
       COSEAlgorithmIdentifier.Name,
       COSEAlgorithmIdentifier.Value]:
   alg_raw = parse_dictionary_field(
-    1, (int, str), credential_public_key)
+    3, (int, str), credential_public_key)
 
   try:
     alg = COSEAlgorithmIdentifier(alg_raw)
@@ -142,53 +224,65 @@ def parse_credential_public_key_kwargs(
   }
 
 
-def parse_fido_u2f_credential_public_key(
-    credential_public_key: dict) -> FIDOU2FCredentialPublicKey:
+def parse_ec2_public_key_crv(
+    credential_public_key: dict) -> CredentialPublicKey:
+  crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
+  try:
+    return EC2KeyType(crv_raw)
+  except KeyError:
+    raise ValidationError('Invalid EC2 curve {}'.format(crv_raw))
+
+
+def parse_okp_public_key_crv(
+    credential_public_key: dict) -> CredentialPublicKey:
+  crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
+  try:
+    return OKPKeyType(crv_raw)
+  except KeyError:
+    raise ValidationError('Invalid OKP curve {}'.format(crv_raw))
+
+
+def parse_okp_public_key(
+    credential_public_key: dict) -> CredentialPublicKey:
+  x = parse_dictionary_field(-2, bytes, credential_public_key)
+  d = parse_dictionary_field(-4, bytes, credential_public_key)
+  crv = parse_okp_public_key_crv(credential_public_key)
+
+  if len(x) != 32:
+    raise ValidationError(
+      'Packed credential public key x and y must be 32 bytes')
+
+  return OKPCredentialPublicKey(
+    crv=crv, x=x, d=d,
+    **parse_credential_public_key_kwargs(credential_public_key),
+  )
+
+
+def parse_ec2_public_key(
+    credential_public_key: dict) -> EC2CredentialPublicKey:
   x = parse_dictionary_field(-2, bytes, credential_public_key)
   y = parse_dictionary_field(-3, bytes, credential_public_key)
+  crv = parse_ec2_public_key_crv(credential_public_key)
 
   if len(x) != 32 or len(y) != 32:
     raise ValidationError(
       'Packed credential public key x and y must be 32 bytes')
 
-  return FIDOU2FCredentialPublicKey(
-    x=x, y=y,
+  return EC2CredentialPublicKey(
+    x=x, y=y, crv=crv,
     **parse_credential_public_key_kwargs(credential_public_key),
   )
 
 
-def parse_packed_credential_public_key(
-    credential_public_key: dict) -> CredentialPublicKey:
-  raise UnimplementedError('Packed credential public key unimplemented')
-
-
-def parse_tpm_credential_public_key(
+def parse_symmetric_public_key(
     credential_public_key: dict) -> CredentialPublicKey:
   raise UnimplementedError('TPM credential public key unimplemented')
 
 
-def parse_android_key_credential_public_key(
-    credential_public_key: dict) -> CredentialPublicKey:
-  raise UnimplementedError('Android Key credential public key unimplemented')
-
-
-def parse_android_safetynet_credential_public_key(
-    credential_public_key: dict) -> CredentialPublicKey:
-  raise UnimplementedError('Android SafetyNet credential public key unimplemented')
-
-
-def parse_none_credential_public_key(
-    credential_public_key: dict) -> CredentialPublicKey:
-  raise UnimplementedError('None credential public key unimplemented')
-
-
 class CredentialPublicKeyParser(Enum):
-  PACKED = parse_packed_credential_public_key
-  TPM = parse_tpm_credential_public_key
-  ANDROID_KEY = parse_android_key_credential_public_key
-  ANDROID_SAFETYNET = parse_android_safetynet_credential_public_key
-  FIDO_U2F = parse_fido_u2f_credential_public_key
-  NONE = parse_none_credential_public_key
+  OKP = parse_okp_public_key
+  EC2 = parse_ec2_public_key
+  SYMMETRIC = parse_symmetric_public_key
 
 
 def parse_extensions(
@@ -308,19 +402,11 @@ def parse_extensions(
   )
 
 
-def check_unsupported_keys(supported: Set[str], data: dict):
-  unsupported_keys = set(data.keys()).difference(supported)
-  if unsupported_keys:
-    raise ValidationError((
-      'Found unsupported keys in attestation statement {}').format(
-        str(unsupported_keys)))
-
-
 def parse_attestation_statement_alg(
     att_stmt: dict) -> Union[
       COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]:
   alg = parse_dictionary_field('alg', (int, str), att_stmt)
-
+  
   try:
     alg = COSEAlgorithmIdentifier(alg)
   except KeyError:
@@ -443,9 +529,9 @@ class AttestationStatementParser(Enum):
   NONE = parse_none_attestation_statement
 
 
-def parse_client_data(client_data_json: str) -> Optional[CollectedClientData]:
+def parse_client_data(client_data_JSON: bytes) -> Optional[CollectedClientData]:
   try:
-    client_data_text = response.client_data_json.decode('utf-8')
+    client_data_text = client_data_JSON.decode('utf-8')
     client_data = json.loads(client_data_text)
   except (UnicodeDecodeError, json.JSONDecodeError):
     raise DecodingError('Could not decode the client data JSON')
@@ -454,8 +540,9 @@ def parse_client_data(client_data_json: str) -> Optional[CollectedClientData]:
   challenge = client_data.get('challenge')
   origin = client_data.get('origin')
 
-  if all((type_, challenge, origin), lambda x: isinstance(x, str)):
+  if all(isinstance(x, str) for x in (type_, challenge, origin)):
     token_binding_data = client_data.get('tokenBinding')
+    token_binding = None
     if token_binding_data is not None:
       token_binding_status = token_binding_data.get('status')
       token_binding_id = token_binding_data.get('id')
@@ -482,42 +569,47 @@ def parse_authenticator_data(
     auth_data: bytes,
     fmt: Optional[
       AttestationStatementFormatIdentifier] = None) -> AuthenticatorData:
-  if len(auth_data) < 35:
+  if len(auth_data) < 37:
     raise ValidationError('Attestation auth data must be at least 35 bytes')
 
   rp_id_hash = auth_data[:32]
   flags = auth_data[32]
   signature_counter_bytes = auth_data[33:37]
-  signature_counter_uint32 = struct.unpack('>I', counter_bytes)
+  signature_counter_uint32, = struct.unpack('>I', signature_counter_bytes)
 
   attested_credential_data = None
   if len(auth_data) >= 53:
-    aaguid = auth_data[35:51]
-    credential_id_length_bytes = auth_data[51:53]
-    credential_id_length_uint16 = struct.unpack('>H')
-    credential_id = auth_data[53:(53 + credential_id_length_uint16)]
+    aaguid = auth_data[37:53]
+    credential_id_length_bytes = auth_data[53:55]
+    credential_id_length_uint16, = struct.unpack(
+      '>H', credential_id_length_bytes)
+    credential_id = auth_data[55:(55 + credential_id_length_uint16)]
     credential_public_key_bytes = auth_data[
-      (53 + credential_id_length_uint16):]
+      (55 + credential_id_length_uint16):]
 
     try:
-      credential_public_key, bytes_read = cbor._loads(
-        credential_public_key_bytes)
+      credential_public_key, bytes_read = cbor.cbor._loads(
+        io.BytesIO(credential_public_key_bytes))
     except ValueError:
       raise DecodingError('Could not decode the credential public key CBOR')
+
+    print('credentialPublicKey', credential_public_key, bytes_read)
 
     if type(credential_public_key) is not dict:
       raise ValidationError('Credential public key must be a dictionary')
 
-    cpk = None
-    if fmt is not None:
-      try:
-        cpk_parser = CredentialPublicKeyParser[fmt.name]
-      except KeyError:
-        ValidationError('Parser not supported for key type {}'.format(
-          fmt.name))
+    cose_key_type = COSEKeyType(credential_public_key[1])
 
-      cpk = cpk_parser(credential_public_key)
-      validators.keys.validate(cpk)
+    cpk = None
+    print(cose_key_type)
+    try:
+      cpk_parser = getattr(CredentialPublicKeyParser, cose_key_type.name)
+    except AttributeError:
+      raise ValidationError('Parser not supported for key type {}'.format(
+        cose_key_type.name))
+
+    cpk = cpk_parser(credential_public_key)
+    validators.keys.validate(cpk)
 
     extension_bytes = credential_public_key_bytes[bytes_read:]
 
@@ -560,8 +652,10 @@ def parse_attestation(attestation_object: bytes) -> Tuple[
     if type(fmt) is not str:
       raise ValidationError('fmt must be a text string')
 
+    print('fmt', fmt)
+
     try:
-      asfi = AttestationStatementFormatIdentifier[fmt]
+      asfi = AttestationStatementFormatIdentifier(fmt)
     except KeyError:
       raise ValidationError('Invalid attestation statement format identifier')
 
@@ -577,9 +671,13 @@ def parse_attestation(attestation_object: bytes) -> Tuple[
     raise ValidationError('attStmt must be a dictionary')
 
   try:
-    as_parser = AttestationStatementParser[asfi.name]
+    print('asfi.name', asfi.name)
+    print(AttestationStatementParser.NONE)
+    print(list(AttestationStatementParser))
+    as_parser = getattr(AttestationStatementParser, asfi.name)
+    print('as_parser', as_parser)
     attestation_statement = as_parser(att_stmt)
-  except KeyError:
+  except AttributeError:
     raise ValidationError('Unsupported attestation statement {}'.format(
       asfi.name))
 

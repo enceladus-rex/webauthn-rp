@@ -9,3 +9,4 @@ class UnimplementedError(WebAuthnRPError): pass
 class ValidationError(WebAuthnRPError): pass
 class NotFoundError(WebAuthnRPError): pass
 class SignatureCountError(WebAuthnRPError): pass
+class RegistrationError(WebAuthnRPError): pass
