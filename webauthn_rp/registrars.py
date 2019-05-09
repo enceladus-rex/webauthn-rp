@@ -4,6 +4,7 @@ from typing import Optional, Sequence, Union, NamedTuple
 
 from .errors import UnimplementedError
 from .types import (
+  CredentialPublicKey,
   CredentialCreationOptions,
   CredentialRequestOptions,
   AuthenticatorAttestationResponse,
@@ -21,7 +22,7 @@ from .types import (
 
 
 class CredentialData(NamedTuple):
-  public_key: PublicKey
+  credential_public_key: CredentialPublicKey
   signature_count: int
   user_entity: Optional[PublicKeyCredentialUserEntity] = None
   rp_entity: Optional[PublicKeyCredentialRpEntity] = None
@@ -43,7 +44,6 @@ class CredentialsRegistrar:
       att_type: AttestationType,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      cryptography_public_key: PublicKey,
       trusted_path: Optional[TrustedPath] = None,
       **kwargs) -> bool:
     raise UnimplementedError(

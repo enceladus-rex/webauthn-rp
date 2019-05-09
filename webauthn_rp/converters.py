@@ -1,10 +1,13 @@
 import json
+import cbor
 import base64
 from enum import Enum
 from functools import singledispatch
 from typing import Any, Union
 
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.ec import (
   EllipticCurvePublicNumbers,
   SECP256R1,
@@ -17,6 +20,7 @@ from .types import (
   PublicKey,
   PublicKeyCredential,
   EC2CredentialPublicKey,
+  OKPCredentialPublicKey,
 )
 
 from .errors import UnimplementedError, ValidationError
@@ -75,6 +79,57 @@ def cryptography_ec2_public_key(
       credential_public_key.crv.name
     ))
   
-  print('EC2 public key', x, y, curve)
   ecpn = EllipticCurvePublicNumbers(x, y, curve)
   return ecpn.public_key(default_backend())
+
+
+@cryptography_public_key.register(OKPCredentialPublicKey)
+def cryptography_okp_public_key(
+    credential_public_key: OKPCredentialPublicKey) -> PublicKey:
+  if credential_public_key.crv.name == 'ED25519':
+    return Ed25519PublicKey.from_public_bytes(credential_public_key.x)
+  elif credential_public_key.crv.name == 'ED448':
+    return Ed448PublicKey.from_public_bytes(credential_public_key.x)
+  else:
+    raise UnimplementedError('Unsupported cryptography OKP curve {}'.format(
+      credential_public_key.crv.name
+    ))
+
+
+def build_base_cose_dictionary(
+    credential_public_key: CredentialPublicKey) -> dict:
+  d = {}
+  d[1] = credential_public_key.kty.value
+  if credential_public_key.kid is not None:
+    d[2] = credential_public_key.kid
+  d[3] = credential_public_key.alg.value
+  if credential_public_key.key_ops is not None:
+    d[4] = [x.value for x in credential_public_key.key_ops]
+  if credential_public_key.key_ops is not None:
+    d[5] = credential_public_key.base_IV
+  return d
+
+
+@singledispatch
+def cose_key(
+    credential_public_key: CredentialPublicKey) -> bytes:
+  raise UnimplementedError('Must implement cose key conversion')
+
+
+@cose_key.register(EC2CredentialPublicKey)
+def cose_key_from_ec2(
+    credential_public_key: EC2CredentialPublicKey) -> bytes:
+  d = build_base_cose_dictionary(credential_public_key)
+  d[-1] = credential_public_key.crv.value
+  d[-2] = credential_public_key.x
+  d[-3] = credential_public_key.y
+  return cbor.dumps(d)
+
+
+@cose_key.register(OKPCredentialPublicKey)
+def cose_key_from_okp(
+    credential_public_key: OKPCredentialPublicKey) -> bytes:
+  d = build_base_cose_dictionary(credential_public_key)
+  d[-1] = credential_public_key.crv.value
+  d[-2] = credential_public_key.x
+  return cbor.dumps(d)

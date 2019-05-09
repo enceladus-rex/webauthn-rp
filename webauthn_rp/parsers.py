@@ -53,7 +53,7 @@ from .types import (
   EC2KeyType,
   OKPKeyType,
 )
-from . import validators
+from .validators import validate
 
 
 def parse_dictionary_field(
@@ -96,8 +96,9 @@ def bytes_from_array(arr: Sequence[Any]) -> bytes:
 
 
 def parse_public_key_credential(data: dict) -> PublicKeyCredential:
+  print('parsing pkc', data)
   check_unsupported_keys({'id', 'rawId', 'response', 'type'}, data)
-
+  print('checked for unsupported keys')
   id_ = parse_dictionary_field('id', str, data)
   type_ = parse_dictionary_field('type', str, data)
   raw_id = bytes_from_array(parse_dictionary_field(
@@ -124,9 +125,11 @@ def parse_public_key_credential(data: dict) -> PublicKeyCredential:
     )
   else:
     # Parse AuthenticatorAssertionResponse
+    print('parsing assertion response')
     check_unsupported_keys(
-      {'clientDataJSON', 'authenticatorData', 'signature'}, response)
+      {'clientDataJSON', 'authenticatorData', 'signature', 'userHandle'}, response)
     
+    print('checked for unsupported key')
     authenticator_data = bytes_from_array(parse_dictionary_field(
       'authenticatorData', (list, tuple), response))
     signature = bytes_from_array(parse_dictionary_field(
@@ -225,7 +228,7 @@ def parse_credential_public_key_kwargs(
 
 
 def parse_ec2_public_key_crv(
-    credential_public_key: dict) -> CredentialPublicKey:
+    credential_public_key: dict) -> Union[EC2KeyType.Name, EC2KeyType.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
     return EC2KeyType(crv_raw)
@@ -234,7 +237,7 @@ def parse_ec2_public_key_crv(
 
 
 def parse_okp_public_key_crv(
-    credential_public_key: dict) -> CredentialPublicKey:
+    credential_public_key: dict) -> Union[OKPKeyType.Name, OKPKeyType.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
     return OKPKeyType(crv_raw)
@@ -245,7 +248,6 @@ def parse_okp_public_key_crv(
 def parse_okp_public_key(
     credential_public_key: dict) -> CredentialPublicKey:
   x = parse_dictionary_field(-2, bytes, credential_public_key)
-  d = parse_dictionary_field(-4, bytes, credential_public_key)
   crv = parse_okp_public_key_crv(credential_public_key)
 
   if len(x) != 32:
@@ -253,7 +255,7 @@ def parse_okp_public_key(
       'Packed credential public key x and y must be 32 bytes')
 
   return OKPCredentialPublicKey(
-    crv=crv, x=x, d=d,
+    crv=crv, x=x,
     **parse_credential_public_key_kwargs(credential_public_key),
   )
 
@@ -274,15 +276,9 @@ def parse_ec2_public_key(
   )
 
 
-def parse_symmetric_public_key(
-    credential_public_key: dict) -> CredentialPublicKey:
-  raise UnimplementedError('TPM credential public key unimplemented')
-
-
 class CredentialPublicKeyParser(Enum):
   OKP = parse_okp_public_key
   EC2 = parse_ec2_public_key
-  SYMMETRIC = parse_symmetric_public_key
 
 
 def parse_extensions(
@@ -565,6 +561,22 @@ def parse_client_data(client_data_JSON: bytes) -> Optional[CollectedClientData]:
     )
 
 
+def parse_cose_key(
+    credential_public_key: Union[dict, bytes]) -> CredentialPublicKey:
+  if type(credential_public_key) is bytes:
+    credential_public_key = cbor.loads(credential_public_key)
+    
+  cose_key_type = COSEKeyType(credential_public_key[1])
+  
+  try:
+    cpk_parser = getattr(CredentialPublicKeyParser, cose_key_type.name)
+  except AttributeError:
+    raise ValidationError('Parser not supported for key type {}'.format(
+      cose_key_type.name))
+
+  return cpk_parser(credential_public_key)
+
+
 def parse_authenticator_data(
     auth_data: bytes,
     fmt: Optional[
@@ -598,18 +610,8 @@ def parse_authenticator_data(
     if type(credential_public_key) is not dict:
       raise ValidationError('Credential public key must be a dictionary')
 
-    cose_key_type = COSEKeyType(credential_public_key[1])
-
-    cpk = None
-    print(cose_key_type)
-    try:
-      cpk_parser = getattr(CredentialPublicKeyParser, cose_key_type.name)
-    except AttributeError:
-      raise ValidationError('Parser not supported for key type {}'.format(
-        cose_key_type.name))
-
-    cpk = cpk_parser(credential_public_key)
-    validators.keys.validate(cpk)
+    cpk = parse_cose_key(credential_public_key)
+    validate(cpk)
 
     extension_bytes = credential_public_key_bytes[bytes_read:]
 

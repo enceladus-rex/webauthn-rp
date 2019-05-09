@@ -4,7 +4,9 @@ import json
 
 from typing import Optional, Set, Sequence, cast
 
+import cryptography
 from cryptography.hazmat.primitives.hashes import SHA256
+from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
 
 from .converters import cryptography_public_key, jsonify
 from .errors import (
@@ -16,7 +18,8 @@ from .errors import (
   NotFoundError,
   RegistrationError,
   ParseError)
-from .parsers import parse_client_data, parse_attestation
+from .parsers import (
+  parse_client_data, parse_attestation, parse_authenticator_data)
 from .registrars import CredentialsRegistrar
 from .types import (
   CredentialCreationOptions,
@@ -30,7 +33,7 @@ from .types import (
   PublicKeyCredentialDescriptor,
   PublicKeyCredential,
   TokenBinding)
-from .verifiers import verify
+from .attesters import attest
 from .utils import url_base64_decode, extract_origin
 
 
@@ -104,7 +107,7 @@ class CredentialsBackend:
     elif collected_client_data.token_binding is not None:
       raise IntegrityError('Unexpected Token Binding in client data')
     
-    client_data_JSON_hash = hashlib.sha256(response.client_data_JSON)
+    client_data_JSON_hash = hashlib.sha256(response.client_data_JSON).digest()
     rp_id_hash = hashlib.sha256(rp.id.encode('utf-8')).digest()
 
     attestation, raw_att_obj = parse_attestation(response.attestation_object)
@@ -129,7 +132,7 @@ class CredentialsBackend:
           raise ValidationError('Missing extension {}'.format(e.value))
 
     print(type(attestation.att_stmt))
-    att_type, trusted_path = verify(
+    att_type, trusted_path = attest(
       attestation.att_stmt,
       attestation.auth_data.attested_credential_data.credential_public_key,
       raw_att_obj['authData'],
@@ -141,7 +144,6 @@ class CredentialsBackend:
     if not self.registrar.register_credential_creation(
           credential=credential, att=attestation,
           att_type=att_type, user=user, rp=rp,
-          cryptography_public_key=crypto_pk,
           trusted_path=trusted_path,
           **registrar_kwargs
         ):
@@ -209,7 +211,7 @@ class CredentialsBackend:
       if not valid_credential:
         raise ValidationError('User does not own credential')
 
-    cpk = credential_data.public_key
+    cpk = cryptography_public_key(credential_data.credential_public_key)
 
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
@@ -255,8 +257,8 @@ class CredentialsBackend:
     elif collected_client_data.token_binding is not None:
       raise IntegrityError('Unexpected Token Binding in client data')
     
-    client_data_JSON_hash = hashlib.sha256(response.client_data_JSON)
-    rp_id_hash = hashlib.sha256(rp.id.encode('utf-8'))
+    client_data_JSON_hash = hashlib.sha256(response.client_data_JSON).digest()
+    rp_id_hash = hashlib.sha256(rp.id.encode('utf-8')).digest()
     
     auth_data = parse_authenticator_data(
       response.authenticator_data)
@@ -282,7 +284,8 @@ class CredentialsBackend:
 
     try:
       verification_data = response.authenticator_data + client_data_JSON_hash
-      cpk.verify(response.signature, verification_data, SHA256())
+      print(cpk, cpk.curve, cpk.public_numbers())
+      cpk.verify(response.signature, verification_data, ECDSA(SHA256()))
     except cryptography.exceptions.InvalidSignature:
       raise VerificationError(
         'Assertion verification failed: invalid signature')
@@ -297,7 +300,7 @@ class CredentialsBackend:
 
     if not self.registrar.register_credential_request(
           credential=credential,
-          authenticator_data=authenticator_data,
+          authenticator_data=auth_data,
           user=user, rp=rp,
           **registrar_kwargs
         ):

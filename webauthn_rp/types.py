@@ -1,7 +1,8 @@
 from typing import Optional, Sequence, Union
 from enum import Enum
 
-from cryptography.hazmat.primitives.asymmetric.dsa import DSAPublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.x509 import Certificate
@@ -9,7 +10,7 @@ from cryptography.x509 import Certificate
 from .utils import camel_to_snake_case
 
 
-PublicKey = Union[DSAPublicKey, EllipticCurvePublicKey, RSAPublicKey]
+PublicKey = Union[EllipticCurvePublicKey, Ed25519PublicKey, Ed448PublicKey]
 TrustedPath = Optional[Sequence[Certificate]]
 
 
@@ -227,94 +228,12 @@ class COSEAlgorithmIdentifier(metaclass=NameValueEnumsContainer):
 
     EDDSA = 'EdDSA'
 
-    ECDH_ES_HKDF_256 = 'ECDH-ES + HKDF-256'
-    ECDH_ES_HKDF_512 = 'ECDH-ES + HKDF-512'
-    ECDH_SS_HKDF_256 = 'ECDH-SS + HKDF-256'
-    ECDH_SS_HKDF_512 = 'ECDH-SS + HKDF-512'
-
-    HMAC_256_64 = 'HMAC 256/64'
-    HMAC_256_256 = 'HMAC 256/256'
-    HMAC_384_384 = 'HMAC 384/384'
-    HMAC_512_512 = 'HMAC 512/512'
-
-    AES_MAC_128_64 = 'AES-MAC 128/64'
-    AES_MAC_256_64 = 'AES-MAC 256/64'
-    AES_MAC_128_128 = 'AES-MAC 128/128'
-    AES_MAC_256_128 = 'AES-MAC 256/128'
-
-    A256KW = 'A256KW'
-    A192KW = 'A192KW'
-    A128KW = 'A128KW'
-
-    A128GCM = 'A128GCM'
-    A192GCM = 'A192GCM'
-    A256GCM = 'A256GCM'
-
-    DIRECT = 'direct'
-
-    DIRECT_HKDF_SHA_256 = 'direct+HKDF-SHA-256'
-    DIRECT_HKDF_SHA_512 = 'direct+HKDF-SHA-512'
-    DIRECT_HKDF_AES_128 = 'direct+HKDF-AES-128'
-    DIRECT_HKDF_AES_256 = 'direct+HKDF-AES-256'
-
-    AES_CCM_16_64_128 = 'AES-CCM-16-64-128'
-    AES_CCM_16_64_256 = 'AES-CCM-16-64-256'
-    AES_CCM_64_64_128 = 'AES-CCM-64-64-128'
-    AES_CCM_64_64_256 = 'AES-CCM-64-64-256'
-    AES_CCM_16_128_128 = 'AES-CCM-16-128-128'
-    AES_CCM_16_128_256 = 'AES-CCM-16-128-256'
-    AES_CCM_64_128_128 = 'AES-CCM-64-128-128'
-    AES_CCM_64_128_256 = 'AES-CCM-64-128-256'
-    
-    CHACHA20_POLY1305 = 'ChaCha20/Poly1305'
-
   class Value(Enum):
     ES256 = -7
     ES384 = -35
     ES512 = -36
 
     EDDSA = -8
-
-    ECDH_ES_HKDF_256 = -25
-    ECDH_ES_HKDF_512 = -26
-    ECDH_SS_HKDF_256 = -27
-    ECDH_SS_HKDF_512 = -28
-
-    HMAC_256_64 = 4
-    HMAC_256_256 = 5
-    HMAC_384_384 = 6
-    HMAC_512_512 = 7
-
-    AES_MAC_128_64 = 14
-    AES_MAC_256_64 = 15
-    AES_MAC_128_128 = 25
-    AES_MAC_256_128 = 26
-
-    A256KW = -5
-    A192KW = -4
-    A128KW = -3
-
-    A128GCM = 1
-    A192GCM = 2
-    A256GCM = 3
-
-    DIRECT = -6
-
-    DIRECT_HKDF_SHA_256 = -10
-    DIRECT_HKDF_SHA_512 = -11
-    DIRECT_HKDF_AES_128 = -12
-    DIRECT_HKDF_AES_256 = -13
-
-    AES_CCM_16_64_128 = 10
-    AES_CCM_16_64_256 = 11
-    AES_CCM_64_64_128 = 12
-    AES_CCM_64_64_256 = 13
-    AES_CCM_16_128_128 = 30
-    AES_CCM_16_128_256 = 31
-    AES_CCM_64_128_128 = 32
-    AES_CCM_64_128_256 = 33
-
-    CHACHA20_POLY1305 = 24
 
 
 class PublicKeyCredentialParameters:
@@ -721,7 +640,7 @@ class PublicKeyCredentialRequestOptions:
     self.challenge = challenge
     self.timeout = timeout
     self.rp_id = rp_id
-    self.allow_credentials = allow_credentials or list()
+    self.allow_credentials = allow_credentials
     self.user_verification = user_verification
     self.extensions = extensions
 
@@ -744,6 +663,12 @@ class CredentialCreationOptions:
     self.public_key = public_key
 
 
+class CredentialMediationRequirement(Enum):
+  SILENT = 'silent'
+  OPTIONAL = 'optional'
+  REQUIRED = 'required'
+
+
 class CredentialRequestOptions:
   """
   The object used to obtain assertions using the
@@ -758,7 +683,12 @@ class CredentialRequestOptions:
   """
 
   def __init__(
-      self, *, public_key: PublicKeyCredentialRequestOptions):
+      self, *,
+      mediation:
+        CredentialMediationRequirement = (
+          CredentialMediationRequirement.OPTIONAL),
+      public_key: PublicKeyCredentialRequestOptions):
+    self.mediation = mediation
     self.public_key = public_key
 
 
@@ -1042,14 +972,10 @@ class EC2KeyType(metaclass=NameValueEnumsContainer):
 class OKPKeyType(metaclass=NameValueEnumsContainer):
 
   class Name(Enum):
-    X25519 = 'X25519'
-    X448 = 'X448'
     ED25519 = 'Ed25519'
     ED448 = 'Ed448'
 
   class Value(Enum):
-    X25519 = 4
-    X448 = 5
     ED25519 = 6
     ED448 = 7
 
@@ -1117,13 +1043,11 @@ class OKPCredentialPublicKey(CredentialPublicKey):
             Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]] = None,
       base_IV: Optional[bytes] = None,
       crv: Union[OKPKeyType.Name, OKPKeyType.Value],
-      x: bytes,
-      d: bytes):
+      x: bytes):
     super().__init__(
       kty=kty, kid=kid, alg=alg, key_ops=key_ops, base_IV=base_IV)
     self.crv = crv
     self.x = x
-    self.d = d
 
 
 class AttestedCredentialData:
