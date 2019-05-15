@@ -15,6 +15,10 @@ TrustedPath = Optional[Sequence[Certificate]]
 
 
 class NameValueEnumsContainer(type):
+  """
+  A metaclass used to enable Enums that can take on a string and integer type
+  for a name and value respectively.
+  """
 
   def __call__(cls, value):
     if type(value) is int:
@@ -214,7 +218,9 @@ class COSEAlgorithmIdentifier(metaclass=NameValueEnumsContainer):
   IANA COSE Algorithms registry.
 
   This Enum only contains algorithms that are internally supported. It can be
-  extended upon further support.
+  extended upon further support. As Web Authentication mainly performs signing
+  and verification, only algorithms that pertain to those operations are
+  considered.
 
   References:
     * https://w3.org/TR/webauthn/#typedefdef-cosealgorithmidentifier
@@ -380,6 +386,16 @@ class UserVerificationRequirement(Enum):
 
 
 class TxAuthGenericArg:
+  """
+  The input type of the txAuthGeneric extension.
+
+  Attributes:
+    content_type (str): MIME-Type of the content, e.g., "image/png"
+    content (bytes): The byte string data.
+
+  References
+    * https://w3.org/TR/webauthn/#sctn-generic-txauth-extension
+  """
 
   def __init__(self, *, content_type: str, content: bytes):
     self.content_type = content_type
@@ -387,6 +403,49 @@ class TxAuthGenericArg:
 
 
 class Coordinates:
+  """
+  The geographic coordinate reference system used by the attributes in this
+  interface is the World Geodetic System (2d) [WGS84]. No other reference
+  system is supported.
+
+  Attributes:
+    latitude (float): Geographic latitude specified in decimal degrees.
+    longitude (float): Geographic longitude specified in decimal degrees.
+    altitude (Optional[float]): Denotes the height of the position, specified
+      in meters above the ellipsoid established by
+      http://earth-info.nga.mil/GandG/publications/tr8350.2/wgs84fin.pdf.
+      If the implementation cannot provide altitude information, the value of
+      this attribute must be null.
+    accuracy (float):
+      Denotes the accuracy level of the latitude and longitude coordinates.
+      It is specified in meters and must be supported by all implementations.
+      The value of the accuracy attribute must be a non-negative real number.
+    altitude_accuracy (Optional[float]):
+      Specified in meters. If the implementation cannot provide altitude
+      information, the value of this attribute must be null. Otherwise, the
+      value must be a non-negative real number.
+    heading (Optional[float]):
+      Denotes the direction of travel of the hosting device and is specified in
+      degrees, where 0° ≤ heading < 360°, counting clockwise relative to the
+      true north. If the implementation cannot provide heading information, the
+      value of this attribute must be null. If the hosting device is stationary
+      (i.e. the value of the speed attribute is 0), then the value of the
+      heading attribute must be NaN.
+    speed (Optional[float]):
+      Denotes the magnitude of the horizontal component of the hosting device's
+      current velocity and is specified in meters per second. If the
+      implementation cannot provide speed information, the value of this
+      attribute must be null. Otherwise, the value of the speed attribute must
+      be a non-negative real number.
+    
+    Notes:
+      * The accuracy and altitude_accuracy values returned by an implementation
+        should correspond to a 95% confidence level.
+
+    References:
+      * https://w3.org/TR/webauthn/#sctn-location-extension
+      * https://w3.org/TR/geolocation-API/#coordinates_interface
+  """
 
   def __init__(
       self, *, latitude: float, longitude : float,
@@ -411,12 +470,72 @@ UvmEntries = Sequence[UvmEntry]
 
 
 class AuthenticatorBiometricPerfBounds:
+  """
+  Biometric performance bounds.
+
+  Attributes:
+    FAR (float): The maximum false acceptance rate for a biometric
+      authenticator allowed by the Relying Party.
+    FRR (float): The maximum false rejection rate for a biometric authenticator
+      allowed by the Relying Party.
+  
+  References:
+    * w3.org/TR/webauthn/#sctn-authenticator-biometric-criteria-extension
+  """
 
   def __init__(self, *, FAR: float, FRR: float):
     self.FAR = FAR
     self.FRR = FRR
 
+
 class ExtensionIdentifier(Enum):
+  """
+  The string identifier of supported extensions.
+
+  Attributes:
+    APPID (str):
+      This extension allows WebAuthn Relying Parties that have previously
+      registered a credential using the legacy FIDO JavaScript APIs to request
+      an assertion. The FIDO APIs use an alternative identifier for Relying
+      Parties called an AppID [FIDO-APPID], and any credentials created using
+      those APIs will be scoped to that identifier. Without this extension,
+      they would need to be re-registered in order to be scoped to an RP ID.
+
+      This extension does not allow FIDO-compatible credentials to be created.
+      Thus, credentials created with WebAuthn are not backwards compatible with
+      the FIDO JavaScript APIs.
+    TX_AUTH_SIMPLE (str):
+      This extension allows for a simple form of transaction authorization.
+      A Relying Party can specify a prompt string, intended for display on a
+      trusted device on the authenticator.
+    TX_AUTH_GENERIC (str):
+      This extension allows images to be used as transaction authorization
+      prompts as well. This allows authenticators without a font rendering
+      engine to be used and also supports a richer visual appearance.
+    AUTHN_SEL (str):
+      This extension allows a WebAuthn Relying Party to guide the selection of
+      the authenticator that will be leveraged when creating the credential.
+      It is intended primarily for Relying Parties that wish to tightly control
+      the experience around credential creation.
+    EXTS (str):
+      This extension enables the WebAuthn Relying Party to determine which
+      extensions the authenticator supports.
+    UVI (str):
+      This extension enables use of a user verification index.
+    LOC (str):
+      This extension provides the authenticator's current location to the
+      WebAuthn Relying Party.
+    UVM (str);
+      This extension enables use of a user verification method.
+    BIOMETRIC_PERF_BOUNDS (str):
+      This extension allows WebAuthn Relying Parties to specify the desired
+      performance bounds for selecting biometric authenticators as candidates
+      to be employed in a registration ceremony.
+
+  References:
+    * https://w3.org/TR/webauthn/#sctn-defined-extensions
+  """
+
   APPID = 'appid'
   TX_AUTH_SIMPLE = 'txAuthSimple'
   TX_AUTH_GENERIC = 'txAuthGeneric'
@@ -437,8 +556,37 @@ class AuthenticationExtensionsClientInputs:
   This is an object containing the client extension input values for zero or
   more WebAuthn extensions.
 
+  Attributes:
+    appid (Optional[str]): A single string specifying a FIDO AppID.
+    tx_auth_simple (Optional[str]): A single string prompt.
+    tx_auth_generic (Optional[TxAuthGenericArg]):
+      An object containing generic inputs.
+    authn_sel (Optional[AuthenticatorSelectionList]):
+      A sequence of AAGUIDs. Each AAGUID corresponds to an authenticator model
+      that is acceptable to the Relying Party for this credential creation. The
+      list is ordered by decreasing preference.
+
+      An AAGUID is defined as an array containing the globally unique
+      identifier of the authenticator model being sought.
+    exts (Optional[bool]):
+      The Boolean value true to indicate that this extension is requested by
+      the Relying Party.
+    uvi (Optional[bool]):
+      The Boolean value true to indicate that this extension is requested by
+      the Relying Party.
+    loc (Optional[bool]):
+      The Boolean value true to indicate that this extension is requested by
+      the Relying Party.
+    uvm (Optional[bool]):
+      The Boolean value true to indicate that this extension is requested by
+      the Relying Party.
+    biometric_perf_bounds (Optional[AuthenticatorBiometricPerfBounds]):
+      The biometric performance bounds.
+
   References:
+    * https://www.w3.org/TR/webauthn/#extensions
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientinputs
+    * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientoutputs
   """
   
   def __init__(
@@ -467,6 +615,31 @@ class AuthenticationExtensionsClientOutputs:
   """
   This is an object containing the client extension output values for zero or
   more WebAuthn extensions.
+
+  Attributes:
+    appid (Optional[bool]): If true, the AppID was used and thus, when
+      verifying an assertion, the Relying Party MUST expect the rpIdHash to be
+      the hash of the AppID, not the RP ID.
+    tx_auth_simple (Optional[str]):
+      The authenticator extension output string UTF-8 decoded into a string.
+    tx_auth_generic (Optional[bytes]): A generic byte string.
+    authn_sel (Optional[AuthenticatorSelectionList]):
+      Returns the value true to indicate to the Relying Party that the
+      extension was acted upon.
+    exts (Optional[AuthenticationExtensionsSupported]):
+      Returns the list of supported extensions as an array of extension
+      identifier strings.
+    uvi (Optional[bytes]):
+      Returns the authenticator extension output as a byte string.
+    loc (Optional[Coordinates]):
+      Returns an object that encodes the location information in the
+      authenticator extension output as a Coordinates value.
+    uvm (Optional[UvmEntries]):
+      Returns a sequence of UvmEntry objects which are 3-element arrays of
+      numbers that encode the factors in the authenticator extension output.
+    biometric_perf_bounds (Optional[bool]):
+      Returns the value true to indicate to the Relying Party that the
+      extension was acted upon.
 
   References:
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientoutputs
@@ -664,6 +837,29 @@ class CredentialCreationOptions:
 
 
 class CredentialMediationRequirement(Enum):
+  """
+  When making a request via get(options), developers can set a case-by-case
+  requirement for user mediation by choosing the appropriate
+  CredentialMediationRequirement enum value.
+
+  Attributes:
+    SILENT (str):
+      User mediation is suppressed for the given operation. If the operation
+      can be performed without user involvement, wonderful. If user involvement
+      is necessary, then the operation will return null rather than involving
+      the user.
+    OPTIONAL (str):
+      If credentials can be handed over for a given operation without user
+      mediation, they will be. If user mediation is required, then the user
+      agent will involve the user in the decision.
+    REQUIRED (str):
+      The user agent will not hand over credentials without user mediation,
+      even if the prevent silent access flag is unset for an origin.
+  
+  References:
+    * https://www.w3.org/TR/credential-management-1/#mediation-requirements
+  """
+
   SILENT = 'silent'
   OPTIONAL = 'optional'
   REQUIRED = 'required'
@@ -675,11 +871,14 @@ class CredentialRequestOptions:
   navigator.credentials.get() function on the client side.
 
   Attributes:
+    mediation (CredentialMediationRequirement):
+      Specifies the mediation requirements for a given credential request.
     public_key (PublicKeyCredentialRequestOptions):
       The request options for the public key credential.
 
   References:
     * https://w3.org/TR/webauthn/#credentialrequestoptions-extension
+    * w3.org/TR/credential-management-1/#dictdef-credentialrequestoptions
   """
 
   def __init__(
@@ -760,7 +959,7 @@ class AuthenticatorAssertionResponse(AuthenticatorResponse):
       returned by the authenticator.
     signature (bytes): This attribute contains the raw signature returned from
       the authenticator.
-    user_handle (bytes): This attribute contains the user handle returned from
+    user_handle (Optional[bytes]): This attribute contains the user handle returned from
       the authenticator, or null if the authenticator did not return a user handle.
 
   References:
@@ -889,10 +1088,10 @@ class CollectedClientData:
     origin (str): This member contains the fully qualified origin of the
       requester, as provided to the authenticator by the client, in the syntax
       defined by RFC6454.
-    token_binding (TokenBinding): This OPTIONAL member contains information
-      about the state of the Token Binding protocol used when the client was
-      communicating with the Relying Party. Its absence indicates that the
-      client doesn’t support token binding.
+    token_binding (Optional[TokenBinding]): This OPTIONAL member contains
+      information about the state of the Token Binding protocol used when the
+      client was communicating with the Relying Party. Its absence 
+      that the client doesn’t support token binding.
 
   References:
     * https://w3.org/TR/webauthn/#dictdef-collectedclientdata
@@ -908,6 +1107,21 @@ class CollectedClientData:
 
 
 class AuthenticatorDataFlag(Enum):
+  """
+  The authenticator data bit flags.
+
+  Attributes:
+    UP (int): User is present.
+    RFU1 (int): Reserved for future use.
+    UV (int): User is verified.
+    RFU2 (int): Reserved for future use.
+    AT (int): Attested credential data included.
+    ED (int): Extension data is included in the authenticator data.
+    
+  References:
+    * https://www.w3.org/TR/webauthn/#sec-authenticator-data
+  """
+
   UP = 1 << 0
   RFU1 = 1 << 1
   UV = 1 << 2
@@ -916,7 +1130,22 @@ class AuthenticatorDataFlag(Enum):
   ED = 1 << 7
 
 
-class COSEKeyType(metaclass=NameValueEnumsContainer):
+class COSEKeyType(metaclass=NameValueEnumsContainer):"""
+  A metaclass for the COSEKeyOperation Name and Value Enums.
+  
+  Both the Name and Value Enums share the following documentation.
+
+  The COSEKeyType object defines a way to hold a single key object. It is still
+  required that the members of individual key types be defined.
+
+  Attributes:
+    OKP: Octet Key Pair
+    EC2: Elliptic Curve Keys with X, Y Coordinate pair
+    SYMMETRIC: Symmetric Keys
+  
+  References:
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13
+  """
 
   class Name(Enum):
     OKP = 'OKP'
@@ -930,6 +1159,32 @@ class COSEKeyType(metaclass=NameValueEnumsContainer):
 
 
 class COSEKeyOperation(metaclass=NameValueEnumsContainer):
+  """
+  A metaclass for the COSEKeyOperation Name and Value Enums.
+
+  Both the Name and Value Enums share the following documentation.
+
+  The COSEKeyOperation object specifies the type of operations that are
+  permitted for the COSE Key.
+
+  Attributes:
+    SIGN: The key is used to create signatures. Requires private key fields.
+    VERIFY: The key is used for verification of signatures.
+    ENCRYPT: The key is used for key transport encryption.
+    DECRYPT: The key is used for key transport decryption. Requires private key
+      fields.
+    WRAP_KEY: The key is used for key wrapping.
+    UNWRAP_KEY: The key is used for key unwrapping. Requires private key
+      fields.
+    DERIVE_KEY: The key is used for deriving keys. Requires private key fields.
+    DERIVE_BITS: The key is used for deriving bits not to be used as a key.
+      Requires private key fields.
+    MAC_CREATE: The key is used for creating MACs.
+    MAC_VERIFY: The key is used for validating MACs.
+
+  References:
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
+  """
 
   class Name(Enum):
     SIGN = 'sign'
@@ -957,6 +1212,19 @@ class COSEKeyOperation(metaclass=NameValueEnumsContainer):
 
 
 class EC2KeyType(metaclass=NameValueEnumsContainer):
+  """
+  A metaclass for the COSEKeyOperation Name and Value Enums.
+
+  Both the Name and Value Enums share the following documentation.
+
+  Attributes:
+    P_256: NIST P-256 also known as secp256r1.
+    P_384: NIST P-384 also known as secp384r1.
+    P_521: NIST P-521 also known as secp521r1.
+
+  References:
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
+  """
 
   class Name(Enum):
     P_256 = 'P-256'
@@ -970,6 +1238,18 @@ class EC2KeyType(metaclass=NameValueEnumsContainer):
 
 
 class OKPKeyType(metaclass=NameValueEnumsContainer):
+    """
+  A metaclass for the COSEKeyOperation Name and Value Enums.
+
+  Both the Name and Value Enums share the following documentation.
+
+  Attributes:
+    ED25519: Ed25519 for use with EdDSA only.
+    ED448: Ed448 for use with EdDSA only.
+
+  References:
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
+  """
 
   class Name(Enum):
     ED25519 = 'Ed25519'
@@ -981,6 +1261,25 @@ class OKPKeyType(metaclass=NameValueEnumsContainer):
 
 
 class CredentialPublicKey:
+  """
+  The credential public key encoded in COSE_Key format.
+
+  Attributes:
+    kty (Union[COSEKeyType.Name, COSEKeyType.Value]): 
+    kid (Optional[bytes]): 
+    alg (Optional[
+          Union[
+            COSEAlgorithmIdentifier.Name,
+            COSEAlgorithmIdentifier.Value]]): 
+    key_ops (Optional[
+          Sequence[
+            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]): 
+    base_IV (Optional[bytes]): 
+
+  References:
+    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7
+  """
 
   def __init__(
       self, *, kty: Union[COSEKeyType.Name, COSEKeyType.Value],

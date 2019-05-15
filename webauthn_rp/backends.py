@@ -34,6 +34,7 @@ from .types import (
   PublicKeyCredential,
   TokenBinding)
 from .attesters import attest
+from .verifiers import verify
 from .utils import url_base64_decode, extract_origin
 
 
@@ -147,7 +148,7 @@ class CredentialsBackend:
           trusted_path=trusted_path,
           **registrar_kwargs
         ):
-      raise RegistrationError('Failed to create credential')
+      raise RegistrationError('Failed to register credential creation')
   
   def handle_credential_request(
       self, credential: PublicKeyCredential,
@@ -210,8 +211,6 @@ class CredentialsBackend:
       
       if not valid_credential:
         raise ValidationError('User does not own credential')
-
-    cpk = cryptography_public_key(credential_data.credential_public_key)
 
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
@@ -282,13 +281,8 @@ class CredentialsBackend:
             e.key) is None:
           raise ValidationError('Missing extension {}'.format(e.value))
 
-    try:
-      verification_data = response.authenticator_data + client_data_JSON_hash
-      print(cpk, cpk.curve, cpk.public_numbers())
-      cpk.verify(response.signature, verification_data, ECDSA(SHA256()))
-    except cryptography.exceptions.InvalidSignature:
-      raise VerificationError(
-        'Assertion verification failed: invalid signature')
+    verification_data = response.authenticator_data + client_data_JSON_hash
+    verify(credential_data.credential_public_key, response.signature, verification_data)
     
     registered_sign_count = credential_data.signature_count
 
@@ -304,4 +298,4 @@ class CredentialsBackend:
           user=user, rp=rp,
           **registrar_kwargs
         ):
-      raise RegistrationError('Failed to request credential')
+      raise RegistrationError('Failed to register credential request')

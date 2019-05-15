@@ -6,14 +6,17 @@ import cryptography.x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1
-from cryptography.hazmat.primitives.hashes import SHA256
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
 from cryptography.x509 import Certificate
 
 from typing import Tuple, Sequence, Optional
 
-from .errors import UnimplementedError, ValidationError, VerificationError
+from .converters import cryptography_public_key
+from .errors import (
+  UnimplementedError, ValidationError, AttestationError, VerificationError)
 from .types import (
   FIDOU2FAttestationStatement,
+  AndroidKeyAttestationStatement,
   NoneAttestationStatement,
   AttestationStatement,
   CredentialPublicKey,
@@ -72,6 +75,47 @@ def attest_fido_u2f(
     raise VerificationError('FIDO U2F verification failed: invalid signature')
   
   return AttestationType.UNCERTAIN, [att_cert_x509]
+
+
+@attest.register(AndroidKeyAttestationStatement)
+def attest_android_key(
+    att_stmt: AndroidKeyAttestationStatement,
+    att_obj: AttestationObject,
+    auth_data: bytes,
+    client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
+  if len(att_stmt.x5c) == 0:
+    raise ValidationError('Must have at least 1 X509 certificate')
+
+  credential_certificate = att_stmt.x5c[0]
+  cred_cert_pk = credential_certificate.public_key()
+
+  hash_algorithm = None
+  if att_stmt.alg.name == 'ES256': hash_algorithm = SHA256
+  elif att_stmt.alg.name == 'ES384': hash_algorithm = SHA384
+  elif att_stmt.alg.name == 'ES512': hash_algorithm = SHA512
+  elif att_stmt.alg.name != 'EDDSA':
+    raise ValidationError('Unsupported hashing algorithm {}'.format(
+      att_stmt.alg.name))
+
+  verification_data = auth_data + client_data_hash
+  try:
+    if hash_algorithm is not None:
+      cred_cert_pk.verify(
+        att_stmt.sig, verification_data, hash_algorithm)
+    else:
+      cred_cert_pk.verify(att_stmt.sig, verification_data)
+  except cryptography.exceptions.InvalidSignature:
+    raise VerificationError(
+      'Android Key verification failed: invalid signature')
+
+  cpk = cryptography_public_key(
+    att_obj.auth_data.attested_credential_data.credential_public_key)
+
+  if cpk != cred_cert_pk:
+    raise ValidationError((
+      'Certificate public key in attestation statement must match the '
+      'provided credential public key'))
+  
 
 
 @attest.register(NoneAttestationStatement)
