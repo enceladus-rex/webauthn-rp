@@ -1130,7 +1130,8 @@ class AuthenticatorDataFlag(Enum):
   ED = 1 << 7
 
 
-class COSEKeyType(metaclass=NameValueEnumsContainer):"""
+class COSEKeyType(metaclass=NameValueEnumsContainer):
+  """
   A metaclass for the COSEKeyOperation Name and Value Enums.
   
   Both the Name and Value Enums share the following documentation.
@@ -1238,7 +1239,7 @@ class EC2KeyType(metaclass=NameValueEnumsContainer):
 
 
 class OKPKeyType(metaclass=NameValueEnumsContainer):
-    """
+  """
   A metaclass for the COSEKeyOperation Name and Value Enums.
 
   Both the Name and Value Enums share the following documentation.
@@ -1265,20 +1266,47 @@ class CredentialPublicKey:
   The credential public key encoded in COSE_Key format.
 
   Attributes:
-    kty (Union[COSEKeyType.Name, COSEKeyType.Value]): 
-    kid (Optional[bytes]): 
+    kty (Union[COSEKeyType.Name, COSEKeyType.Value]):
+      This parameter is used to identify the family of keys for this structure,
+      and thus the set of key type specific parameters to be found. This 
+      parameter MUST be present in a key object. Implementations MUST verify
+      that the key type is appropriate for the algorithm being processed. The
+      key type MUST be included as part of the trust decision process.
+    kid (Optional[bytes]):
+      This parameter is used to give an identifier for a key. The identifier is
+      not structured and can be anything from a user provided string to a value
+      computed on the public portion of the key. This field is intended for
+      matching against a 'kid' parameter in a message in order to filter down
+      the set of keys that need to be checked.
     alg (Optional[
           Union[
             COSEAlgorithmIdentifier.Name,
-            COSEAlgorithmIdentifier.Value]]): 
+            COSEAlgorithmIdentifier.Value]]):
+      This parameter is used to restrict the algorithm that is used with the
+      key. If this parameter is present in the key structure, the application
+      MUST verify that this algorithm matches the algorithm for which the key
+      is being used. If the algorithms do not match, then this key object MUST
+      NOT be used to perform the cryptographic operation. Note that the same
+      key can be in a different key structure with a different or no algorithm
+      specified, however this is considered to be a poor security practice.
     key_ops (Optional[
           Sequence[
-            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]): 
+            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
+      This parameter is defined to restrict the set of operations that a key is
+      to be used for. Algorithms define the values of key ops that are
+      permitted to appear and are required for specific operations.
     base_IV (Optional[bytes]): 
+      his parameter is defined to carry the base portion of an IV. This field
+      provides the ability to associate a partial IV with a key that is then
+      modified on a per message basis with the partial IV. 
+
+      Extreme care needs to be taken when using a Base IV in an application.
+      Many encryption algorithms lose security if the same IV is used twice.
 
   References:
     * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
     * https://cose-wg.github.io/cose-spec/#rfc.section.7
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
   """
 
   def __init__(
@@ -1302,6 +1330,59 @@ class CredentialPublicKey:
 
 
 class EC2CredentialPublicKey(CredentialPublicKey):
+  """
+  The Elliptic Curve Cryptography (EC2) credential public key encoded in
+  COSE_Key format.
+
+  Attributes:
+    kty (Union[COSEKeyType.Name, COSEKeyType.Value]):
+      This parameter is used to identify the family of keys for this structure,
+      and thus the set of key type specific parameters to be found. This 
+      parameter MUST be present in a key object. Implementations MUST verify
+      that the key type is appropriate for the algorithm being processed. The
+      key type MUST be included as part of the trust decision process.
+    kid (Optional[bytes]):
+      This parameter is used to give an identifier for a key. The identifier is
+      not structured and can be anything from a user provided string to a value
+      computed on the public portion of the key. This field is intended for
+      matching against a 'kid' parameter in a message in order to filter down
+      the set of keys that need to be checked.
+    alg (Optional[
+          Union[
+            COSEAlgorithmIdentifier.Name,
+            COSEAlgorithmIdentifier.Value]]):
+      This parameter is used to restrict the algorithm that is used with the
+      key. If this parameter is present in the key structure, the application
+      MUST verify that this algorithm matches the algorithm for which the key
+      is being used. If the algorithms do not match, then this key object MUST
+      NOT be used to perform the cryptographic operation. Note that the same
+      key can be in a different key structure with a different or no algorithm
+      specified, however this is considered to be a poor security practice.
+    key_ops (Optional[
+          Sequence[
+            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
+      This parameter is defined to restrict the set of operations that a key is
+      to be used for. Algorithms define the values of key ops that are
+      permitted to appear and are required for specific operations.
+    base_IV (Optional[bytes]): 
+      his parameter is defined to carry the base portion of an IV. This field
+      provides the ability to associate a partial IV with a key that is then
+      modified on a per message basis with the partial IV. 
+
+      Extreme care needs to be taken when using a Base IV in an application.
+      Many encryption algorithms lose security if the same IV is used twice.
+    x (bytes): The Elliptic Curve X Coordinate.
+    y (bytes): The Elliptic Curve Y Coordinate.
+    crv (Union[EC2KeyType.Name, EC2KeyType.Value]):
+      The Elliptic Curve Identifier.
+
+  References:
+    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13.1.1
+  """
 
   def __init__(
       self, *, kty: Union[COSEKeyType.Name, COSEKeyType.Value],
@@ -1327,6 +1408,58 @@ class EC2CredentialPublicKey(CredentialPublicKey):
 
 
 class OKPCredentialPublicKey(CredentialPublicKey):
+  """
+  The Octet Key Pair (OKP) credential public key encoded in COSE_Key format.
+
+  Attributes:
+    kty (Union[COSEKeyType.Name, COSEKeyType.Value]):
+      This parameter is used to identify the family of keys for this structure,
+      and thus the set of key type specific parameters to be found. This 
+      parameter MUST be present in a key object. Implementations MUST verify
+      that the key type is appropriate for the algorithm being processed. The
+      key type MUST be included as part of the trust decision process.
+    kid (Optional[bytes]):
+      This parameter is used to give an identifier for a key. The identifier is
+      not structured and can be anything from a user provided string to a value
+      computed on the public portion of the key. This field is intended for
+      matching against a 'kid' parameter in a message in order to filter down
+      the set of keys that need to be checked.
+    alg (Optional[
+          Union[
+            COSEAlgorithmIdentifier.Name,
+            COSEAlgorithmIdentifier.Value]]):
+      This parameter is used to restrict the algorithm that is used with the
+      key. If this parameter is present in the key structure, the application
+      MUST verify that this algorithm matches the algorithm for which the key
+      is being used. If the algorithms do not match, then this key object MUST
+      NOT be used to perform the cryptographic operation. Note that the same
+      key can be in a different key structure with a different or no algorithm
+      specified, however this is considered to be a poor security practice.
+    key_ops (Optional[
+          Sequence[
+            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
+      This parameter is defined to restrict the set of operations that a key is
+      to be used for. Algorithms define the values of key ops that are
+      permitted to appear and are required for specific operations.
+    base_IV (Optional[bytes]): 
+      his parameter is defined to carry the base portion of an IV. This field
+      provides the ability to associate a partial IV with a key that is then
+      modified on a per message basis with the partial IV. 
+
+      Extreme care needs to be taken when using a Base IV in an application.
+      Many encryption algorithms lose security if the same IV is used twice.
+    x (bytes): The Elliptic Curve X Coordinate.
+    y (bytes): The Elliptic Curve Y Coordinate.
+    crv (Union[OKPKeyType.Name, OKPKeyType.Value]):
+      The Elliptic Curve Identifier.
+
+  References:
+    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7
+    * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
+    * https://cose-wg.github.io/cose-spec/#rfc.section.13.2
+  """
 
   def __init__(
       self, *, kty: Union[COSEKeyType.Name, COSEKeyType.Value],
@@ -1350,27 +1483,64 @@ class OKPCredentialPublicKey(CredentialPublicKey):
 
 
 class AttestedCredentialData:
+  """
+  Attested credential data is a variable-length byte array added to the
+  authenticator data when generating an attestation object for a given
+  credential.
+
+  Attributes:
+    aaguid (bytes): The AAGUID of the authenticator.
+      Each authenticator has an AAGUID, which is a 128-bit identifier
+      indicating the type (e.g. make and model) of the authenticator. The
+      AAGUID MUST be chosen by the manufacturer to be identical across all
+      substantially identical authenticators made by that manufacturer, and
+      different (with high probability) from the AAGUIDs of all other types of
+      authenticators. The AAGUID for a given type of authenticator SHOULD be
+      randomly generated to ensure this. The Relying Party MAY use the AAGUID
+      to infer certain properties of the authenticator, such as certification
+      level and strength of key protection, using information from other
+      sources.
+    credential_id_length (int): Byte length of Credential ID, parsed from a
+      16-bit unsigned big-endian integer.
+    credential_id (bytes):
+      A probabilistically-unique byte sequence identifying a public key
+      credential source and its authentication assertions.
+    credential_public_key (Optional[CredentialPublicKey]):
+      The credential public key encoded in COSE_Key format. The
+      COSE_Key-encoded credential public key MUST contain the "alg" parameter
+      and MUST NOT contain any other OPTIONAL parameters. The "alg" parameter
+      MUST contain a COSEAlgorithmIdentifier value. The encoded credential
+      public key MUST also contain any additional REQUIRED parameters
+      stipulated by the relevant key type specification, i.e., REQUIRED for the
+      key type "kty" and algorithm "alg"
+
+  References:
+    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://www.w3.org/TR/webauthn/#aaguid
+    * https://www.w3.org/TR/webauthn/#credential-id
+    * 
+  """
 
   def __init__(
       self, aaguid: bytes, credential_id_length: int, credential_id: bytes,
-      credential_public_key: Optional[CredentialPublicKey] = None,
-      extensions: Optional[AuthenticationExtensionsClientOutputs] = None):
+      credential_public_key: Optional[CredentialPublicKey] = None):
     self.aaguid = aaguid
     self.credential_id_length = credential_id_length
     self.credential_id = credential_id
     self.credential_public_key = credential_public_key
-    self.extensions = extensions
 
 
 class AuthenticatorData:
 
   def __init__(
       self, *, rp_id_hash: bytes, flags: int, sign_count: int,
-      attested_credential_data: Optional[AttestedCredentialData] = None):
+      attested_credential_data: Optional[AttestedCredentialData] = None,
+      extensions: Optional[AuthenticationExtensionsClientOutputs] = None):
     self.rp_id_hash = rp_id_hash
     self.flags = flags
     self.sign_count = sign_count
     self.attested_credential_data = attested_credential_data
+    self.extensions = extensions
 
 
 class AttestationStatementFormatIdentifier(Enum):

@@ -126,9 +126,9 @@ class CredentialsBackend:
     if expected_extensions is not None:
       for e in expected_extensions:
         if not hasattr(
-            attestation.auth_data.attested_credential_data.extensions,
+            attestation.auth_data.extensions,
             e.key) or getattr(
-            attestation.auth_data.attested_credential_data.extensions,
+            attestation.auth_data.extensions,
             e.key) is None:
           raise ValidationError('Missing extension {}'.format(e.value))
 
@@ -275,9 +275,9 @@ class CredentialsBackend:
     if expected_extensions is not None:
       for e in expected_extensions:
         if not hasattr(
-            auth_data.attested_credential_data.extensions,
+            auth_data.extensions,
             e.key) or getattr(
-            auth_data.attested_credential_data.extensions,
+            auth_data.extensions,
             e.key) is None:
           raise ValidationError('Missing extension {}'.format(e.value))
 

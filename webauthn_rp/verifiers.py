@@ -29,12 +29,15 @@ def verify_ec2_credential_public_key(
   public_key = cryptography_public_key(credential_public_key)
 
   hash_algorithm = None
-  if credential_public_key.crv.name == 'P_256': hash_algorithm = SHA256
-  elif credential_public_key.crv.name == 'P_384': hash_algorithm = SHA384
-  elif credential_public_key.crv.name == 'P_512': hash_algorithm = SHA512
+  if credential_public_key.alg.name == 'ES256':
+    hash_algorithm = ECDSA(SHA256())
+  elif credential_public_key.alg.name == 'ES384':
+    hash_algorithm = ECDSA(SHA384())
+  elif credential_public_key.alg.name == 'ES512':
+    hash_algorithm = ECDSA(SHA512())
   else:
-    raise ValidationError('Unsupported EC2 curve {}'.format(
-      credential_public_key.crv.name
+    raise ValidationError('Unsupported EC2 alg {}'.format(
+      credential_public_key.alg.name
     ))
     
   try:

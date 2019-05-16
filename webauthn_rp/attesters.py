@@ -5,7 +5,7 @@ import cryptography.x509
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
-from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1
+from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, ECDSA
 from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
 from cryptography.x509 import Certificate
 
@@ -90,9 +90,9 @@ def attest_android_key(
   cred_cert_pk = credential_certificate.public_key()
 
   hash_algorithm = None
-  if att_stmt.alg.name == 'ES256': hash_algorithm = SHA256
-  elif att_stmt.alg.name == 'ES384': hash_algorithm = SHA384
-  elif att_stmt.alg.name == 'ES512': hash_algorithm = SHA512
+  if att_stmt.alg.name == 'ES256': hash_algorithm = ECDSA(SHA256())
+  elif att_stmt.alg.name == 'ES384': hash_algorithm = ECDSA(SHA384())
+  elif att_stmt.alg.name == 'ES512': hash_algorithm = ECDSA(SHA512())
   elif att_stmt.alg.name != 'EDDSA':
     raise ValidationError('Unsupported hashing algorithm {}'.format(
       att_stmt.alg.name))

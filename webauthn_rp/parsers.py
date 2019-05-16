@@ -590,6 +590,7 @@ def parse_authenticator_data(
   signature_counter_uint32, = struct.unpack('>I', signature_counter_bytes)
 
   attested_credential_data = None
+  aeci = None
   if len(auth_data) >= 53:
     aaguid = auth_data[37:53]
     credential_id_length_bytes = auth_data[53:55]
@@ -615,7 +616,6 @@ def parse_authenticator_data(
 
     extension_bytes = credential_public_key_bytes[bytes_read:]
 
-    aeci = None
     if extension_bytes:
       try:
         extensions = cbor.loads(extension_bytes)
@@ -628,14 +628,14 @@ def parse_authenticator_data(
       credential_id_length=credential_id_length_uint16,
       credential_id=credential_id,
       credential_public_key=cpk,
-      extensions=aeci,
     )
 
   return AuthenticatorData(
     rp_id_hash=rp_id_hash,
     flags=flags,
     sign_count=signature_counter_uint32,
-    attested_credential_data=attested_credential_data
+    attested_credential_data=attested_credential_data,
+    extensions=aeci,
   )
 
 
