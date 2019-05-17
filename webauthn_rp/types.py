@@ -584,7 +584,7 @@ class AuthenticationExtensionsClientInputs:
       The biometric performance bounds.
 
   References:
-    * https://www.w3.org/TR/webauthn/#extensions
+    * https://w3.org/TR/webauthn/#extensions
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientinputs
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientoutputs
   """
@@ -857,7 +857,7 @@ class CredentialMediationRequirement(Enum):
       even if the prevent silent access flag is unset for an origin.
   
   References:
-    * https://www.w3.org/TR/credential-management-1/#mediation-requirements
+    * https://w3.org/TR/credential-management-1/#mediation-requirements
   """
 
   SILENT = 'silent'
@@ -1119,7 +1119,7 @@ class AuthenticatorDataFlag(Enum):
     ED (int): Extension data is included in the authenticator data.
     
   References:
-    * https://www.w3.org/TR/webauthn/#sec-authenticator-data
+    * https://w3.org/TR/webauthn/#sec-authenticator-data
   """
 
   UP = 1 << 0
@@ -1279,9 +1279,7 @@ class CredentialPublicKey:
       matching against a 'kid' parameter in a message in order to filter down
       the set of keys that need to be checked.
     alg (Optional[
-          Union[
-            COSEAlgorithmIdentifier.Name,
-            COSEAlgorithmIdentifier.Value]]):
+      Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]]):
       This parameter is used to restrict the algorithm that is used with the
       key. If this parameter is present in the key structure, the application
       MUST verify that this algorithm matches the algorithm for which the key
@@ -1290,21 +1288,19 @@ class CredentialPublicKey:
       key can be in a different key structure with a different or no algorithm
       specified, however this is considered to be a poor security practice.
     key_ops (Optional[
-          Sequence[
-            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
+      Sequence[Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
       This parameter is defined to restrict the set of operations that a key is
       to be used for. Algorithms define the values of key ops that are
       permitted to appear and are required for specific operations.
     base_IV (Optional[bytes]): 
-      his parameter is defined to carry the base portion of an IV. This field
+      This parameter is defined to carry the base portion of an IV. This field
       provides the ability to associate a partial IV with a key that is then
-      modified on a per message basis with the partial IV. 
-
-      Extreme care needs to be taken when using a Base IV in an application.
-      Many encryption algorithms lose security if the same IV is used twice.
+      modified on a per message basis with the partial IV. Extreme care needs
+      to be taken when using a Base IV in an application. Many encryption
+      algorithms lose security if the same IV is used twice.
 
   References:
-    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://w3.org/TR/webauthn/#sec-attested-credential-data
     * https://cose-wg.github.io/cose-spec/#rfc.section.7
     * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
   """
@@ -1348,9 +1344,7 @@ class EC2CredentialPublicKey(CredentialPublicKey):
       matching against a 'kid' parameter in a message in order to filter down
       the set of keys that need to be checked.
     alg (Optional[
-          Union[
-            COSEAlgorithmIdentifier.Name,
-            COSEAlgorithmIdentifier.Value]]):
+      Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]]):
       This parameter is used to restrict the algorithm that is used with the
       key. If this parameter is present in the key structure, the application
       MUST verify that this algorithm matches the algorithm for which the key
@@ -1359,25 +1353,23 @@ class EC2CredentialPublicKey(CredentialPublicKey):
       key can be in a different key structure with a different or no algorithm
       specified, however this is considered to be a poor security practice.
     key_ops (Optional[
-          Sequence[
-            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
+      Sequence[Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
       This parameter is defined to restrict the set of operations that a key is
       to be used for. Algorithms define the values of key ops that are
       permitted to appear and are required for specific operations.
     base_IV (Optional[bytes]): 
       his parameter is defined to carry the base portion of an IV. This field
       provides the ability to associate a partial IV with a key that is then
-      modified on a per message basis with the partial IV. 
-
-      Extreme care needs to be taken when using a Base IV in an application.
-      Many encryption algorithms lose security if the same IV is used twice.
+      modified on a per message basis with the partial IV. Extreme care needs
+      to be taken when using a Base IV in an application. Many encryption
+      algorithms lose security if the same IV is used twice.
     x (bytes): The Elliptic Curve X Coordinate.
     y (bytes): The Elliptic Curve Y Coordinate.
     crv (Union[EC2KeyType.Name, EC2KeyType.Value]):
       The Elliptic Curve Identifier.
 
   References:
-    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://w3.org/TR/webauthn/#sec-attested-credential-data
     * https://cose-wg.github.io/cose-spec/#rfc.section.7
     * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
@@ -1425,9 +1417,7 @@ class OKPCredentialPublicKey(CredentialPublicKey):
       matching against a 'kid' parameter in a message in order to filter down
       the set of keys that need to be checked.
     alg (Optional[
-          Union[
-            COSEAlgorithmIdentifier.Name,
-            COSEAlgorithmIdentifier.Value]]):
+      Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]]):
       This parameter is used to restrict the algorithm that is used with the
       key. If this parameter is present in the key structure, the application
       MUST verify that this algorithm matches the algorithm for which the key
@@ -1436,25 +1426,23 @@ class OKPCredentialPublicKey(CredentialPublicKey):
       key can be in a different key structure with a different or no algorithm
       specified, however this is considered to be a poor security practice.
     key_ops (Optional[
-          Sequence[
-            Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
+      Sequence[Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]):
       This parameter is defined to restrict the set of operations that a key is
       to be used for. Algorithms define the values of key ops that are
       permitted to appear and are required for specific operations.
     base_IV (Optional[bytes]): 
       his parameter is defined to carry the base portion of an IV. This field
       provides the ability to associate a partial IV with a key that is then
-      modified on a per message basis with the partial IV. 
-
-      Extreme care needs to be taken when using a Base IV in an application.
-      Many encryption algorithms lose security if the same IV is used twice.
+      modified on a per message basis with the partial IV. Extreme care needs
+      to be taken when using a Base IV in an application. Many encryption
+      algorithms lose security if the same IV is used twice.
     x (bytes): The Elliptic Curve X Coordinate.
     y (bytes): The Elliptic Curve Y Coordinate.
     crv (Union[OKPKeyType.Name, OKPKeyType.Value]):
       The Elliptic Curve Identifier.
 
   References:
-    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://w3.org/TR/webauthn/#sec-attested-credential-data
     * https://cose-wg.github.io/cose-spec/#rfc.section.7
     * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
@@ -1515,9 +1503,9 @@ class AttestedCredentialData:
       key type "kty" and algorithm "alg"
 
   References:
-    * https://www.w3.org/TR/webauthn/#sec-attested-credential-data
-    * https://www.w3.org/TR/webauthn/#aaguid
-    * https://www.w3.org/TR/webauthn/#credential-id
+    * https://w3.org/TR/webauthn/#sec-attested-credential-data
+    * https://w3.org/TR/webauthn/#aaguid
+    * https://w3.org/TR/webauthn/#credential-id
     * 
   """
 
@@ -1531,6 +1519,31 @@ class AttestedCredentialData:
 
 
 class AuthenticatorData:
+  """
+  The authenticator data structure encodes contextual bindings made by the
+  authenticator. These bindings are controlled by the authenticator itself, and
+  derive their trust from the WebAuthn Relying Party's assessment of the
+  security properties of the authenticator. In one extreme case, the
+  authenticator may be embedded in the client, and its bindings may be no more
+  trustworthy than the client data. At the other extreme, the authenticator may
+  be a discrete entity with high-security hardware and software, connected to
+  the client over a secure channel. In both cases, the Relying Party receives
+  the authenticator data in the same format, and uses its knowledge of the
+  authenticator to make trust decisions.
+
+  Attributes:
+    rp_id_hash (bytes): SHA-256 hash of the RP ID the credential is scoped to.
+    flags (int): 8 flag bits for the authenticator data.
+    sign_count (int):
+      Signature counter parsed from a 32-bit unsigned big-endian integer.
+    attested_credential_data (Optional[AttestedCredentialData]):
+      The attested credential data.
+    extensions (Optional[AuthenticationExtensionsClientOutputs]):
+      Extension-defined authenticator data.
+
+  References:
+    * https://w3.org/TR/webauthn/#authenticator-data
+  """
 
   def __init__(
       self, *, rp_id_hash: bytes, flags: int, sign_count: int,
@@ -1544,6 +1557,52 @@ class AuthenticatorData:
 
 
 class AttestationStatementFormatIdentifier(Enum):
+  """
+  Attestation statement formats are identified by a string, called an
+  attestation statement format identifier, chosen by the author of the
+  attestation statement format.
+
+  Attributes:
+    PACKED (str):
+      This is a WebAuthn optimized attestation statement format. It uses a very
+      compact but still extensible encoding method. It is implementable by
+      authenticators with limited resources (e.g., secure elements).
+    TPM (str):
+      This attestation statement format is generally used by authenticators
+      that use a Trusted Platform Module as their cryptographic engine.
+    ANDROID_KEY (str):
+      When the authenticator in question is a platform-provided Authenticator
+      on the Android "N" or later platform, the attestation statement is based
+      on the Android key attestation. In these cases, the attestation statement
+      is produced by a component running in a secure operating environment, but
+      the authenticator data for the attestation is produced outside this
+      environment. The WebAuthn Relying Party is expected to check that the
+      authenticator data claimed to have been used for the attestation is
+      consistent with the fields of the attestation certificate’s extension
+      data.
+    ANDROID_SAFETYNET (str):
+      When the authenticator in question is a platform-provided Authenticator
+      on certain Android platforms, the attestation statement is based on the
+      SafetyNet API. In this case the authenticator data is completely
+      controlled by the caller of the SafetyNet API (typically an application
+      running on the Android platform) and the attestation statement only
+      provides some statements about the health of the platform and the
+      identity of the calling application. This attestation does not provide
+      information regarding provenance of the authenticator and its associated
+      data. Therefore platform-provided authenticators SHOULD make use of the
+      Android Key Attestation when available, even if the SafetyNet API is also
+      present.
+    FIDO_U2F (str):
+      This attestation statement format is used with FIDO U2F authenticators.
+    NONE (str):
+      The none attestation statement format is used to replace any
+      authenticator-provided attestation statement when a WebAuthn Relying
+      Party indicates it does not wish to receive attestation information.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement-format-identifier
+  """
+  
   PACKED = 'packed'
   TPM = 'tpm'
   ANDROID_KEY = 'android-key'
@@ -1553,6 +1612,47 @@ class AttestationStatementFormatIdentifier(Enum):
 
 
 class AttestationType(Enum):
+  """
+  WebAuthn supports several attestation types, defining the semantics of
+  attestation statements and their underlying trust models.
+
+  Attributes:
+    BASIC (str):
+      In the case of basic attestation, the authenticator’s attestation key pair
+      is specific to an authenticator model. Thus, authenticators of the same
+      model often share the same attestation key pair.
+    SELF (str):
+      In the case of self attestation, also known as surrogate basic attestation,
+      the Authenticator does not have any specific attestation key. Instead it
+      uses the credential private key to create the attestation signature.
+      Authenticators without meaningful protection measures for an attestation
+      private key typically use this attestation type.
+    ATTCA (str):
+      In this case, an authenticator is based on a Trusted Platform Module (TPM)
+      and holds an authenticator-specific "endorsement key" (EK). This key is
+      used to securely communicate with a trusted third party, the Attestation CA
+      (formerly known as a "Privacy CA"). The authenticator can generate multiple
+      attestation identity key pairs (AIK) and requests an Attestation CA to
+      issue an AIK certificate for each. Using this approach, such an
+      authenticator can limit the exposure of the EK (which is a global
+      correlation handle) to Attestation CA(s). AIKs can be requested for each
+      authenticator-generated public key credential individually, and conveyed
+      to Relying Parties as attestation certificates.
+    ECDAA (str):
+      In this case, the Authenticator receives direct anonymous attestation (DAA)
+      credentials from a single DAA-Issuer. These DAA credentials are used along
+      with blinding to sign the attested credential data. The concept of blinding
+      avoids the DAA credentials being misused as global correlation handle.
+      WebAuthn supports DAA using elliptic curve cryptography and bilinear
+      pairings, called ECDAA in this specification. Consequently we denote the
+      DAA-Issuer as ECDAA-Issuer.
+    NONE (str): In this case, no attestation information is available.
+    UNCERTAIN (str): In this case, the attestation type is uncertain.
+
+  References:
+    * https://w3.org/TR/webauthn/#sctn-attestation-types
+  """
+
   BASIC = 'Basic'
   ATTCA = 'AttCA'
   ECDAA = 'ECDAA'
@@ -1562,6 +1662,37 @@ class AttestationType(Enum):
 
 
 class AttestationStatement:
+  """
+  An important component of the attestation object is the attestation
+  statement. This is a specific type of signed data object, containing
+  statements about a public key credential itself and the authenticator that
+  created it. It contains an attestation signature created using the key of the
+  attesting authority (except for the case of self attestation, when it is
+  created using the credential private key). In order to correctly interpret an
+  attestation statement, a Relying Party needs to understand these two aspects
+  of attestation:
+
+    1. The attestation statement format is the manner in which the signature is
+    represented and the various contextual bindings are incorporated into the
+    attestation statement by the authenticator. In other words, this defines
+    the syntax of the statement. Various existing components and OS platforms
+    (such as TPMs and the Android OS) have previously defined attestation
+    statement formats.
+    2. The attestation type defines the semantics of attestation statements and
+    their underlying trust models. Specifically, it defines how a Relying Party
+    establishes trust in a particular attestation statement, after verifying
+    that it is cryptographically valid.
+
+  Attributes:
+    alg (Optional[COSEAlgorithmIdentifier]):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (Optional[bytes]): A byte string containing the attestation signature.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+  """
+  
   def __init__(
       self, *, alg: Optional[COSEAlgorithmIdentifier] = None,
       sig: Optional[bytes] = None):
@@ -1570,12 +1701,42 @@ class AttestationStatement:
 
 
 class PackedAttestationStatement(AttestationStatement):
+  """
+  The Packed Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#packed-attestation
+  """
 
   def __init__(self, *, alg: COSEAlgorithmIdentifier, sig: bytes):
     super().__init__(alg=alg, sig=sig)
 
 
 class PackedX509AttestationStatement(PackedAttestationStatement):
+  """
+  The Packed X.509 Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+    x5c (Sequence[bytes]):
+      The elements of this array contain the attestation certificate and its 
+      certificate chain, each encoded in X.509 format. The attestation
+      certificate MUST be the first element in the array.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#packed-attestation
+  """
 
   def __init__(
       self, *, alg: COSEAlgorithmIdentifier, sig: bytes, x5c: Sequence[bytes]):
@@ -1584,6 +1745,22 @@ class PackedX509AttestationStatement(PackedAttestationStatement):
 
 
 class PackedECDAAAttestationStatement(PackedAttestationStatement):
+  """
+  The Packed ECDAA Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+    ecdaa_key_id (bytes):
+      The identifier of the ECDAA-Issuer public key. This is the BigNumberToB
+      encoding of the component "c" of the ECDAA-Issuer public key.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#packed-attestation
+  """
 
   def __init__(
       self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ecdaa_key_id: bytes):
@@ -1592,6 +1769,26 @@ class PackedECDAAAttestationStatement(PackedAttestationStatement):
 
 
 class TPMAttestationStatement(AttestationStatement):
+  """
+  The TPM Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+    ver (str):
+      The version of the TPM specification to which the signature conforms.
+    cert_info (bytes):
+      The TPMS_ATTEST structure over which the above signature was computed.
+    pub_area (bytes):
+      The TPMT_PUBLIC structure used by the TPM to represent the credential
+      public key.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#tpm-attestation
+  """
 
   def __init__(
       self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
@@ -1603,6 +1800,30 @@ class TPMAttestationStatement(AttestationStatement):
 
 
 class TPMX509AttestationStatement(TPMAttestationStatement):
+  """
+  The TPM X.509 Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+    ver (str):
+      The version of the TPM specification to which the signature conforms.
+    cert_info (bytes):
+      The TPMS_ATTEST structure over which the above signature was computed.
+    pub_area (bytes):
+      The TPMT_PUBLIC structure used by the TPM to represent the credential
+      public key.
+    x5c (Sequence[bytes]):
+      The elements of this array contain the attestation certificate and its 
+      certificate chain, each encoded in X.509 format. The attestation
+      certificate MUST be the first element in the array.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#tpm-attestation
+  """
 
   def __init__(
       self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
@@ -1613,6 +1834,29 @@ class TPMX509AttestationStatement(TPMAttestationStatement):
 
 
 class TPMECDAAAttestationStatement(TPMAttestationStatement):
+  """
+  The TPM ECDAA Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+    ver (str):
+      The version of the TPM specification to which the signature conforms.
+    cert_info (bytes):
+      The TPMS_ATTEST structure over which the above signature was computed.
+    pub_area (bytes):
+      The TPMT_PUBLIC structure used by the TPM to represent the credential
+      public key.
+    ecdaa_key_id (bytes):
+      The identifier of the ECDAA-Issuer public key. This is the BigNumberToB
+      encoding of the component "c" of the ECDAA-Issuer public key.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#tpm-attestation
+  """
 
   def __init__(
       self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
@@ -1623,6 +1867,23 @@ class TPMECDAAAttestationStatement(TPMAttestationStatement):
 
 
 class AndroidKeyAttestationStatement(AttestationStatement):
+  """
+  The Android Key Attestation Statement.
+
+  Attributes:
+    alg (COSEAlgorithmIdentifier):
+      A COSEAlgorithmIdentifier containing the identifier of the algorithm used
+      to generate the attestation signature.
+    sig (bytes): A byte string containing the attestation signature.
+    x5c (Sequence[bytes]):
+      The elements of this array contain the attestation certificate and its 
+      certificate chain, each encoded in X.509 format. The attestation
+      certificate MUST be the first element in the array.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#android-key-attestation
+  """
 
   def __init__(
       self, *, alg: COSEAlgorithmIdentifier, sig: bytes,
@@ -1632,25 +1893,61 @@ class AndroidKeyAttestationStatement(AttestationStatement):
 
 
 class AndroidSafetyNetAttestationStatement(AttestationStatement):
+  """
+  The Android SafetyNet Attestation Statement.
+
+  Attributes:
+    ver (str):
+      The version number of Google Play Services responsible for providing the
+      SafetyNet API.
+    response (bytes):
+      The UTF-8 encoded result of the getJwsResult() call of the SafetyNet API.
+      This value is a JWS object (see SafetyNet online documentation) in
+      Compact Serialization.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#android-safetynet-attestation
+  """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
-      response: bytes):
-    super().__init__(alg=alg, sig=sig)
+      self, *, ver: str, response: bytes):
+    super().__init__(alg=None, sig=None)
     self.ver = ver
     self.response = response
 
 
 class FIDOU2FAttestationStatement(AttestationStatement):
+  """
+  The FIDO U2F Attestation Statement.
+
+  Attributes:
+    sig (bytes):
+      The attestation signature. The signature was calculated over the (raw)
+      U2F registration response message received by the client from the
+      authenticator.
+    x5c (Sequence[bytes]):
+      A single element array containing the attestation certificate in X.509
+      format.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-statement
+    * https://w3.org/TR/webauthn/#android-safetynet-attestation
+  """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes,
-      x5c: Sequence[bytes]):
-    super().__init__(alg=alg, sig=sig)
+      self, *, sig: bytes, x5c: Sequence[bytes]):
+    super().__init__(alg=None, sig=sig)
     self.x5c = x5c
 
 
 class NoneAttestationStatement(AttestationStatement):
+  """
+  The None Attestation Statement. Consists of an empty object.
+
+  References:
+    * https://w3.org/TR/webauthn/#none-attestation
+  """
   pass
 
 
@@ -1669,6 +1966,14 @@ class AttestationObject:
   authenticators any time a new public key credential is generated, in the
   overall form of an attestation object.
 
+  Attributes:
+    auth_data (AuthenticatorData): The authenticator data.
+    fmt (AttestationStatementFormatIdentifier):
+      The format of the attestation statement.
+    att_stmt (AttestationStatment): The attestation statement.
+
+  References:
+    * https://w3.org/TR/webauthn/#attestation-object
   """
 
   def __init__(

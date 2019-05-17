@@ -1,4 +1,5 @@
 from . import (
+  attesters,
   backends,
   builders,
   converters,
@@ -7,4 +8,5 @@ from . import (
   registrars,
   types,
   validators,
+  verifiers,
 )
