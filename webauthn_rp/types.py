@@ -14,29 +14,6 @@ PublicKey = Union[EllipticCurvePublicKey, Ed25519PublicKey, Ed448PublicKey]
 TrustedPath = Optional[Sequence[Certificate]]
 
 
-class NameValueEnumsContainer(type):
-  """
-  A metaclass used to enable Enums that can take on a string and integer type
-  for a name and value respectively.
-  """
-
-  def __call__(cls, value):
-    if type(value) is int:
-      return cls.Value(value)
-    elif type(value) is str:
-      return cls.Name(value)
-    else:
-      raise KeyError('Invalid key {}'.format(value))
-
-  def __getitem__(cls, value):
-    if type(value) is int:
-      return cls.Value[value]
-    elif type(value) is str:
-      return cls.Name[value]
-    else:
-      raise KeyError('Invalid key {}'.format(value))
-
-
 class PublicKeyCredentialEntity:
   """
   The PublicKeyCredentialEntity describes a user account, or a WebAuthn Relying
@@ -209,6 +186,29 @@ class AuthenticatorTransport(Enum):
   NFC = 'nfc'
   BLE = 'ble'
   INTERNAL = 'internal'
+
+
+class NameValueEnumsContainer(type):
+  """
+  A metaclass used to enable Enums that can take on a string and integer type
+  for a name and value respectively.
+  """
+
+  def __call__(cls, value):
+    if type(value) is int:
+      return cls.Value(value)
+    elif type(value) is str:
+      return cls.Name(value)
+    else:
+      raise KeyError('Invalid key {}'.format(value))
+
+  def __getitem__(cls, value):
+    if type(value) is int:
+      return cls.Value[value]
+    elif type(value) is str:
+      return cls.Name[value]
+    else:
+      raise KeyError('Invalid key {}'.format(value))
 
 
 class COSEAlgorithmIdentifier(metaclass=NameValueEnumsContainer):

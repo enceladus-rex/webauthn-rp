@@ -10,7 +10,7 @@ webauthn-rp
   :alt: Webauthn Logo
 
 `webauthn-rp` is an implementation of the Relying Party components of the 
-Web Authentication (Webauthn) standard which was made official in March of 2019.
+`Web Authentication (WebAuthn) standard`_ which was made official in March of 2019.
 It aims to be a quick and easy way to use public key credentials for your Python
 applications. Support is only for Python 3.x considering that Python 2.x will reach
 its end of life in early 2020. This allows for the use of many features of Python 3 such
@@ -20,13 +20,13 @@ You can integrate this library into any backend web framework by implementing an
 interface that abstracts the operations that you'll need to perform as a public key
 credential registrar (explained in more detail in the docs).
 
-The general flow diagram for web authentication is shown in the diagrams below (taken from the spec):
+The general flow diagram for web authentication is shown in the diagrams below (from the spec):
 
 .. figure:: _static/webauthn-registration-flow-01.svg
   :width: 750
-  :alt: Webauthn Registration Flow
+  :alt: WebAuthn Registration Flow
   
-  Webauthn Registration Flow
+  WebAuthn Registration Flow (Figure 1 of WebAuthn Standard)
 
 In the case of registration, the relying party server must send a challenge along with
 information about the user that is to be registered and the specific relying party to
@@ -41,9 +41,9 @@ mostly covered by a different specification (the Client To Authenticator Protoco
 
 .. figure:: _static/webauthn-authentication-flow-01.svg
   :width: 750
-  :alt: Webauthn Authentication Flow
+  :alt: WebAuthn Authentication Flow
   
-  Webauthn Authentication Flow
+  WebAuthn Authentication Flow (Figure 2 of WebAuthn Standard)
 
 Authentication is very much like registration, however some of the message formats are
 different and consequently the parsing and validation operations as well. The steps
@@ -102,3 +102,5 @@ The entire library is written in Python 3.x so you can install it easily using `
    dev-docs/writing-tests
    dev-docs/making-changes
    dev-docs/bug-reporting
+
+.. _Web Authentication (WebAuthn) standard: https://www.w3.org/TR/webauthn/
