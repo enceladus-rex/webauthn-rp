@@ -1,5 +1,3 @@
-from cryptography.x509 import Certificate
-
 from typing import Optional, Sequence, Union, NamedTuple
 
 from .errors import UnimplementedError
@@ -29,14 +27,6 @@ class CredentialData(NamedTuple):
 
 
 class CredentialsRegistrar:
-
-  def register_creation_options(
-      self, options: CredentialCreationOptions, **kwargs) -> bool:
-    raise UnimplementedError('Must implement register_creation_options')
-
-  def register_request_options(
-      self, options: CredentialRequestOptions, **kwargs) -> bool:
-    raise UnimplementedError('Must implement register_request_options')
 
   def register_credential_creation(
       self, credential: PublicKeyCredential,
@@ -83,3 +73,11 @@ class CredentialsRegistrar:
       **kwargs) -> Optional[bool]:
     raise UnimplementedError(
       'Must implement check_user_owns_credential')
+
+  def register_creation_options(
+      self, options: CredentialCreationOptions, **kwargs) -> bool:
+    return True
+
+  def register_request_options(
+      self, options: CredentialRequestOptions, **kwargs) -> bool:
+    return True

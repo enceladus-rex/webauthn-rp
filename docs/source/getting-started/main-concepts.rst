@@ -10,7 +10,7 @@ entirely in Python 3.x so you can use `pip` to install it:
   pip install webauthn-rp
 
 If you aren't familiar with some of the key concepts involved with web authentication
-you may want read this page to gain some insight before you start using the library.
+you may want to read this page to gain some insight before you start using the library.
 
 Why WebAuthn?
 -------------
@@ -46,6 +46,11 @@ Reference Terminology
   it emits; including, for example: credential IDs, credential key pairs, signature
   counters, etc. An attestation statement is conveyed in an attestation object
   during registration.
+* `Public Key Credential` - Generically, a credential is data one entity presents to
+  another in order to authenticate the former to the latter. The term public key
+  credential refers to one of: a public key credential source, the possibly-attested
+  credential public key corresponding to a public key credential source, or an
+  authentication assertion. Which one is generally determined by context.
 * `Registration` - The ceremony where a user, a Relying Party, and the user’s
   client (containing at least one authenticator) work in concert to create a public
   key credential and associate it with the user’s Relying Party account. Note that
@@ -55,11 +60,6 @@ Reference Terminology
   Party that the user controls the credential private key associated with a
   previously-registered public key credential (see Registration). Note that this
   includes a test of user presence or user verification.
-* `Public Key Credential` - Generically, a credential is data one entity presents to
-  another in order to authenticate the former to the latter. The term public key
-  credential refers to one of: a public key credential source, the possibly-attested
-  credential public key corresponding to a public key credential source, or an
-  authentication assertion. Which one is generally determined by context.
 
 Challenge and Response
 ----------------------
@@ -72,13 +72,13 @@ should be probabilistically unique (extremely low chance of using the same chall
 The signed data is then verified using the public key that the Relying Party has
 registered for the user. In order to register a public key, the Relying Party can
 specify whether or not the user must provided an attestation, which can be for example
-a certificate chain for the authenticator's public key. Attestations enables one to
+a certificate chain for the authenticator's public key. Attestations enable one to
 ensure that at the time of use, a particular hardware certificate is trusted by
 validating its chain of trust (checking that there haven't been any revocations).
 Furthermore, due to the nature of asymmetric encryption, gaining access to the public
 key (which is shared with the Relying Party) does not allow one to authenticate as
-the user. The private key is actually never shared and is usually kept in its own
-separate memory.
+the user. Rather, it's the private key (which is usually never shared) that is
+necessary to generate valid signatures.
 
 Links
 ^^^^^
