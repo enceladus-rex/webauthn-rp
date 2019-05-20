@@ -6,15 +6,33 @@ import json
 
 from typing import Optional, Sequence, Union, NamedTuple
 
+from webauthn_rp.backends import CredentialsBackend
 from webauthn_rp.converters import cose_key, jsonify
 from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.registrars import *
+from webauthn_rp.types import (
+  CredentialCreationOptions,
+  CredentialRequestOptions,
+  COSEAlgorithmIdentifier,
+  PublicKeyCredentialCreationOptions,
+  PublicKeyCredentialParameters,
+  PublicKeyCredentialRequestOptions,
+  PublicKeyCredentialType,
+)
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 
 db = SQLAlchemy(app)
+
+
+example_rp = PublicKeyCredentialRpEntity(name='webauthn-rp', id='localhost')
+example_timeout = 60
+example_credential_parameters = [
+  PublicKeyCredentialParameters(
+    type=PublicKeyCredentialType.PUBLIC_KEY,
+    alg=COSEAlgorithmIdentifier.Value.ES256)]
 
 
 class User(db.Model):
@@ -109,31 +127,38 @@ class RegistrarImpl(CredentialsRegistrar):
     return credential_model.user.user_handle == user_handle
 
 
+credentials_registrar = RegistrarImpl()
+credentials_backend = CredentialsBackend(credentials_registrar)
+
+
 @app.route('/registration/request/', methods=['POST'])
 def registration_request():
   username = request.form['username']
-  credentials = json.loads(request.form['credentials'])
+  display_name = request.form['display_name']
 
   user_model = User.query.filter_by(username=username).first()
   if user_model is not None:
-    return 
+    # User is already registered.
+    return ('User already registered', 400, {})
 
   options = CredentialCreationOptions(
     public_key=PublicKeyCredentialCreationOptions(
-      rp=PublicKeyCredentialRpEntity(
-        name='webauthn-rp',
-        id='localhost'),
+      rp=example_rp,
       user=PublicKeyCredentialUserEntity(
-        name=cco.employee.username,
-        id=cco.user_entity.user_handle,
-        display_name=cco.user_entity.display_name),
-      challenge=cco.credential_challenge.challenge,
-      timeout=WEBAUTHN_CHALLENGE_TIMEOUT,
-      pub_key_cred_params=supported_public_key_credential_parameters(),
+        name=username,
+        id=user_model.user_handle,
+        display_name=display_name),
+      challenge=challenge,
+      timeout=example_timeout,
+      pub_key_cred_params=example_credential_parameters,
     )
   )
 
+  if not credentials_backend.handle_creation_options(options):
+    return ('Could not handle creation options', 200, {})
+
   options_json = jsonify(options)
+  return (json.dumps(options_json), 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/registration/response/')

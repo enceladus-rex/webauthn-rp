@@ -6,7 +6,7 @@ Configuring a server to use this library requires doing a few things:
 
 * Implementing the `CredentialsRegistrar` interface from `webauthn-rp`.
 * Setting up a database to store the registered credential public keys and metadata.
-* Configuring and handling a routes for the user client to:
+* Configuring and handling routes for the user client to:
 
   a. Begin registration for an authenticator.
   b. Send back the attested registration response.
