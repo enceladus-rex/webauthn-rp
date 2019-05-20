@@ -60,13 +60,13 @@ The entire library is written in Python 3.x so you can install it easily using `
   pip install webauthn-rp
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: API
 
    webauthn_rp
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Getting Started
 
    getting-started/main-concepts
@@ -78,7 +78,7 @@ The entire library is written in Python 3.x so you can install it easily using `
    getting-started/using-extensions
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: User Documentation
 
    user-docs/backend
@@ -93,7 +93,7 @@ The entire library is written in Python 3.x so you can install it easily using `
    user-docs/extensions
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Developer Documentation
 
    dev-docs/setup-environment

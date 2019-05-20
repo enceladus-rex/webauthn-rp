@@ -44,23 +44,24 @@ class CredentialsBackend:
     self.registrar = registrar
 
   def handle_creation_options(
-      self, options: CredentialCreationOptions):
+      self, *, options: CredentialCreationOptions):
     if not self.registrar.register_creation_options(options):
       raise RegistrationError('Failed to register creation options')
 
   def handle_request_options(
-      self, options: CredentialRequestOptions):
+      self, *, options: CredentialRequestOptions):
     if not self.registrar.register_request_options(options):
       raise RegistrationError('Failed to register request options')
 
   def handle_credential_creation(
-      self, credential: PublicKeyCredential,
+      self, *, credential: PublicKeyCredential,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
+      expected_challenge: bytes,
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
-      **registrar_kwargs):
+      ):
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
@@ -73,11 +74,7 @@ class CredentialsBackend:
 
     try:
       challenge = url_base64_decode(collected_client_data.challenge)
-      create_options_challenge = self.registrar.get_creation_options_challenge(
-        user, rp, **registrar_kwargs
-      )
-
-      if challenge != create_options_challenge:
+      if challenge != expected_challenge:
         raise IntegrityError(
           'Given and expected challenge byte strings don\'t match')
     except ValueError:
@@ -151,7 +148,8 @@ class CredentialsBackend:
       raise RegistrationError('Failed to register credential creation')
   
   def handle_credential_request(
-      self, credential: PublicKeyCredential,
+      self, *, credential: PublicKeyCredential,
+      expected_challenge: bytes,
       rp: Optional[PublicKeyCredentialRpEntity] = None,
       user: Optional[PublicKeyCredentialUserEntity] = None,
       allow_credentials:
@@ -172,8 +170,7 @@ class CredentialsBackend:
       if not allowed:
         raise ValidationError('Provided credential is not allowed')
 
-    credential_data = self.registrar.get_credential_data(
-      credential.raw_id, **registrar_kwargs)
+    credential_data = self.registrar.get_credential_data(credential.raw_id)
 
     if credential_data is None:
       raise NotFoundError('Could not get credential data')
@@ -222,10 +219,7 @@ class CredentialsBackend:
 
     try:
       challenge = url_base64_decode(collected_client_data.challenge)
-      request_options_challenge = self.registrar.get_request_options_challenge(
-        user, rp, **registrar_kwargs)
-
-      if challenge != request_options_challenge:
+      if challenge != expected_challenge:
         raise IntegrityError(
           'Given and expected challenge byte strings don\'t match')
     except ValueError:

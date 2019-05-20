@@ -34,15 +34,7 @@ store and retrieve.
 .. literalinclude:: ../../../webauthn_rp/registrars.py
    :pyobject: CredentialsRegistrar
 
-Focusing on the get functions, you'll first notice that the registrar will need to be
-able to retrieve the stored challenge that was originally sent out with a
-`CredentialCreationOptions` object. You might realize that there could be multiple
-challenges for a given user and Relying Pary, and since that is the case, you can
-pass in additional identifying information using the `kwargs` parameter. This was
-not part of the specification and so how you do this is an implementation decision.
-
-The same applies for the `CredentialRequestOptions` which also has a challenge
-that needs to be retrieved from the registrar. Additionally, you'll need to be able to
+Focusing on the get functions, you'll first notice that you'll need to be able to
 retrieve a number of fields related to a particular credential. 
 
 .. note::
@@ -72,12 +64,16 @@ owns a credential with the given ID.
   but should contain no personally identifiable information, i.e. not a username or
   email address.
 
-The data to be stored is provided in the two functions `register_credential_creation`
-and `register_credential_request`. In particular you can find the
-`credential_public_key` using the `att` parameter under
+The data to be stored is provided in the four `register` functions. In particular you
+can find the `credential_public_key` using the `att` parameter under
 `att.auth_data.attested_credential_data.credential_public_key` and the
-`signature_count` under `att.auth_data.sign_count`. Lastly the credential ID is under
-`att.auth_data.attested_credential_data.credential_id`.
+`signature_count` under `att.auth_data.sign_count`. Additionally, the `credential_id`
+is under `att.auth_data.attested_credential_data.credential_id`.
+
+Lastly, although not explicitly retrieved using a `get` function, you'll need to store
+the challenge that is used for each registration and authentication ceremony in order
+to have the `CredentialsBackend` check it for verification. The challenge is provided
+in the `options` object under `options.public_key.challenge`.
 
 Flask Setup
 -----------
@@ -127,19 +123,19 @@ Although the register functions are passed a lot of data, we'll only focus on th
 key pieces of information that need to be stored for later retrieval as previously
 mentioned.
 
+Putting it all together yields:
 
+.. literalinclude:: ../../../examples/none-attestation/app.py
+   :pyobject: RegistrarImpl
 
-
-
-
-
-
-
+Next, we'll go about creating and handling the registration and authentication routes.
 
 Registration Request
 --------------------
 
-
+When a user client wants to register an authenticator with a Relying Party, it'll first need
+to request some options from the Relying Party that specify a number of things, namely what
+kinds of authenticators are acceptable and which challenge should be used.
 
 Registration Response
 ---------------------

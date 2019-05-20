@@ -7,4 +7,9 @@ setup(
   description='Web Authentication Relying Party Library',
   author='enceladus-rex',
   packages=['webauthn_rp'],
+  install_requires=[
+    'cbor',
+    'cryptography',
+    'pyopenssl',
+  ],
 )

@@ -1,8 +1,13 @@
 from flask import Flask
+from flask import request
+from flask_sqlalchemy import SQLAlchemy
+
+import json
 
 from typing import Optional, Sequence, Union, NamedTuple
 
-from webauthn_rp.converters import cose_key
+from webauthn_rp.converters import cose_key, jsonify
+from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.registrars import *
 
 
@@ -17,7 +22,7 @@ class User(db.Model):
   user_handle = db.Column(db.String(64), unique=True)
   
   @staticmethod
-  def by_user_handle(user_handle: bytes) -> User:
+  def by_user_handle(user_handle: bytes) -> 'User':
     return User.query.filter_by(User.user_handle == user_handle).first()
 
 
@@ -29,6 +34,7 @@ class Credential(db.Model):
 
 
 class Challenge(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
   request = db.Column(db.String, unique=True)
   user = db.relationship('User', backref=db.backref('challenges', lazy=True))
 
@@ -46,6 +52,7 @@ class RegistrarImpl(CredentialsRegistrar):
     challenge.user = user_model
 
     db.session.add(challenge)
+    db.session.commit()
     return True
 
   def register_creation_options(
@@ -75,53 +82,70 @@ class RegistrarImpl(CredentialsRegistrar):
     credential_model.user = user_model
 
     db.session.add(credential_model)
+    db.session.commit()
 
   def register_credential_request(
       self, credential: PublicKeyCredential,
       authenticator_data: AuthenticatorData,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity) -> bool:
-    raise UnimplementedError(
-      'Must implement register_credential_request')
-
-  def get_creation_options_challenge(
-      self, user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity) -> Optional[bytes]:
-    raise UnimplementedError(
-      'Must implement get_creation_options_challenge')
-
-  def get_request_options_challenge(
-      self, user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity) -> Optional[bytes]:
-    raise UnimplementedError(
-      'Must implement get_request_options_challenge')
+    credential_model = Credential.query.get(id=credential.raw_id)
+    credential_model.signature_count = authenticator_data.sign_count
+    db.session.commit()
+    return True
 
   def get_credential_data(
       self, credential_id: bytes) -> Optional[CredentialData]:
-    raise UnimplementedError(
-      'Must implement get_credential_data')
+    credential_model = Credential.query.get(id=credential_id)
+    return CredentialData(
+      parse_cose_key(
+        credential_model.credential_public_key),
+      credential_model.signature_count,
+    )
   
   def check_user_owns_credential(
       self, user_handle: bytes, credential_id: bytes) -> Optional[bool]:
-    raise UnimplementedError(
-      'Must implement check_user_owns_credential')
+    credential_model = Credential.query.get(id=credential_id)
+    return credential_model.user.user_handle == user_handle
 
 
-@app.route('/registration/request/')
+@app.route('/registration/request/', methods=['POST'])
 def registration_request():
-    return 'Hello, World!'
+  username = request.form['username']
+  credentials = json.loads(request.form['credentials'])
+
+  user_model = User.query.filter_by(username=username).first()
+  if user_model is not None:
+    return 
+
+  options = CredentialCreationOptions(
+    public_key=PublicKeyCredentialCreationOptions(
+      rp=PublicKeyCredentialRpEntity(
+        name='webauthn-rp',
+        id='localhost'),
+      user=PublicKeyCredentialUserEntity(
+        name=cco.employee.username,
+        id=cco.user_entity.user_handle,
+        display_name=cco.user_entity.display_name),
+      challenge=cco.credential_challenge.challenge,
+      timeout=WEBAUTHN_CHALLENGE_TIMEOUT,
+      pub_key_cred_params=supported_public_key_credential_parameters(),
+    )
+  )
+
+  options_json = jsonify(options)
 
 
 @app.route('/registration/response/')
-def registration_request():
-    return 'Hello, World!'
+def registration_response():
+  return 'Hello, World!'
 
 
 @app.route('/authentication/request/')
-def registration_request():
-    return 'Hello, World!'
+def authentication_request():
+  return 'Hello, World!'
 
 
 @app.route('/authentication/request/')
-def registration_request():
-    return 'Hello, World!'
+def authentication_response():
+  return 'Hello, World!'
