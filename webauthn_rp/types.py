@@ -261,7 +261,7 @@ class PublicKeyCredentialParameters:
 
   def __init__(
       self, *, type: PublicKeyCredentialType,
-      alg: COSEAlgorithmIdentifier):
+      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]):
     self.type = type
     self.alg = alg
 

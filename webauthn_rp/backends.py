@@ -2,7 +2,7 @@ import cbor
 import hashlib
 import json
 
-from typing import Optional, Set, Sequence, cast
+from typing import Optional, Set, Sequence, Any, cast
 
 import cryptography
 from cryptography.hazmat.primitives.hashes import SHA256
@@ -44,13 +44,13 @@ class CredentialsBackend:
     self.registrar = registrar
 
   def handle_creation_options(
-      self, *, options: CredentialCreationOptions):
-    if not self.registrar.register_creation_options(options):
+      self, *, options: CredentialCreationOptions, metadata: Any = None):
+    if not self.registrar.register_creation_options(options, metadata):
       raise RegistrationError('Failed to register creation options')
 
   def handle_request_options(
-      self, *, options: CredentialRequestOptions):
-    if not self.registrar.register_request_options(options):
+      self, *, options: CredentialRequestOptions, metadata: Any = None):
+    if not self.registrar.register_request_options(options, metadata):
       raise RegistrationError('Failed to register request options')
 
   def handle_credential_creation(
@@ -61,7 +61,7 @@ class CredentialsBackend:
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
-      ):
+      metadata: Any = None):
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
@@ -143,7 +143,7 @@ class CredentialsBackend:
           credential=credential, att=attestation,
           att_type=att_type, user=user, rp=rp,
           trusted_path=trusted_path,
-          **registrar_kwargs
+          metadata=metadata,
         ):
       raise RegistrationError('Failed to register credential creation')
   
@@ -158,7 +158,7 @@ class CredentialsBackend:
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
       ignore_clone_error: bool = False,
-      **registrar_kwargs) -> bool:
+      metadata: Any = None) -> bool:
     response = cast(AuthenticatorAssertionResponse, credential.response)
     if allow_credentials is not None:
       allowed = False
@@ -176,12 +176,17 @@ class CredentialsBackend:
       raise NotFoundError('Could not get credential data')
 
     registered_user = credential_data.user_entity
-    
     if registered_user is None:
-      raise NotFoundError('Could not find a user with the credential')
+      if user is None:
+        raise NotFoundError('Could not find a user with the credential')
+    elif user is not None:
+      if registered_user.id != user.id:
+        raise ValidationError(
+          'Registered user and provided user ids do not match')
+    else:
+      user = registered_user
 
     registered_rp = credential_data.rp_entity
-
     if registered_rp is None:
       if rp is None:
         raise NotFoundError((
@@ -290,6 +295,6 @@ class CredentialsBackend:
           credential=credential,
           authenticator_data=auth_data,
           user=user, rp=rp,
-          **registrar_kwargs
+          metadata=metadata,
         ):
       raise RegistrationError('Failed to register credential request')

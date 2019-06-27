@@ -48,7 +48,7 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
           data.items()) if v is not None
     }
   elif type(data) is bytes:
-    return list(data)
+    return base64.b64encode(data).decode('utf-8')
   elif type(data) in (str, int, float, bool):
     return data
   elif type(data) in (list, tuple):

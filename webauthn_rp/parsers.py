@@ -2,6 +2,8 @@ import cbor
 import json
 import struct
 import io
+import base64
+import binascii
 
 from functools import singledispatch
 from enum import Enum
@@ -88,10 +90,17 @@ def check_unsupported_keys(supported: Set[str], data: dict):
         str(unsupported_keys)))
 
 
+def bytes_from_base64(s: str) -> bytes:
+  try:
+    return base64.b64decode(s)
+  except Exception:
+    raise ValidationError('Invalid base64 string')
+
+
 def bytes_from_array(arr: Sequence[Any]) -> bytes:
   try:
     return bytes(arr)
-  except TypeError:
+  except binascii.Error:
     raise ValidationError('Invalid array type')
 
 
@@ -101,19 +110,19 @@ def parse_public_key_credential(data: dict) -> PublicKeyCredential:
   print('checked for unsupported keys')
   id_ = parse_dictionary_field('id', str, data)
   type_ = parse_dictionary_field('type', str, data)
-  raw_id = bytes_from_array(parse_dictionary_field(
-    'rawId', (list, tuple), data))
+  raw_id = bytes_from_base64(parse_dictionary_field(
+    'rawId', str, data))
   
   response = parse_dictionary_field('response', dict, data)
-  client_data_JSON = bytes_from_array(parse_dictionary_field(
-    'clientDataJSON', (list, tuple), response))
+  client_data_JSON = bytes_from_base64(parse_dictionary_field(
+    'clientDataJSON', str, response))
   
   if 'attestationObject' in response:
     # Parse AuthenticatorAttestationResponse
     check_unsupported_keys({'clientDataJSON', 'attestationObject'}, response)
 
-    attestation_object = bytes_from_array(parse_dictionary_field(
-      'attestationObject', (list, tuple), response))
+    attestation_object = bytes_from_base64(parse_dictionary_field(
+      'attestationObject', str, response))
 
     return PublicKeyCredential(
       id=id_,
@@ -130,15 +139,15 @@ def parse_public_key_credential(data: dict) -> PublicKeyCredential:
       {'clientDataJSON', 'authenticatorData', 'signature', 'userHandle'}, response)
     
     print('checked for unsupported key')
-    authenticator_data = bytes_from_array(parse_dictionary_field(
-      'authenticatorData', (list, tuple), response))
-    signature = bytes_from_array(parse_dictionary_field(
-      'signature', (list, tuple), response))
-    user_handle_array = parse_dictionary_field(
+    authenticator_data = bytes_from_base64(parse_dictionary_field(
+      'authenticatorData', str, response))
+    signature = bytes_from_base64(parse_dictionary_field(
+      'signature', str, response))
+    user_handle_b64s = parse_dictionary_field(
       'userHandle', (list, tuple), response, False)
     user_handle = None
-    if user_handle_array is not None:
-      user_handle = bytes_from_array(user_handle_array)
+    if user_handle_b64s is not None:
+      user_handle = bytes_from_base64(user_handle_b64s)
     
     return PublicKeyCredential(
       id=id_,

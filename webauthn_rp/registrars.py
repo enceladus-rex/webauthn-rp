@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Union, NamedTuple
+from typing import Optional, Sequence, Union, NamedTuple, Any
 
 from .errors import UnimplementedError
 from .types import (
@@ -29,14 +29,12 @@ class CredentialData(NamedTuple):
 class CredentialsRegistrar:
 
   def register_creation_options(
-      self, options: CredentialCreationOptions) -> bool:
-    raise UnimplementedError(
-      'Must implement register_creation_options')
+      self, options: CredentialCreationOptions, metadata: Any = None) -> bool:
+    return True
 
   def register_request_options(
-      self, options: CredentialRequestOptions) -> bool:
-    raise UnimplementedError(
-      'Must implement register_request_options')
+      self, options: CredentialRequestOptions, metadata: Any = None) -> bool:
+    return True
   
   def register_credential_creation(
       self, credential: PublicKeyCredential,
@@ -44,7 +42,8 @@ class CredentialsRegistrar:
       att_type: AttestationType,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None) -> bool:
+      trusted_path: Optional[TrustedPath] = None,
+      metadata: Any = None) -> bool:
     raise UnimplementedError(
       'Must implement register_credential_creation')
 
@@ -52,7 +51,8 @@ class CredentialsRegistrar:
       self, credential: PublicKeyCredential,
       authenticator_data: AuthenticatorData,
       user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity) -> bool:
+      rp: PublicKeyCredentialRpEntity,
+      metadata: Any = None) -> bool:
     raise UnimplementedError(
       'Must implement register_credential_request')
 
