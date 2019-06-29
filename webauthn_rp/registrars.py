@@ -1,22 +1,13 @@
-from typing import Optional, Sequence, Union, NamedTuple, Any
+from typing import Any, NamedTuple, Optional, Sequence, Union
 
 from .errors import UnimplementedError
-from .types import (
-  CredentialPublicKey,
-  CredentialCreationOptions,
-  CredentialRequestOptions,
-  AuthenticatorAttestationResponse,
-  AuthenticatorAssertionResponse,
-  PublicKeyCredentialUserEntity,
-  PublicKeyCredentialRpEntity,
-  AttestationObject,
-  AttestationStatementFormatIdentifier,
-  AttestationType,
-  AuthenticatorData,
-  PublicKeyCredential,
-  PublicKey,
-  TrustedPath,
-)
+from .types import (AttestationObject, AttestationStatementFormatIdentifier,
+                    AttestationType, AuthenticatorAssertionResponse,
+                    AuthenticatorAttestationResponse, AuthenticatorData,
+                    CredentialCreationOptions, CredentialPublicKey,
+                    CredentialRequestOptions, PublicKey, PublicKeyCredential,
+                    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
+                    TrustedPath)
 
 
 class CredentialData(NamedTuple):
@@ -27,39 +18,34 @@ class CredentialData(NamedTuple):
 
 
 class CredentialsRegistrar:
-
-  def register_creation_options(
-      self, options: CredentialCreationOptions) -> bool:
+  def register_creation_options(self,
+                                options: CredentialCreationOptions) -> bool:
     return True
 
-  def register_request_options(
-      self, options: CredentialRequestOptions) -> bool:
+  def register_request_options(self,
+                               options: CredentialRequestOptions) -> bool:
     return True
-  
-  def register_credential_creation(
-      self, credential: PublicKeyCredential,
-      att: AttestationObject, 
-      att_type: AttestationType,
-      user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None) -> bool:
-    raise UnimplementedError(
-      'Must implement register_credential_creation')
 
-  def register_credential_request(
-      self, credential: PublicKeyCredential,
-      authenticator_data: AuthenticatorData,
-      user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity) -> bool:
-    raise UnimplementedError(
-      'Must implement register_credential_request')
+  def register_credential_creation(self,
+                                   credential: PublicKeyCredential,
+                                   att: AttestationObject,
+                                   att_type: AttestationType,
+                                   user: PublicKeyCredentialUserEntity,
+                                   rp: PublicKeyCredentialRpEntity,
+                                   trusted_path: Optional[TrustedPath] = None
+                                   ) -> bool:
+    raise UnimplementedError('Must implement register_credential_creation')
 
-  def get_credential_data(
-      self, credential_id: bytes) -> Optional[CredentialData]:
-    raise UnimplementedError(
-      'Must implement get_credential_data')
-  
-  def check_user_owns_credential(
-      self, user_handle: bytes, credential_id: bytes) -> Optional[bool]:
-    raise UnimplementedError(
-      'Must implement check_user_owns_credential')
+  def register_credential_request(self, credential: PublicKeyCredential,
+                                  authenticator_data: AuthenticatorData,
+                                  user: PublicKeyCredentialUserEntity,
+                                  rp: PublicKeyCredentialRpEntity) -> bool:
+    raise UnimplementedError('Must implement register_credential_request')
+
+  def get_credential_data(self,
+                          credential_id: bytes) -> Optional[CredentialData]:
+    raise UnimplementedError('Must implement get_credential_data')
+
+  def check_user_owns_credential(self, user_handle: bytes,
+                                 credential_id: bytes) -> Optional[bool]:
+    raise UnimplementedError('Must implement check_user_owns_credential')

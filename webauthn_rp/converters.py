@@ -1,31 +1,28 @@
-import json
-import cbor # type: ignore
 import base64
+import json
 from enum import Enum
 from functools import singledispatch
 from typing import Any, Union
 
-from cryptography.hazmat.backends import default_backend # type: ignore
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey # type: ignore
-from cryptography.hazmat.primitives.asymmetric.ed448 import  Ed448PublicKey # type: ignore
-from cryptography.hazmat.primitives.asymmetric.ec import ( # type: ignore
-  EllipticCurvePublicNumbers, # type: ignore
-  SECP256R1,  # type: ignore
-  SECP384R1,  # type: ignore
-  SECP521R1,  # type: ignore
-)
-
-from .types import (
-  CredentialPublicKey,
-  PublicKey,
-  PublicKeyCredential,
-  EC2CredentialPublicKey,
-  OKPCredentialPublicKey,
-)
+import cbor
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric.ec import \
+    SECP256R1
+from cryptography.hazmat.primitives.asymmetric.ec import \
+    SECP384R1
+from cryptography.hazmat.primitives.asymmetric.ec import \
+    SECP521R1
+from cryptography.hazmat.primitives.asymmetric.ec import \
+    EllipticCurvePublicNumbers
+from cryptography.hazmat.primitives.asymmetric.ed448 import \
+    Ed448PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import \
+    Ed25519PublicKey
 
 from .errors import UnimplementedError, ValidationError
+from .types import (CredentialPublicKey, EC2CredentialPublicKey,
+                    OKPCredentialPublicKey, PublicKey, PublicKeyCredential)
 from .utils import snake_to_camel_case
-
 
 JSONValue = Union[dict, list, bool, int, float, str]
 
@@ -42,11 +39,9 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
       if type(k) is not str:
         raise ValidationError('The type of dict keys must be a string in JSON')
 
-    return {
-      (snake_to_camel_case(k) if convert_case else k): jsonify(
-        v, convert_case) for k, v in (
-          data.items()) if v is not None
-    }
+    return {(snake_to_camel_case(k) if convert_case else k):
+            jsonify(v, convert_case)
+            for k, v in (data.items()) if v is not None}
   elif type(data) is bytes:
     return base64.b64encode(data).decode('utf-8')
   elif type(data) in (str, int, float, bool):
@@ -54,50 +49,47 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
   elif type(data) in (list, tuple):
     return [jsonify(x, convert_case) for x in data]
   else:
-    raise UnimplementedError(
-      'JSON conversion for given data is not supported')
+    raise UnimplementedError('JSON conversion for given data is not supported')
 
 
 @singledispatch
-def cryptography_public_key(
-    credential_public_key: CredentialPublicKey) -> PublicKey:
+def cryptography_public_key(credential_public_key: CredentialPublicKey
+                            ) -> PublicKey:
   raise UnimplementedError('Must implement public key conversion')
 
 
 @cryptography_public_key.register(EC2CredentialPublicKey)
-def cryptography_ec2_public_key(
-    credential_public_key: EC2CredentialPublicKey) -> PublicKey:
+def cryptography_ec2_public_key(credential_public_key: EC2CredentialPublicKey
+                                ) -> PublicKey:
   x = int.from_bytes(credential_public_key.x, 'big')
   y = int.from_bytes(credential_public_key.y, 'big')
-  
+
   curve = None
   if credential_public_key.crv.name == 'P_256': curve = SECP256R1()
   elif credential_public_key.crv.name == 'P_384': curve = SECP384R1()
   elif credential_public_key.crv.name == 'P_521': curve = SECP521R1()
   else:
     raise UnimplementedError('Unsupported cryptography EC2 curve {}'.format(
-      credential_public_key.crv.name
-    ))
-  
+        credential_public_key.crv.name))
+
   ecpn = EllipticCurvePublicNumbers(x, y, curve)
   return ecpn.public_key(default_backend())
 
 
 @cryptography_public_key.register(OKPCredentialPublicKey)
-def cryptography_okp_public_key(
-    credential_public_key: OKPCredentialPublicKey) -> PublicKey:
+def cryptography_okp_public_key(credential_public_key: OKPCredentialPublicKey
+                                ) -> PublicKey:
   if credential_public_key.crv.name == 'ED25519':
     return Ed25519PublicKey.from_public_bytes(credential_public_key.x)
   elif credential_public_key.crv.name == 'ED448':
     return Ed448PublicKey.from_public_bytes(credential_public_key.x)
   else:
     raise UnimplementedError('Unsupported cryptography OKP curve {}'.format(
-      credential_public_key.crv.name
-    ))
+        credential_public_key.crv.name))
 
 
-def build_base_cose_dictionary(
-    credential_public_key: CredentialPublicKey) -> dict:
+def build_base_cose_dictionary(credential_public_key: CredentialPublicKey
+                               ) -> dict:
   d = {}
   d[1] = credential_public_key.kty.value
   if credential_public_key.kid is not None:
@@ -112,14 +104,12 @@ def build_base_cose_dictionary(
 
 
 @singledispatch
-def cose_key(
-    credential_public_key: CredentialPublicKey) -> bytes:
+def cose_key(credential_public_key: CredentialPublicKey) -> bytes:
   raise UnimplementedError('Must implement cose key conversion')
 
 
 @cose_key.register(EC2CredentialPublicKey)
-def cose_key_from_ec2(
-    credential_public_key: EC2CredentialPublicKey) -> bytes:
+def cose_key_from_ec2(credential_public_key: EC2CredentialPublicKey) -> bytes:
   d = build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x
@@ -128,8 +118,7 @@ def cose_key_from_ec2(
 
 
 @cose_key.register(OKPCredentialPublicKey)
-def cose_key_from_okp(
-    credential_public_key: OKPCredentialPublicKey) -> bytes:
+def cose_key_from_okp(credential_public_key: OKPCredentialPublicKey) -> bytes:
   d = build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x

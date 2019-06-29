@@ -1,12 +1,2 @@
-from . import (
-  attesters,
-  backends,
-  builders,
-  converters,
-  errors,
-  parsers,
-  registrars,
-  types,
-  validators,
-  verifiers,
-)
+from . import (attesters, backends, builders, converters, errors, parsers,
+               registrars, types, validators, verifiers)
