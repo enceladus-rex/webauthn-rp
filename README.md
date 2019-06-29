@@ -18,6 +18,6 @@ To quickly install the library you can use pip:
 pip install webauthn-rp
 ```
 
-To learn more about how to use the library (which is currently in alpha), please visit the documentation at [readthedocs]().
+To learn more about how to use the library (which is currently in alpha), please visit the documentation at [readthedocs](https://webauthn-rp.readthedocs.io/en/latest/).
 
 You can also find some of the examples which are covered in the docs under `/examples`.
