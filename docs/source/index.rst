@@ -8,6 +8,7 @@ webauthn-rp
 
 .. figure:: _static/webauthn-rp-logo.png
   :alt: Webauthn Logo
+  :align: center
 
 `webauthn-rp` is an implementation of the Relying Party components of the 
 `Web Authentication (WebAuthn) standard`_ which was made official in March of 2019.
@@ -25,6 +26,7 @@ The general flow diagram for web authentication is shown in the diagrams below (
 .. figure:: _static/webauthn-registration-flow-01.svg
   :width: 750
   :alt: WebAuthn Registration Flow
+  :align: center
   
   WebAuthn Registration Flow (Figure 1 of WebAuthn Standard)
 
@@ -42,6 +44,7 @@ mostly covered by a different specification (the Client To Authenticator Protoco
 .. figure:: _static/webauthn-authentication-flow-01.svg
   :width: 750
   :alt: WebAuthn Authentication Flow
+  :align: center
   
   WebAuthn Authentication Flow (Figure 2 of WebAuthn Standard)
 
