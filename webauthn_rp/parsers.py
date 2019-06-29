@@ -9,11 +9,20 @@ from functools import singledispatch
 from enum import Enum
 from typing import Optional, Union, Sequence, Any, Tuple, Set
 
+from .constants import (
+  EC2_P_256_NUMBER_LENGTH,
+  EC2_P_384_NUMBER_LENGTH,
+  EC2_P_521_NUMBER_LENGTH,
+  OKP_ED25519_NUMBER_LENGTH,
+  OKP_ED448_NUMBER_LENGTH,
+)
+
 from .errors import (
   DecodingError,
   TokenBindingError,
   ValidationError,
 )
+
 from .types import (
   CollectedClientData,
   TokenBinding,
@@ -28,6 +37,7 @@ from .types import (
 
   CredentialPublicKey,
   EC2CredentialPublicKey,
+  OKPCredentialPublicKey,
 
   AuthenticationExtensionsClientOutputs,
   Coordinates,
@@ -55,6 +65,7 @@ from .types import (
   EC2KeyType,
   OKPKeyType,
 )
+
 from .validators import validate
 
 
@@ -236,6 +247,32 @@ def parse_credential_public_key_kwargs(
   }
 
 
+def ec2_number_length(crv: Union[EC2KeyType.Name, EC2KeyType.Value]) -> int:
+  key_to_length = {
+    EC2KeyType.Name.P_256: EC2_P_256_NUMBER_LENGTH,
+    EC2KeyType.Name.P_384: EC2_P_384_NUMBER_LENGTH,
+    EC2KeyType.Name.P_521: EC2_P_521_NUMBER_LENGTH,
+
+    EC2KeyType.Value.P_256: EC2_P_256_NUMBER_LENGTH,
+    EC2KeyType.Value.P_384: EC2_P_384_NUMBER_LENGTH,
+    EC2KeyType.Value.P_521: EC2_P_521_NUMBER_LENGTH,
+  }
+
+  return key_to_length[crv]
+
+
+def okp_number_length(crv: Union[OKPKeyType.Name, OKPKeyType.Value]) -> int:
+  key_to_length = {
+    OKPKeyType.Name.ED25519: OKP_ED25519_NUMBER_LENGTH,
+    OKPKeyType.Name.ED448: OKP_ED448_NUMBER_LENGTH,
+
+    OKPKeyType.Value.ED25519: OKP_ED25519_NUMBER_LENGTH,
+    OKPKeyType.Value.ED448: OKP_ED448_NUMBER_LENGTH,
+  }
+
+  return key_to_length[crv]
+
+
 def parse_ec2_public_key_crv(
     credential_public_key: dict) -> Union[EC2KeyType.Name, EC2KeyType.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
@@ -258,10 +295,10 @@ def parse_okp_public_key(
     credential_public_key: dict) -> CredentialPublicKey:
   x = parse_dictionary_field(-2, bytes, credential_public_key)
   crv = parse_okp_public_key_crv(credential_public_key)
-
-  if len(x) != 32:
+  crv_len = okp_number_length(crv)
+  if len(x) != crv_len:
     raise ValidationError(
-      'Packed credential public key x and y must be 32 bytes')
+      'Packed credential public key x and y must be {} bytes'.format(crv_len))
 
   return OKPCredentialPublicKey(
     crv=crv, x=x,
@@ -274,10 +311,10 @@ def parse_ec2_public_key(
   x = parse_dictionary_field(-2, bytes, credential_public_key)
   y = parse_dictionary_field(-3, bytes, credential_public_key)
   crv = parse_ec2_public_key_crv(credential_public_key)
-
-  if len(x) != 32 or len(y) != 32:
+  crv_len = ec2_number_length(crv)
+  if len(x) != crv_len or len(y) != crv_len:
     raise ValidationError(
-      'Packed credential public key x and y must be 32 bytes')
+      'Packed credential public key x and y must be {} bytes'.format(crv_len))
 
   return EC2CredentialPublicKey(
     x=x, y=y, crv=crv,
