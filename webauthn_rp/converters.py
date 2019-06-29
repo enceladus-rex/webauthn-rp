@@ -1,18 +1,18 @@
 import json
-import cbor
+import cbor # type: ignore
 import base64
 from enum import Enum
 from functools import singledispatch
 from typing import Any, Union
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
-from cryptography.hazmat.primitives.asymmetric.ec import (
-  EllipticCurvePublicNumbers,
-  SECP256R1,
-  SECP384R1,
-  SECP521R1,
+from cryptography.hazmat.backends import default_backend # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ed448 import  Ed448PublicKey # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ec import ( # type: ignore
+  EllipticCurvePublicNumbers, # type: ignore
+  SECP256R1,  # type: ignore
+  SECP384R1,  # type: ignore
+  SECP521R1,  # type: ignore
 )
 
 from .types import (
@@ -102,6 +102,7 @@ def build_base_cose_dictionary(
   d[1] = credential_public_key.kty.value
   if credential_public_key.kid is not None:
     d[2] = credential_public_key.kid
+  assert credential_public_key.alg is not None
   d[3] = credential_public_key.alg.value
   if credential_public_key.key_ops is not None:
     d[4] = [x.value for x in credential_public_key.key_ops]

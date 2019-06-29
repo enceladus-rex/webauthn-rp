@@ -1,8 +1,8 @@
 from functools import singledispatch
 
-import cryptography
-from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
-from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+import cryptography # type: ignore
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512 # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ec import ECDSA # type: ignore
 
 from .converters import cryptography_public_key
 from .errors import ValidationError, UnimplementedError, VerificationError
@@ -10,6 +10,9 @@ from .types import (
   CredentialPublicKey,
   EC2CredentialPublicKey,
   OKPCredentialPublicKey,
+  EC2KeyType,
+  OKPKeyType,
+  COSEAlgorithmIdentifier,
 )
 
 
@@ -27,18 +30,21 @@ def verify_ec2_credential_public_key(
     credential_public_key: EC2CredentialPublicKey,
     signature: bytes, data: bytes):
   public_key = cryptography_public_key(credential_public_key)
+  if credential_public_key.alg is None:
+    raise ValidationError('alg must not be None')
+
+  alg_name = credential_public_key.alg.name
+  alg_to_hash = {
+    'ES256': SHA256,
+    'ES384': SHA384,
+    'ES512': SHA512,
+  }
 
   hash_algorithm = None
-  if credential_public_key.alg.name == 'ES256':
-    hash_algorithm = ECDSA(SHA256())
-  elif credential_public_key.alg.name == 'ES384':
-    hash_algorithm = ECDSA(SHA384())
-  elif credential_public_key.alg.name == 'ES512':
-    hash_algorithm = ECDSA(SHA512())
+  if alg_name in alg_to_hash:
+    hash_algorithm = ECDSA(alg_to_hash[alg_name]())
   else:
-    raise ValidationError('Unsupported EC2 alg {}'.format(
-      credential_public_key.alg.name
-    ))
+    raise ValidationError('Unsupported EC2 alg {}'.format(alg_name))
     
   try:
     public_key.verify(signature, data, hash_algorithm)

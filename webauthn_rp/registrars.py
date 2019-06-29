@@ -29,11 +29,11 @@ class CredentialData(NamedTuple):
 class CredentialsRegistrar:
 
   def register_creation_options(
-      self, options: CredentialCreationOptions, metadata: Any = None) -> bool:
+      self, options: CredentialCreationOptions) -> bool:
     return True
 
   def register_request_options(
-      self, options: CredentialRequestOptions, metadata: Any = None) -> bool:
+      self, options: CredentialRequestOptions) -> bool:
     return True
   
   def register_credential_creation(
@@ -42,8 +42,7 @@ class CredentialsRegistrar:
       att_type: AttestationType,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None,
-      metadata: Any = None) -> bool:
+      trusted_path: Optional[TrustedPath] = None) -> bool:
     raise UnimplementedError(
       'Must implement register_credential_creation')
 
@@ -51,8 +50,7 @@ class CredentialsRegistrar:
       self, credential: PublicKeyCredential,
       authenticator_data: AuthenticatorData,
       user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity,
-      metadata: Any = None) -> bool:
+      rp: PublicKeyCredentialRpEntity) -> bool:
     raise UnimplementedError(
       'Must implement register_credential_request')
 

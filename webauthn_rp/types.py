@@ -1,11 +1,11 @@
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, Any, Type, TypeVar, ClassVar
 from enum import Enum
 
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
-from cryptography.x509 import Certificate
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey # type: ignore
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey  # type: ignore
+from cryptography.x509 import Certificate # type: ignore
 
 from .utils import camel_to_snake_case
 
@@ -194,7 +194,7 @@ class NameValueEnumsContainer(type):
   for a name and value respectively.
   """
 
-  def __call__(cls, value):
+  def __call__(cls: Any, value: Union[int, str]) -> Any: # type: ignore
     if type(value) is int:
       return cls.Value(value)
     elif type(value) is str:
@@ -202,7 +202,7 @@ class NameValueEnumsContainer(type):
     else:
       raise KeyError('Invalid key {}'.format(value))
 
-  def __getitem__(cls, value):
+  def __getitem__(cls: Any, value: Union[int, str]) -> Any: # type: ignore
     if type(value) is int:
       return cls.Value[value]
     elif type(value) is str:
@@ -1694,7 +1694,8 @@ class AttestationStatement:
   """
   
   def __init__(
-      self, *, alg: Optional[COSEAlgorithmIdentifier] = None,
+      self, *, alg: Optional[Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]] = None,
       sig: Optional[bytes] = None):
     self.alg = alg
     self.sig = sig
@@ -1715,7 +1716,10 @@ class PackedAttestationStatement(AttestationStatement):
     * https://w3.org/TR/webauthn/#packed-attestation
   """
 
-  def __init__(self, *, alg: COSEAlgorithmIdentifier, sig: bytes):
+  def __init__(self, *, 
+      alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
+      sig: bytes):
     super().__init__(alg=alg, sig=sig)
 
 
@@ -1739,7 +1743,10 @@ class PackedX509AttestationStatement(PackedAttestationStatement):
   """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes, x5c: Sequence[bytes]):
+      self, *, alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value], 
+      sig: bytes, 
+      x5c: Sequence[bytes]):
     super().__init__(alg=alg, sig=sig)
     self.x5c = x5c
 
@@ -1763,7 +1770,10 @@ class PackedECDAAAttestationStatement(PackedAttestationStatement):
   """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ecdaa_key_id: bytes):
+      self, *, alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value], 
+      sig: bytes,
+      ecdaa_key_id: bytes):
     super().__init__(alg=alg, sig=sig)
     self.ecdaa_key_id = ecdaa_key_id
 
@@ -1791,7 +1801,9 @@ class TPMAttestationStatement(AttestationStatement):
   """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
+      self, *, alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value], 
+      sig: bytes, ver: str,
       cert_info: bytes, pub_area: bytes):
     super().__init__(alg=alg, sig=sig)
     self.ver = ver
@@ -1826,10 +1838,12 @@ class TPMX509AttestationStatement(TPMAttestationStatement):
   """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
+      self, *, alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value], 
+      sig: bytes, ver: str,
       cert_info: bytes, pub_area: bytes, x5c: Sequence[bytes]):
     super().__init__(
-      self, alg=alg, sig=sig, ver=ver, cert_info=cert_info, pub_area=pub_area)
+      alg=alg, sig=sig, ver=ver, cert_info=cert_info, pub_area=pub_area)
     self.x5c = x5c
 
 
@@ -1859,10 +1873,12 @@ class TPMECDAAAttestationStatement(TPMAttestationStatement):
   """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes, ver: str,
+      self, *, alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value], 
+      sig: bytes, ver: str,
       cert_info: bytes, pub_area: bytes, ecdaa_key_id: bytes):
     super().__init__(
-      self, alg=alg, sig=sig, ver=ver, cert_info=cert_info, pub_area=pub_area)
+      alg=alg, sig=sig, ver=ver, cert_info=cert_info, pub_area=pub_area)
     self.ecdaa_key_id = ecdaa_key_id
 
 
@@ -1886,7 +1902,9 @@ class AndroidKeyAttestationStatement(AttestationStatement):
   """
 
   def __init__(
-      self, *, alg: COSEAlgorithmIdentifier, sig: bytes,
+      self, *, alg: Union[
+        COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value], 
+      sig: bytes,
       x5c: Sequence[bytes]):
     super().__init__(alg=alg, sig=sig)
     self.x5c = x5c

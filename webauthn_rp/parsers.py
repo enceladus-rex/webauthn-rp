@@ -1,4 +1,4 @@
-import cbor
+import cbor # type: ignore
 import json
 import struct
 import io
@@ -7,7 +7,7 @@ import binascii
 
 from functools import singledispatch
 from enum import Enum
-from typing import Optional, Union, Sequence, Any, Tuple, Set
+from typing import Optional, Union, Sequence, Any, Tuple, Set, List, cast
 
 from .constants import (
   EC2_P_256_NUMBER_LENGTH,
@@ -74,9 +74,8 @@ def parse_dictionary_field(
     valid_types: Union[type, Sequence[type]],
     dictionary: dict,
     required: bool = True) -> Any:
-  if type(valid_types) is type:
-    valid_types = [valid_types]
-  
+  valid_types_seq: Sequence[type] = [valid_types] if ( # type: ignore
+    type(valid_types) is type) else valid_types
   field = dictionary.get(field_key)
   if field is None:
     if not required: return
@@ -84,10 +83,10 @@ def parse_dictionary_field(
       '{} is required in dictionary keys'.format(
         field_key))
 
-  if type(field) not in valid_types:
+  if type(field) not in valid_types_seq:
     raise ValidationError(
       '{} type must be one of {} not {}'.format(field_key,
-        str(valid_types),
+        str(valid_types_seq),
         str(type(field))))
 
   return field
@@ -116,9 +115,7 @@ def bytes_from_array(arr: Sequence[Any]) -> bytes:
 
 
 def parse_public_key_credential(data: dict) -> PublicKeyCredential:
-  print('parsing pkc', data)
   check_unsupported_keys({'id', 'rawId', 'response', 'type'}, data)
-  print('checked for unsupported keys')
   id_ = parse_dictionary_field('id', str, data)
   type_ = parse_dictionary_field('type', str, data)
   raw_id = bytes_from_base64(parse_dictionary_field(
@@ -145,11 +142,9 @@ def parse_public_key_credential(data: dict) -> PublicKeyCredential:
     )
   else:
     # Parse AuthenticatorAssertionResponse
-    print('parsing assertion response')
     check_unsupported_keys(
       {'clientDataJSON', 'authenticatorData', 'signature', 'userHandle'}, response)
     
-    print('checked for unsupported key')
     authenticator_data = bytes_from_base64(parse_dictionary_field(
       'authenticatorData', str, response))
     signature = bytes_from_base64(parse_dictionary_field(
@@ -178,7 +173,9 @@ def parse_credential_public_key_kty(
     1, (int, str), credential_public_key)
 
   try:
-    kty = COSEKeyType(kty_raw)
+    kty = cast(
+      Union[COSEKeyType.Name, COSEKeyType.Value],
+      COSEKeyType(kty_raw)) # type: ignore
   except KeyError:
     raise ValidationError(
       'Invalid credential public key type {}'.format(kty_raw))
@@ -187,13 +184,14 @@ def parse_credential_public_key_kty(
 
 def parse_credential_public_key_alg(
     credential_public_key: dict) -> Union[
-      COSEAlgorithmIdentifier.Name,
-      COSEAlgorithmIdentifier.Value]:
+      COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]:
   alg_raw = parse_dictionary_field(
     3, (int, str), credential_public_key)
 
   try:
-    alg = COSEAlgorithmIdentifier(alg_raw)
+    alg = cast(
+      Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
+      COSEAlgorithmIdentifier(alg_raw)) # type: ignore
   except KeyError:
     raise ValidationError(
       'Invalid credential public key alg type {}'.format(alg_raw))
@@ -201,18 +199,18 @@ def parse_credential_public_key_alg(
 
 
 def parse_credential_public_key_key_ops(
-    credential_public_key: dict) -> Sequence[
-      Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]:
+    credential_public_key: dict) -> Optional[Sequence[
+      Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]:
   key_ops_raw = parse_dictionary_field(
     4, (list, tuple), credential_public_key, False)
   
-  if key_ops_raw is None: return
+  if key_ops_raw is None: return None
 
   if len(key_ops_raw) < 1:
     raise ValidationError(
       'Credential public key key_ops(4) must have at least 1 element')
 
-  key_ops = []
+  key_ops: List[Union[COSEKeyOperation.Name, COSEKeyOperation.Value]] = []
   for i, ko in enumerate(key_ops_raw):
     if type(ko) not in (str, int):
       raise ValidationError((
@@ -220,7 +218,10 @@ def parse_credential_public_key_key_ops(
         ' text string or an integer').format(i))
     
     try:
-      key_ops.append(COSEAlgorithmIdentifier(ko))
+      key_ops.append( # type: ignore
+        cast(
+          Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
+          COSEAlgorithmIdentifier(ko))) # type: ignore
     except KeyError:
       raise ValidationError(
         'Invalid credential public key key op {}'.format(
@@ -277,7 +278,7 @@ def parse_ec2_public_key_crv(
     credential_public_key: dict) -> Union[EC2KeyType.Name, EC2KeyType.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
-    return EC2KeyType(crv_raw)
+    return EC2KeyType(crv_raw) # type: ignore
   except KeyError:
     raise ValidationError('Invalid EC2 curve {}'.format(crv_raw))
 
@@ -286,7 +287,7 @@ def parse_okp_public_key_crv(
     credential_public_key: dict) -> Union[OKPKeyType.Name, OKPKeyType.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
-    return OKPKeyType(crv_raw)
+    return OKPKeyType(crv_raw) # type: ignore
   except KeyError:
     raise ValidationError('Invalid OKP curve {}'.format(crv_raw))
 
@@ -450,14 +451,14 @@ def parse_attestation_statement_alg(
   alg = parse_dictionary_field('alg', (int, str), att_stmt)
   
   try:
-    alg = COSEAlgorithmIdentifier(alg)
+    alg = COSEAlgorithmIdentifier(alg) # type: ignore
   except KeyError:
     raise ValidationError('Invalid algorithm identifier {}'.format(alg))
   return alg
 
 
 def parse_attestation_statement_x5c(
-    att_stmt: dict) -> bytes:
+    att_stmt: dict) -> Sequence[bytes]:
   x5c = parse_dictionary_field('x5c', (list, tuple), att_stmt)
   
   for i, e in enumerate(x5c):
@@ -511,7 +512,7 @@ def parse_tpm_attestation_statement(
   if 'ecdaaKeyId' in att_stmt:
     supported_keys.add('ecdaaKeyId')
     check_unsupported_keys(supported_keys, att_stmt)
-    ecdaa_key_id = parse_attestation_statement_ecdaa_key_id(att_stmt)
+    ecdaa_key_id = parse_dictionary_field('ecdaaKeyId', bytes, att_stmt)
     return TPMECDAAAttestationStatement(
       alg=alg, sig=sig, ver=ver, cert_info=cert_info, 
       pub_area=pub_area, ecdaa_key_id=ecdaa_key_id)
@@ -535,30 +536,27 @@ def parse_android_key_attestation_statement(
 
 def parse_android_safetynet_attestation_statement(
     att_stmt: dict) -> AndroidSafetyNetAttestationStatement:
-  supported_keys = {'alg', 'sig', 'ver', 'response'}
-  alg = parse_attestation_statement_alg(att_stmt)
-  sig = parse_dictionary_field('sig', bytes, att_stmt)  
+  supported_keys = {'ver', 'response'}
   ver = parse_dictionary_field('ver', str, att_stmt)
   response = parse_dictionary_field('response', bytes, att_stmt)
   check_unsupported_keys(supported_keys, att_stmt)
   return AndroidSafetyNetAttestationStatement(
-    alg=alg, sig=sig, ver=ver, response=response)
+    ver=ver, response=response)
 
 
 def parse_fido_u2f_attestation_statement(
     att_stmt: dict) -> FIDOU2FAttestationStatement:
-  supported_keys = {'alg', 'sig', 'x5c'}
-  alg = parse_attestation_statement_alg(att_stmt)
+  supported_keys = {'sig', 'x5c'}
   sig = parse_dictionary_field('sig', bytes, att_stmt)  
   x5c = parse_attestation_statement_x5c(att_stmt)
   check_unsupported_keys(supported_keys, att_stmt)
   return FIDOU2FAttestationStatement(
-    alg=alg, sig=sig, x5c=x5c)
+    sig=sig, x5c=x5c)
 
 
 def parse_none_attestation_statement(
     att_stmt: dict) -> NoneAttestationStatement:
-  check_unsupported_keys({}, att_stmt)
+  check_unsupported_keys(set(), att_stmt)
   return NoneAttestationStatement()
 
 
@@ -582,29 +580,32 @@ def parse_client_data(client_data_JSON: bytes) -> Optional[CollectedClientData]:
   challenge = client_data.get('challenge')
   origin = client_data.get('origin')
 
-  if all(isinstance(x, str) for x in (type_, challenge, origin)):
-    token_binding_data = client_data.get('tokenBinding')
-    token_binding = None
-    if token_binding_data is not None:
-      token_binding_status = token_binding_data.get('status')
-      token_binding_id = token_binding_data.get('id')
+  if not all(isinstance(x, str) for x in (type_, challenge, origin)):
+    raise ValidationError('Invalid client data parsed')
 
-      if token_binding_status == TokenBindingStatus.PRESENT and (
-          token_binding_id is None):
-        raise TokenBindingError(
-          'Token Binding must contain an id if status is {}'.format(
-            TokenBindingStatus.PRESENT
-          ))
-      
-      token_binding = TokenBinding(
-        status=token_binding_status, id=token_binding_id)
+  token_binding_data = client_data.get('tokenBinding')
+  token_binding = None
+  if token_binding_data is not None:
+    token_binding_status = token_binding_data.get('status')
+    token_binding_id = token_binding_data.get('id')
 
-    return CollectedClientData(
-      type=type_,
-      challenge=challenge,
-      origin=origin,
-      token_binding=token_binding
-    )
+    if token_binding_status == TokenBindingStatus.PRESENT and (
+        token_binding_id is None):
+      raise TokenBindingError(
+        'Token Binding must contain an id if status is {}'.format(
+          TokenBindingStatus.PRESENT
+        ))
+    
+    token_binding = TokenBinding(
+      status=token_binding_status, id=token_binding_id)
+
+  return CollectedClientData(
+    type=type_,
+    challenge=challenge,
+    origin=origin,
+    token_binding=token_binding
+  )
+  
 
 
 def parse_cose_key(
@@ -612,7 +613,9 @@ def parse_cose_key(
   if type(credential_public_key) is bytes:
     credential_public_key = cbor.loads(credential_public_key)
     
-  cose_key_type = COSEKeyType(credential_public_key[1])
+  cose_key_type = cast(
+    Union[COSEKeyType.Name, COSEKeyType.Value],
+    COSEKeyType(credential_public_key[1])) # type: ignore
   
   try:
     cpk_parser = getattr(CredentialPublicKeyParser, cose_key_type.name)
@@ -651,8 +654,6 @@ def parse_authenticator_data(
         io.BytesIO(credential_public_key_bytes))
     except ValueError:
       raise DecodingError('Could not decode the credential public key CBOR')
-
-    print('credentialPublicKey', credential_public_key, bytes_read)
 
     if type(credential_public_key) is not dict:
       raise ValidationError('Credential public key must be a dictionary')
@@ -700,8 +701,6 @@ def parse_attestation(attestation_object: bytes) -> Tuple[
     if type(fmt) is not str:
       raise ValidationError('fmt must be a text string')
 
-    print('fmt', fmt)
-
     try:
       asfi = AttestationStatementFormatIdentifier(fmt)
     except KeyError:
@@ -719,11 +718,7 @@ def parse_attestation(attestation_object: bytes) -> Tuple[
     raise ValidationError('attStmt must be a dictionary')
 
   try:
-    print('asfi.name', asfi.name)
-    print(AttestationStatementParser.NONE)
-    print(list(AttestationStatementParser))
     as_parser = getattr(AttestationStatementParser, asfi.name)
-    print('as_parser', as_parser)
     attestation_statement = as_parser(att_stmt)
   except AttributeError:
     raise ValidationError('Unsupported attestation statement {}'.format(

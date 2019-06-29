@@ -1,12 +1,12 @@
-import cbor
+import cbor # type: ignore
 import hashlib
 import json
 
 from typing import Optional, Set, Sequence, Any, cast
 
-import cryptography
-from cryptography.hazmat.primitives.hashes import SHA256
-from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+import cryptography # type: ignore
+from cryptography.hazmat.primitives.hashes import SHA256 # type: ignore
+from cryptography.hazmat.primitives.asymmetric.ec import ECDSA # type: ignore
 
 from .converters import cryptography_public_key, jsonify
 from .errors import (
@@ -17,6 +17,7 @@ from .errors import (
   VerificationError,
   NotFoundError,
   RegistrationError,
+  SignatureCountError,
   ParseError)
 from .parsers import (
   parse_client_data, parse_attestation, parse_authenticator_data)
@@ -44,13 +45,13 @@ class CredentialsBackend:
     self.registrar = registrar
 
   def handle_creation_options(
-      self, *, options: CredentialCreationOptions, metadata: Any = None):
-    if not self.registrar.register_creation_options(options, metadata):
+      self, *, options: CredentialCreationOptions):
+    if not self.registrar.register_creation_options(options):
       raise RegistrationError('Failed to register creation options')
 
   def handle_request_options(
-      self, *, options: CredentialRequestOptions, metadata: Any = None):
-    if not self.registrar.register_request_options(options, metadata):
+      self, *, options: CredentialRequestOptions):
+    if not self.registrar.register_request_options(options):
       raise RegistrationError('Failed to register request options')
 
   def handle_credential_creation(
@@ -60,14 +61,12 @@ class CredentialsBackend:
       expected_challenge: bytes,
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
-      expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
-      metadata: Any = None):
+      expected_extensions: Optional[Set[ExtensionIdentifier]] = None):
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
       raise ParseError('Could not parse the client data dictionary')
     
-    print('collected_client_data', jsonify(collected_client_data))
     if collected_client_data.type != 'webauthn.create':
       raise ValidationError('Invalid client data type {}'.format(
         collected_client_data.type))
@@ -109,7 +108,6 @@ class CredentialsBackend:
     rp_id_hash = hashlib.sha256(rp.id.encode('utf-8')).digest()
 
     attestation, raw_att_obj = parse_attestation(response.attestation_object)
-    print('rp_id_hash', attestation.auth_data.rp_id_hash, rp_id_hash)
     if attestation.auth_data.rp_id_hash != rp_id_hash:
       raise IntegrityError('RP ID hash does not match')
 
@@ -129,7 +127,9 @@ class CredentialsBackend:
             e.key) is None:
           raise ValidationError('Missing extension {}'.format(e.value))
 
-    print(type(attestation.att_stmt))
+    assert attestation.auth_data is not None
+    assert attestation.auth_data.attested_credential_data is not None
+
     att_type, trusted_path = attest(
       attestation.att_stmt,
       attestation.auth_data.attested_credential_data.credential_public_key,
@@ -143,7 +143,6 @@ class CredentialsBackend:
           credential=credential, att=attestation,
           att_type=att_type, user=user, rp=rp,
           trusted_path=trusted_path,
-          metadata=metadata,
         ):
       raise RegistrationError('Failed to register credential creation')
   
@@ -157,8 +156,7 @@ class CredentialsBackend:
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
-      ignore_clone_error: bool = False,
-      metadata: Any = None) -> bool:
+      ignore_clone_error: bool = False):
     response = cast(AuthenticatorAssertionResponse, credential.response)
     if allow_credentials is not None:
       allowed = False
@@ -209,7 +207,7 @@ class CredentialsBackend:
           'there must be a user handle'))
       
       valid_credential = self.registrar.check_user_owns_credential(
-        response.user_handle, credential.raw_id, **registrar_kwargs)
+        response.user_handle, credential.raw_id)
       
       if not valid_credential:
         raise ValidationError('User does not own credential')
@@ -295,6 +293,5 @@ class CredentialsBackend:
           credential=credential,
           authenticator_data=auth_data,
           user=user, rp=rp,
-          metadata=metadata,
         ):
       raise RegistrationError('Failed to register credential request')

@@ -81,8 +81,9 @@ class RegistrarImpl(CredentialsRegistrar):
       att_type: AttestationType,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None,
-      metadata: Any = None) -> bool:
+      trusted_path: Optional[TrustedPath] = None) -> bool:
+    assert att.auth_data is not None
+    assert att.auth_data.attested_credential_data is not None
     cpk = att.auth_data.attested_credential_data.credential_public_key
 
     user_model = User.by_user_handle(user.id)
@@ -102,8 +103,7 @@ class RegistrarImpl(CredentialsRegistrar):
       self, credential: PublicKeyCredential,
       authenticator_data: AuthenticatorData,
       user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity,
-      metadata: Any = None) -> bool:
+      rp: PublicKeyCredentialRpEntity) -> bool:
     credential_model = Credential.query.filter_by(id=credential.raw_id).first()
     credential_model.signature_count = authenticator_data.sign_count
     db.session.commit()

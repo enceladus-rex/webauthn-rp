@@ -10,8 +10,8 @@ from .types import CredentialPublicKey, COSEKeyType
 def validate_kty(
     validator_ktys: Union[str, Sequence[str]],
     credential_public_key: CredentialPublicKey):
-  if type(validator_ktys) is str:
-    validator_ktys = [validator_ktys]
+  validator_ktys: Sequence[str] = [validator_ktys] if ( # type: ignore
+    type(validator_ktys) is str) else validator_ktys
 
   for kty in validator_ktys:
     if credential_public_key.kty.name == kty: return
@@ -25,9 +25,8 @@ def validate_kty(
 def validate_key_ops(
     validator_key_ops: Union[str, Sequence[str]],
     credential_public_key: CredentialPublicKey):
-  if type(validator_key_ops) is str:
-    validator_key_ops = [validator_key_ops]
-
+  validator_key_ops: Sequence[str] = [validator_key_ops] if ( # type: ignore
+    type(validator_key_ops) is str) else validator_key_ops
   if len(validator_key_ops) == 0: return
   if credential_public_key.key_ops is None:
     raise ValidationError('Found no key ops')
@@ -52,7 +51,8 @@ def ecdsa_validator(
 
 
 def eddsa_validator(
-    credential_public_key: CredentialPublicKey):
+    credential_public_key: CredentialPublicKey,
+    sign: bool = False, verify: bool = False):
   validate_kty('OKP', credential_public_key)
   ops = []
   if sign: ops.append('SIGN')
