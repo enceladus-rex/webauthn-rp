@@ -1,10 +1,11 @@
+import setuptools
 from distutils.core import setup
 from os.path import dirname, join
 
 
 setup(
   name='webauthn-rp',
-  version='0.0.1',
+  version='0.0.2',
   description='Web Authentication Relying Party Library',
   author='enceladus-rex',
   packages=['webauthn_rp'],
