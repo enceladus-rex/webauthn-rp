@@ -1,3 +1,6 @@
+![Travis Build](https://img.shields.io/travis/com/enceladus-rex/webauthn-rp/master.svg)
+![Codecov](https://img.shields.io/codecov/c/github/enceladus-rex/webauthn-rp/master.svg)
+
 <p align="center">
 <img src="https://github.com/enceladus-rex/webauthn-rp/raw/master/docs/source/_static/webauthn-rp-logo.png" />
 </p>
