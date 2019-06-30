@@ -2,7 +2,7 @@ from functools import singledispatch
 
 import cryptography
 from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
-from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512)
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
 
 from .converters import cryptography_public_key
 from .errors import UnimplementedError, ValidationError, VerificationError

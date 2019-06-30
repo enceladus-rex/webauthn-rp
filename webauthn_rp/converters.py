@@ -6,18 +6,10 @@ from typing import Any, Union
 
 import cbor
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric.ec import \
-    SECP256R1
-from cryptography.hazmat.primitives.asymmetric.ec import \
-    SECP384R1
-from cryptography.hazmat.primitives.asymmetric.ec import \
-    SECP521R1
-from cryptography.hazmat.primitives.asymmetric.ec import \
-    EllipticCurvePublicNumbers
-from cryptography.hazmat.primitives.asymmetric.ed448 import \
-    Ed448PublicKey
-from cryptography.hazmat.primitives.asymmetric.ed25519 import \
-    Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ec import (
+    SECP256R1, SECP384R1, SECP521R1, EllipticCurvePublicNumbers)
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from .errors import UnimplementedError, ValidationError
 from .types import (CredentialPublicKey, EC2CredentialPublicKey,

@@ -5,8 +5,8 @@ import cryptography
 import cryptography.x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.ec import (
-    EllipticCurvePublicKey, ECDSA, SECP256R1)
-from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512)
+    ECDSA, SECP256R1, EllipticCurvePublicKey)
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
 from cryptography.x509 import Certificate
 
 from .converters import cryptography_public_key

@@ -1,14 +1,10 @@
 from enum import Enum
 from typing import Any, ClassVar, Optional, Sequence, Type, TypeVar, Union
 
-from cryptography.hazmat.primitives.asymmetric.ec import \
-    EllipticCurvePublicKey
-from cryptography.hazmat.primitives.asymmetric.ed448 import \
-    Ed448PublicKey
-from cryptography.hazmat.primitives.asymmetric.ed25519 import \
-    Ed25519PublicKey
-from cryptography.hazmat.primitives.asymmetric.rsa import \
-    RSAPublicKey
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.x509 import Certificate
 
 from .utils import camel_to_snake_case
