@@ -22,6 +22,8 @@ setup_requirements = [
 
 test_requirements = [
     'pytest~=4.4',
+    'pytest-cov~=2.7',
+    'codecov~=2.0',
     'coverage~=4.5',
     'yapf~=0.27',
     'mypy~=0.701',

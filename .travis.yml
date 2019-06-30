@@ -5,7 +5,8 @@ install:
   - pip install .[test]
 script:
   - mypy --ignore-missing-imports webauthn_rp
-  - pytest
+  - pytest --cov=webauthn_rp
   - yapf --recursive webauthn_rp --diff
   - yapf --recursive tests --diff
   - yapf setup.py --diff
+  - codecov
