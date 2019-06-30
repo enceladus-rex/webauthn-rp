@@ -1,6 +1,7 @@
-import setuptools
 from distutils.core import setup
 from os.path import dirname, join
+
+import setuptools
 
 with open('requirements.txt') as rt:
   requirements_txt = rt.read()

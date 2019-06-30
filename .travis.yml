@@ -1,10 +1,6 @@
 language: python
 python:
-  - "3.3"
-  - "3.4"
-  - "3.5"
   - "3.6"
-  - "3.7"
 install:
   - pip install .[test]
 script:
@@ -13,6 +9,3 @@ script:
   - yapf --recursive webauthn_rp --diff
   - yapf --recursive tests --diff
   - yapf setup.py --diff
-  - isort --recursive webauthn_rp --check-only
-  - isort --recursive tests --check-only
-  - isort setup.py --check-only
