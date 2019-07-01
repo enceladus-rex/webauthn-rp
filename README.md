@@ -1,16 +1,18 @@
-![Travis Build](https://img.shields.io/travis/com/enceladus-rex/webauthn-rp/master.svg)
-![Codecov](https://img.shields.io/codecov/c/github/enceladus-rex/webauthn-rp/master.svg)
-
 <p align="center">
+<br />
 <img src="https://github.com/enceladus-rex/webauthn-rp/raw/master/docs/source/_static/webauthn-rp-logo.png" />
 </p>
 <br />
 <hr />
 
+![Travis Build](https://img.shields.io/travis/com/enceladus-rex/webauthn-rp/master.svg)
+![Codecov](https://img.shields.io/codecov/c/github/enceladus-rex/webauthn-rp/master.svg)
+![Read the Docs](https://img.shields.io/readthedocs/webauthn-rp/latest.svg)
+
 WebAuthn-RP is a Python 3 library to manage credentials that conform to the 
 [Web Authentication specification](https://www.w3.org/TR/webauthn/).
 
-You can use it on the server-side to interface with your database and routing layers. It is 
+You can use it as a relying party on the server-side to interface with your database and routing layers. It is 
 designed to work across different frameworks without any changes.
 
 ## Getting Started
