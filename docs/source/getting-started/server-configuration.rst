@@ -116,7 +116,7 @@ registration and authentication so that you are able to verify it.
 That's the bare minimum you'll need in order to get started. Next, we'll revisit
 the registrar in order to implement the required functions.
 
-Implementing Registrar
+Implementing the Registrar
 ----------------------
 
 Although the register functions are passed a lot of data, we'll only focus on the
@@ -135,18 +135,41 @@ Registration Request
 
 When a user client wants to register an authenticator with a Relying Party, it'll first need
 to request some options from the Relying Party that specify a number of things, namely what
-kinds of authenticators are acceptable and which challenge should be used.
+kinds of authenticators are acceptable and which challenge should be used. In this particular
+example, the user will be registering for the first time and so also provides a desired username.
+
+.. literalinclude:: ../../../examples/none-attestation/app.py
+   :pyobject: registration_request
+
+To reidentify the challenge, note that we're also sending a unique ID with the JSON response.
 
 Registration Response
 ---------------------
 
+If the client successfully is able to use the creation options from the registration request
+to generate an attestation on the user's behalf, then this endpoint will verify the attestation
+and finish the user's registration if valid.
 
+.. literalinclude:: ../../../examples/none-attestation/app.py
+   :pyobject: registration_response
+
+Along with using the credentials backend to verify the challenge and the rest of the attestation,
+object we're also checking to make sure that the response was sent before the specified timeout.
 
 Authentication Request
 ----------------------
 
+The authentication flow is very much like the registration flow, just that credential
+request options are returned instead of credential creation options.
 
+.. literalinclude:: ../../../examples/none-attestation/app.py
+   :pyobject: authentication_request
 
 Authentication Response
 -----------------------
 
+Finally, the authentication flow also mirrors the registration flow, just that an assertion
+is expected rather than an attestation object. 
+
+.. literalinclude:: ../../../examples/none-attestation/app.py
+   :pyobject: authentication_response
