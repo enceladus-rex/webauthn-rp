@@ -5,7 +5,7 @@ import setuptools
 
 
 def get_version():
-  with open(join(__file__, 'webauthn_rp/__init__.py'), 'r') as f:
+  with open(join(dirname(__file__), 'webauthn_rp/__init__.py'), 'r') as f:
     for line in f.read().splitlines():
       if line.startswith('__version__'):
         delim = '"' if '"' in line else "'"
