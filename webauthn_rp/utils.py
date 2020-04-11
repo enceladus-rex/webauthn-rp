@@ -1,9 +1,12 @@
 import base64
+import re
 from urllib.parse import urlparse
+
+from webauthn_rp.errors import ValidationError
 
 
 def snake_to_camel_case(s: str) -> str:
-  chunks = s.split('_')
+  chunks = [x for x in re.split(r'_+', s) if x]
   capped = [x[0].upper() + x[1:] for x in chunks[1:]]
   if chunks:
     return chunks[0] + ''.join(capped)
@@ -31,6 +34,10 @@ def url_base64_decode(s: str) -> bytes:
 
 def extract_origin(url: str) -> str:
   parsed_url = urlparse(url)
-  origin = parsed_url.netloc
-  if ':' in origin: origin = origin.split(':')[0]
-  return origin
+  if parsed_url.netloc is None:
+    raise ValidationError('Origin must contain hostname')
+
+  if parsed_url.scheme is None:
+    raise ValidationError('Origin must contain scheme')
+
+  return parsed_url.scheme + '://' + parsed_url.netloc

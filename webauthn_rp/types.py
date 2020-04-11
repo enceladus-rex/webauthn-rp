@@ -1,15 +1,25 @@
 from enum import Enum
 from typing import Any, ClassVar, Optional, Sequence, Type, TypeVar, Union
 
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
-from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ec import (
+    EllipticCurvePrivateKey, EllipticCurvePublicKey)
+from cryptography.hazmat.primitives.asymmetric.ed448 import (Ed448PrivateKey,
+                                                             Ed448PublicKey)
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey, Ed25519PublicKey)
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.x509 import Certificate
 
-from .utils import camel_to_snake_case
+from webauthn_rp.utils import camel_to_snake_case
 
-PublicKey = Union[EllipticCurvePublicKey, Ed25519PublicKey, Ed448PublicKey]
+EC2PublicKey = Union[EllipticCurvePublicKey]
+OKPPublicKey = Union[Ed25519PublicKey, Ed448PublicKey]
+
+EC2PrivateKey = Union[EllipticCurvePrivateKey]
+OKPPrivateKey = Union[Ed25519PrivateKey, Ed448PrivateKey]
+
+PublicKey = Union[EC2PublicKey, OKPPublicKey]
+PrivateKey = Union[EC2PrivateKey, OKPPrivateKey]
 TrustedPath = Optional[Sequence[Certificate]]
 
 
@@ -41,7 +51,6 @@ class PublicKeyCredentialEntity:
   References:
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialentity
   """
-
   def __init__(self, *, name: str, icon: Optional[str] = None):
     self.name = name
     self.icon = icon
@@ -76,7 +85,6 @@ class PublicKeyCredentialRpEntity(PublicKeyCredentialEntity):
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialrpentity
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialentity
   """
-
   def __init__(self, *, name: str, icon: Optional[str] = None, id: str):
     super().__init__(name=name, icon=icon)
     self.id = id
@@ -128,7 +136,6 @@ class PublicKeyCredentialUserEntity(PublicKeyCredentialEntity):
     * https://w3.org/TR/webauthn/#user-handle
     * https://w3.org/TR/webauthn/#sctn-user-handle-privacy
   """
-
   def __init__(self,
                *,
                name: str,
@@ -195,7 +202,6 @@ class NameValueEnumsContainer(type):
   A metaclass used to enable Enums that can take on a string and integer type
   for a name and value respectively.
   """
-
   def __call__(cls: Any, value: Union[int, str]) -> Any:  # type: ignore
     if type(value) is int:
       return cls.Value(value)
@@ -228,7 +234,6 @@ class COSEAlgorithmIdentifier(metaclass=NameValueEnumsContainer):
     * https://w3.org/TR/webauthn/#typedefdef-cosealgorithmidentifier
     * https://iana.org/assignments/cose/cose.xhtml#algorithms
   """
-
   class Name(Enum):
     ES256 = 'ES256'
     ES384 = 'ES384'
@@ -260,10 +265,9 @@ class PublicKeyCredentialParameters:
   References:
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialparameters
   """
-
-  def __init__(
-      self, *, type: PublicKeyCredentialType,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]):
+  def __init__(self, *, type: PublicKeyCredentialType,
+               alg: Union[COSEAlgorithmIdentifier.Name,
+                          COSEAlgorithmIdentifier.Value]):
     self.type = type
     self.alg = alg
 
@@ -291,7 +295,6 @@ class PublicKeyCredentialDescriptor:
   References:
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialdescriptor
   """
-
   def __init__(self,
                *,
                type: PublicKeyCredentialType,
@@ -400,7 +403,6 @@ class TxAuthGenericArg:
   References
     * https://w3.org/TR/webauthn/#sctn-generic-txauth-extension
   """
-
   def __init__(self, *, content_type: str, content: bytes):
     self.content_type = content_type
     self.content = content
@@ -450,7 +452,6 @@ class Coordinates:
       * https://w3.org/TR/webauthn/#sctn-location-extension
       * https://w3.org/TR/geolocation-API/#coordinates_interface
   """
-
   def __init__(self,
                *,
                latitude: float,
@@ -489,7 +490,6 @@ class AuthenticatorBiometricPerfBounds:
   References:
     * w3.org/TR/webauthn/#sctn-authenticator-biometric-criteria-extension
   """
-
   def __init__(self, *, FAR: float, FRR: float):
     self.FAR = FAR
     self.FRR = FRR
@@ -595,7 +595,6 @@ class AuthenticationExtensionsClientInputs:
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientinputs
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientoutputs
   """
-
   def __init__(
       self,
       *,
@@ -653,7 +652,6 @@ class AuthenticationExtensionsClientOutputs:
   References:
     * https://w3.org/TR/webauthn/#dictdef-authenticationextensionsclientoutputs
   """
-
   def __init__(self,
                *,
                appid: Optional[bool] = None,
@@ -700,7 +698,6 @@ class AuthenticatorSelectionCriteria:
   References:
     * https://w3.org/TR/webauthn/#dictdef-authenticatorselectioncriteria
   """
-
   def __init__(
       self,
       *,
@@ -754,7 +751,6 @@ class PublicKeyCredentialCreationOptions:
   References:
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialcreationoptions
   """
-
   def __init__(
       self,
       *,
@@ -813,7 +809,6 @@ class PublicKeyCredentialRequestOptions:
   References:
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialrequestoptions
   """
-
   def __init__(
       self,
       *,
@@ -845,7 +840,6 @@ class CredentialCreationOptions:
   References:
     * https://w3.org/TR/webauthn/#credentialcreationoptions-extension
   """
-
   def __init__(self, *, public_key: PublicKeyCredentialCreationOptions):
     self.public_key = public_key
 
@@ -894,7 +888,6 @@ class CredentialRequestOptions:
     * https://w3.org/TR/webauthn/#credentialrequestoptions-extension
     * w3.org/TR/credential-management-1/#dictdef-credentialrequestoptions
   """
-
   def __init__(self,
                *,
                mediation: CredentialMediationRequirement = (
@@ -917,7 +910,6 @@ class AuthenticatorResponse:
   References:
     * https://w3.org/TR/webauthn/#authenticatorresponse
   """
-
   def __init__(self, *, client_data_JSON: bytes):
     self.client_data_JSON = client_data_JSON
 
@@ -949,7 +941,6 @@ class AuthenticatorAttestationResponse(AuthenticatorResponse):
     * https://w3.org/TR/webauthn/#authenticatorattestationresponse
     * https://w3.org/TR/webauthn/#authenticatorresponse
   """
-
   def __init__(self, *, client_data_JSON: bytes, attestation_object: bytes):
     super().__init__(client_data_JSON=client_data_JSON)
     self.attestation_object = attestation_object
@@ -979,7 +970,6 @@ class AuthenticatorAssertionResponse(AuthenticatorResponse):
     * https://w3.org/TR/webauthn/#authenticatorassertionresponse
     * https://w3.org/TR/webauthn/#authenticatorresponse
   """
-
   def __init__(self,
                *,
                client_data_JSON: bytes,
@@ -1007,7 +997,6 @@ class Credential:
   References:
     * https://w3.org/TR/credential-management-1/#credential
   """
-
   def __init__(self, *, id: str, type: str):
     self.id = id
     self.type = type
@@ -1039,7 +1028,6 @@ class PublicKeyCredential(Credential):
     * https://w3.org/TR/webauthn/#iface-pkcredential
     * https://w3.org/TR/credential-management-1/#credential
   """
-
   def __init__(self, *, id: str, type: str, raw_id: bytes,
                response: AuthenticatorResponse):
     super().__init__(id=id, type=type)
@@ -1081,7 +1069,6 @@ class TokenBinding:
   References:
     * https://w3.org/TR/webauthn/#dictdef-tokenbinding
   """
-
   def __init__(self, *, status: TokenBindingStatus, id: Optional[str] = None):
     self.status = status
     self.id = id
@@ -1111,7 +1098,6 @@ class CollectedClientData:
   References:
     * https://w3.org/TR/webauthn/#dictdef-collectedclientdata
   """
-
   def __init__(self,
                *,
                type: str,
@@ -1165,7 +1151,6 @@ class COSEKeyType(metaclass=NameValueEnumsContainer):
   References:
     * https://cose-wg.github.io/cose-spec/#rfc.section.13
   """
-
   class Name(Enum):
     OKP = 'OKP'
     EC2 = 'EC2'
@@ -1204,7 +1189,6 @@ class COSEKeyOperation(metaclass=NameValueEnumsContainer):
   References:
     * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
   """
-
   class Name(Enum):
     SIGN = 'sign'
     VERIFY = 'verify'
@@ -1244,7 +1228,6 @@ class EC2KeyType(metaclass=NameValueEnumsContainer):
   References:
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
   """
-
   class Name(Enum):
     P_256 = 'P-256'
     P_384 = 'P-384'
@@ -1269,7 +1252,6 @@ class OKPKeyType(metaclass=NameValueEnumsContainer):
   References:
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
   """
-
   class Name(Enum):
     ED25519 = 'Ed25519'
     ED448 = 'Ed448'
@@ -1322,16 +1304,15 @@ class CredentialPublicKey:
     * https://cose-wg.github.io/cose-spec/#rfc.section.7
     * https://cose-wg.github.io/cose-spec/#rfc.section.7.1
   """
-
   def __init__(
       self,
       *,
       kty: Union[COSEKeyType.Name, COSEKeyType.Value],
       kid: Optional[bytes] = None,
-      alg: Optional[Union[COSEAlgorithmIdentifier.
-                          Name, COSEAlgorithmIdentifier.Value]] = None,
-      key_ops: Optional[Sequence[
-          Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]] = None,
+      alg: Optional[Union[COSEAlgorithmIdentifier.Name,
+                          COSEAlgorithmIdentifier.Value]] = None,
+      key_ops: Optional[Sequence[Union[COSEKeyOperation.Name,
+                                       COSEKeyOperation.Value]]] = None,
       base_IV: Optional[bytes] = None):
     self.kty = kty
     self.kid = kid
@@ -1390,16 +1371,15 @@ class EC2CredentialPublicKey(CredentialPublicKey):
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1.1
   """
-
   def __init__(
       self,
       *,
       kty: Union[COSEKeyType.Name, COSEKeyType.Value],
       kid: Optional[bytes] = None,
-      alg: Optional[Union[COSEAlgorithmIdentifier.
-                          Name, COSEAlgorithmIdentifier.Value]] = None,
-      key_ops: Optional[Sequence[
-          Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]] = None,
+      alg: Optional[Union[COSEAlgorithmIdentifier.Name,
+                          COSEAlgorithmIdentifier.Value]] = None,
+      key_ops: Optional[Sequence[Union[COSEKeyOperation.Name,
+                                       COSEKeyOperation.Value]]] = None,
       base_IV: Optional[bytes] = None,
       x: bytes,
       y: bytes,
@@ -1463,16 +1443,15 @@ class OKPCredentialPublicKey(CredentialPublicKey):
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.1
     * https://cose-wg.github.io/cose-spec/#rfc.section.13.2
   """
-
   def __init__(
       self,
       *,
       kty: Union[COSEKeyType.Name, COSEKeyType.Value],
       kid: Optional[bytes] = None,
-      alg: Optional[Union[COSEAlgorithmIdentifier.
-                          Name, COSEAlgorithmIdentifier.Value]] = None,
-      key_ops: Optional[Sequence[
-          Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]] = None,
+      alg: Optional[Union[COSEAlgorithmIdentifier.Name,
+                          COSEAlgorithmIdentifier.Value]] = None,
+      key_ops: Optional[Sequence[Union[COSEKeyOperation.Name,
+                                       COSEKeyOperation.Value]]] = None,
       base_IV: Optional[bytes] = None,
       crv: Union[OKPKeyType.Name, OKPKeyType.Value],
       x: bytes):
@@ -1523,7 +1502,6 @@ class AttestedCredentialData:
     * https://w3.org/TR/webauthn/#credential-id
     * 
   """
-
   def __init__(self,
                aaguid: bytes,
                credential_id_length: int,
@@ -1561,7 +1539,6 @@ class AuthenticatorData:
   References:
     * https://w3.org/TR/webauthn/#authenticator-data
   """
-
   def __init__(
       self,
       *,
@@ -1713,13 +1690,11 @@ class AttestationStatement:
   References:
     * https://w3.org/TR/webauthn/#attestation-statement
   """
-
-  def __init__(
-      self,
-      *,
-      alg: Optional[Union[COSEAlgorithmIdentifier.
-                          Name, COSEAlgorithmIdentifier.Value]] = None,
-      sig: Optional[bytes] = None):
+  def __init__(self,
+               *,
+               alg: Optional[Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value]] = None,
+               sig: Optional[bytes] = None):
     self.alg = alg
     self.sig = sig
 
@@ -1738,11 +1713,8 @@ class PackedAttestationStatement(AttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#packed-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes):
     super().__init__(alg=alg, sig=sig)
 
 
@@ -1764,11 +1736,9 @@ class PackedX509AttestationStatement(PackedAttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#packed-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes, x5c: Sequence[bytes]):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes,
+               x5c: Sequence[bytes]):
     super().__init__(alg=alg, sig=sig)
     self.x5c = x5c
 
@@ -1790,11 +1760,9 @@ class PackedECDAAAttestationStatement(PackedAttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#packed-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes, ecdaa_key_id: bytes):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes,
+               ecdaa_key_id: bytes):
     super().__init__(alg=alg, sig=sig)
     self.ecdaa_key_id = ecdaa_key_id
 
@@ -1820,11 +1788,9 @@ class TPMAttestationStatement(AttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#tpm-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes, ver: str, cert_info: bytes, pub_area: bytes):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes,
+               ver: str, cert_info: bytes, pub_area: bytes):
     super().__init__(alg=alg, sig=sig)
     self.ver = ver
     self.cert_info = cert_info
@@ -1856,12 +1822,10 @@ class TPMX509AttestationStatement(TPMAttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#tpm-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes, ver: str, cert_info: bytes, pub_area: bytes,
-      x5c: Sequence[bytes]):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes,
+               ver: str, cert_info: bytes, pub_area: bytes,
+               x5c: Sequence[bytes]):
     super().__init__(alg=alg,
                      sig=sig,
                      ver=ver,
@@ -1894,12 +1858,10 @@ class TPMECDAAAttestationStatement(TPMAttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#tpm-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes, ver: str, cert_info: bytes, pub_area: bytes,
-      ecdaa_key_id: bytes):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes,
+               ver: str, cert_info: bytes, pub_area: bytes,
+               ecdaa_key_id: bytes):
     super().__init__(alg=alg,
                      sig=sig,
                      ver=ver,
@@ -1926,11 +1888,9 @@ class AndroidKeyAttestationStatement(AttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#android-key-attestation
   """
-
-  def __init__(
-      self, *,
-      alg: Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value],
-      sig: bytes, x5c: Sequence[bytes]):
+  def __init__(self, *, alg: Union[COSEAlgorithmIdentifier.Name,
+                                   COSEAlgorithmIdentifier.Value], sig: bytes,
+               x5c: Sequence[bytes]):
     super().__init__(alg=alg, sig=sig)
     self.x5c = x5c
 
@@ -1952,7 +1912,6 @@ class AndroidSafetyNetAttestationStatement(AttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#android-safetynet-attestation
   """
-
   def __init__(self, *, ver: str, response: bytes):
     super().__init__(alg=None, sig=None)
     self.ver = ver
@@ -1976,7 +1935,6 @@ class FIDOU2FAttestationStatement(AttestationStatement):
     * https://w3.org/TR/webauthn/#attestation-statement
     * https://w3.org/TR/webauthn/#android-safetynet-attestation
   """
-
   def __init__(self, *, sig: bytes, x5c: Sequence[bytes]):
     super().__init__(alg=None, sig=sig)
     self.x5c = x5c
@@ -2016,7 +1974,6 @@ class AttestationObject:
   References:
     * https://w3.org/TR/webauthn/#attestation-object
   """
-
   def __init__(self, *, auth_data: AuthenticatorData,
                fmt: AttestationStatementFormatIdentifier,
                att_stmt: AttestationStatement):

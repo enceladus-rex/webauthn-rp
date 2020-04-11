@@ -1,13 +1,12 @@
 from typing import Any, NamedTuple, Optional, Sequence, Union
 
-from .errors import UnimplementedError
-from .types import (AttestationObject, AttestationStatementFormatIdentifier,
-                    AttestationType, AuthenticatorAssertionResponse,
-                    AuthenticatorAttestationResponse, AuthenticatorData,
-                    CredentialCreationOptions, CredentialPublicKey,
-                    CredentialRequestOptions, PublicKey, PublicKeyCredential,
-                    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
-                    TrustedPath)
+from webauthn_rp.errors import UnimplementedError
+from webauthn_rp.types import (
+    AttestationObject, AttestationStatementFormatIdentifier, AttestationType,
+    AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
+    AuthenticatorData, CredentialCreationOptions, CredentialPublicKey,
+    CredentialRequestOptions, PublicKey, PublicKeyCredential,
+    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity, TrustedPath)
 
 
 class CredentialData(NamedTuple):
@@ -26,14 +25,14 @@ class CredentialsRegistrar:
                                options: CredentialRequestOptions) -> bool:
     return True
 
-  def register_credential_creation(self,
-                                   credential: PublicKeyCredential,
-                                   att: AttestationObject,
-                                   att_type: AttestationType,
-                                   user: PublicKeyCredentialUserEntity,
-                                   rp: PublicKeyCredentialRpEntity,
-                                   trusted_path: Optional[TrustedPath] = None
-                                   ) -> bool:
+  def register_credential_creation(
+      self,
+      credential: PublicKeyCredential,
+      att: AttestationObject,
+      att_type: AttestationType,
+      user: PublicKeyCredentialUserEntity,
+      rp: PublicKeyCredentialRpEntity,
+      trusted_path: Optional[TrustedPath] = None) -> bool:
     raise UnimplementedError('Must implement register_credential_creation')
 
   def register_credential_request(self, credential: PublicKeyCredential,

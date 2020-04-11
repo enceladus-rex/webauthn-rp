@@ -6,6 +6,7 @@ from typing import Any, NamedTuple, Optional, Sequence, Union
 
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+
 from webauthn_rp.backends import CredentialsBackend
 from webauthn_rp.converters import cose_key, jsonify
 from webauthn_rp.errors import WebAuthnRPError
@@ -63,14 +64,14 @@ class Challenge(db.Model):
 
 
 class RegistrarImpl(CredentialsRegistrar):
-  def register_credential_creation(self,
-                                   credential: PublicKeyCredential,
-                                   att: AttestationObject,
-                                   att_type: AttestationType,
-                                   user: PublicKeyCredentialUserEntity,
-                                   rp: PublicKeyCredentialRpEntity,
-                                   trusted_path: Optional[TrustedPath] = None
-                                   ) -> bool:
+  def register_credential_creation(
+      self,
+      credential: PublicKeyCredential,
+      att: AttestationObject,
+      att_type: AttestationType,
+      user: PublicKeyCredentialUserEntity,
+      rp: PublicKeyCredentialRpEntity,
+      trusted_path: Optional[TrustedPath] = None) -> bool:
     assert att.auth_data is not None
     assert att.auth_data.attested_credential_data is not None
     cpk = att.auth_data.attested_credential_data.credential_public_key

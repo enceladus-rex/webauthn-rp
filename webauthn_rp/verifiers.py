@@ -1,14 +1,18 @@
 from functools import singledispatch
+from typing import cast
 
 import cryptography
+import cryptography.exceptions
 from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
 from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
 
-from .converters import cryptography_public_key
-from .errors import UnimplementedError, ValidationError, VerificationError
-from .types import (COSEAlgorithmIdentifier, CredentialPublicKey,
-                    EC2CredentialPublicKey, EC2KeyType, OKPCredentialPublicKey,
-                    OKPKeyType)
+from webauthn_rp.converters import cryptography_public_key
+from webauthn_rp.errors import (UnimplementedError, ValidationError,
+                                VerificationError)
+from webauthn_rp.types import (COSEAlgorithmIdentifier, CredentialPublicKey,
+                               EC2CredentialPublicKey, EC2KeyType,
+                               EC2PublicKey, OKPCredentialPublicKey,
+                               OKPKeyType, OKPPublicKey)
 
 
 @singledispatch
@@ -22,7 +26,8 @@ def verify(credential_public_key: CredentialPublicKey, signature: bytes,
 def verify_ec2_credential_public_key(
     credential_public_key: EC2CredentialPublicKey, signature: bytes,
     data: bytes):
-  public_key = cryptography_public_key(credential_public_key)
+  public_key = cast(EC2PublicKey,
+                    cryptography_public_key(credential_public_key))
   if credential_public_key.alg is None:
     raise ValidationError('alg must not be None')
 
@@ -49,7 +54,8 @@ def verify_ec2_credential_public_key(
 def verify_okp_credential_public_key(
     credential_public_key: OKPCredentialPublicKey, signature: bytes,
     data: bytes):
-  public_key = cryptography_public_key(credential_public_key)
+  public_key = cast(OKPPublicKey,
+                    cryptography_public_key(credential_public_key))
 
   try:
     public_key.verify(signature, data)

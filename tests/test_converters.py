@@ -41,7 +41,8 @@ def generate_ec2_public_key(crv: EC2KeyType.Value) -> EllipticCurvePublicKey:
 
 
 def generate_ec2_credential_public_key(
-    crv: EC2KeyType.Value, alg: Optional[COSEAlgorithmIdentifier.Value] = None
+    crv: EC2KeyType.Value,
+    alg: Optional[COSEAlgorithmIdentifier.Value] = None
 ) -> EC2CredentialPublicKey:
   key_to_klen = {
       EC2KeyType.Value.P_256: EC2_P_256_NUMBER_LENGTH,

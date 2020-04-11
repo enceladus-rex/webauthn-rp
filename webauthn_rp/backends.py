@@ -7,22 +7,22 @@ import cryptography
 from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
 from cryptography.hazmat.primitives.hashes import SHA256
 
-from .attesters import attest
-from .converters import cryptography_public_key, jsonify
-from .errors import (AuthenticationError, DecodingError, IntegrityError,
-                     NotFoundError, ParseError, RegistrationError,
-                     SignatureCountError, ValidationError, VerificationError)
-from .parsers import (parse_attestation, parse_authenticator_data,
-                      parse_client_data)
-from .registrars import CredentialsRegistrar
-from .types import (AuthenticatorAssertionResponse,
-                    AuthenticatorAttestationResponse, AuthenticatorDataFlag,
-                    CredentialCreationOptions, CredentialRequestOptions,
-                    ExtensionIdentifier, PublicKeyCredential,
-                    PublicKeyCredentialDescriptor, PublicKeyCredentialRpEntity,
-                    PublicKeyCredentialUserEntity, TokenBinding)
-from .utils import extract_origin, url_base64_decode
-from .verifiers import verify
+from webauthn_rp.attesters import attest
+from webauthn_rp.converters import cryptography_public_key, jsonify
+from webauthn_rp.errors import (AuthenticationError, DecodingError,
+                                IntegrityError, NotFoundError, ParseError,
+                                RegistrationError, SignatureCountError,
+                                ValidationError, VerificationError)
+from webauthn_rp.parsers import (parse_attestation, parse_authenticator_data,
+                                 parse_client_data)
+from webauthn_rp.registrars import CredentialsRegistrar
+from webauthn_rp.types import (
+    AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
+    AuthenticatorDataFlag, CredentialCreationOptions, CredentialRequestOptions,
+    ExtensionIdentifier, PublicKeyCredential, PublicKeyCredentialDescriptor,
+    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity, TokenBinding)
+from webauthn_rp.utils import extract_origin, url_base64_decode
+from webauthn_rp.verifiers import verify
 
 
 class CredentialsBackend:
@@ -64,7 +64,7 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    rp_origin = rp_origin = extract_origin(collected_client_data.origin)
+    rp_origin = extract_origin(collected_client_data.origin)
     if rp_origin != rp.id:
       raise IntegrityError(
           'Given ({0}) and expected ({1}) RP origin don\'t match'.format(

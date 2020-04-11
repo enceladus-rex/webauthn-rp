@@ -2,8 +2,8 @@ from collections import namedtuple
 from enum import Enum
 from typing import Sequence, Union
 
-from .errors import UnimplementedError, ValidationError
-from .types import COSEKeyType, CredentialPublicKey
+from webauthn_rp.errors import UnimplementedError, ValidationError
+from webauthn_rp.types import COSEKeyType, CredentialPublicKey
 
 
 def validate_kty(validator_ktys: Union[str, Sequence[str]],

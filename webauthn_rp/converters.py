@@ -2,7 +2,7 @@ import base64
 import json
 from enum import Enum
 from functools import singledispatch
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import cbor
 from cryptography.hazmat.backends import default_backend
@@ -11,10 +11,11 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
 from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from .errors import UnimplementedError, ValidationError
-from .types import (CredentialPublicKey, EC2CredentialPublicKey,
-                    OKPCredentialPublicKey, PublicKey, PublicKeyCredential)
-from .utils import snake_to_camel_case
+from webauthn_rp.errors import UnimplementedError, ValidationError
+from webauthn_rp.types import (CredentialPublicKey, EC2CredentialPublicKey,
+                               EC2PublicKey, OKPCredentialPublicKey,
+                               OKPPublicKey, PublicKey, PublicKeyCredential)
+from webauthn_rp.utils import snake_to_camel_case
 
 JSONValue = Union[dict, list, bool, int, float, str]
 
@@ -45,18 +46,18 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
 
 
 @singledispatch
-def cryptography_public_key(credential_public_key: CredentialPublicKey
-                            ) -> PublicKey:
+def cryptography_public_key(
+    credential_public_key: CredentialPublicKey) -> PublicKey:
   raise UnimplementedError('Must implement public key conversion')
 
 
 @cryptography_public_key.register(EC2CredentialPublicKey)
-def cryptography_ec2_public_key(credential_public_key: EC2CredentialPublicKey
-                                ) -> PublicKey:
+def cryptography_ec2_public_key(
+    credential_public_key: EC2CredentialPublicKey) -> EC2PublicKey:
   x = int.from_bytes(credential_public_key.x, 'big')
   y = int.from_bytes(credential_public_key.y, 'big')
 
-  curve = None
+  curve: Optional[Union[SECP256R1, SECP384R1, SECP521R1]] = None
   if credential_public_key.crv.name == 'P_256': curve = SECP256R1()
   elif credential_public_key.crv.name == 'P_384': curve = SECP384R1()
   elif credential_public_key.crv.name == 'P_521': curve = SECP521R1()
@@ -64,13 +65,15 @@ def cryptography_ec2_public_key(credential_public_key: EC2CredentialPublicKey
     raise UnimplementedError('Unsupported cryptography EC2 curve {}'.format(
         credential_public_key.crv.name))
 
+  assert curve is not None
+
   ecpn = EllipticCurvePublicNumbers(x, y, curve)
   return ecpn.public_key(default_backend())
 
 
 @cryptography_public_key.register(OKPCredentialPublicKey)
-def cryptography_okp_public_key(credential_public_key: OKPCredentialPublicKey
-                                ) -> PublicKey:
+def cryptography_okp_public_key(
+    credential_public_key: OKPCredentialPublicKey) -> OKPPublicKey:
   if credential_public_key.crv.name == 'ED25519':
     return Ed25519PublicKey.from_public_bytes(credential_public_key.x)
   elif credential_public_key.crv.name == 'ED448':
@@ -80,8 +83,8 @@ def cryptography_okp_public_key(credential_public_key: OKPCredentialPublicKey
         credential_public_key.crv.name))
 
 
-def build_base_cose_dictionary(credential_public_key: CredentialPublicKey
-                               ) -> dict:
+def build_base_cose_dictionary(
+    credential_public_key: CredentialPublicKey) -> dict:
   d = {}
   d[1] = credential_public_key.kty.value
   if credential_public_key.kid is not None:

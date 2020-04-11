@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from .types import (
+from webauthn_rp.types import (
     AttestationConveyancePreference, AuthenticationExtensionsClientInputs,
     AuthenticatorSelectionCriteria, CredentialCreationOptions,
     CredentialRequestOptions, PublicKeyCredentialCreationOptions,
