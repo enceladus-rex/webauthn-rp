@@ -4,10 +4,12 @@ mypy --ignore-missing-imports webauthn_rp || exit
 mypy --ignore-missing-imports tests || exit
 pytest --cov=webauthn_rp || exit
 
+isort setup.py
 isort --recursive webauthn_rp
 isort --recursive tests
 isort --recursive examples
 
+yapf --in-place setup.py
 yapf --recursive webauthn_rp --in-place
 yapf --recursive tests --in-place
 yapf --recursive examples --in-place

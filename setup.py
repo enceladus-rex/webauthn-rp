@@ -3,6 +3,17 @@ from os.path import dirname, join
 
 import setuptools
 
+
+def get_version():
+  with open(join(__file__, 'webauthn_rp/__init__.py'), 'r') as f:
+    for line in f.read().splitlines():
+      if line.startswith('__version__'):
+        delim = '"' if '"' in line else "'"
+        return line.split(delim)[1]
+    else:
+      raise RuntimeError("Unable to find version string.")
+
+
 with open('requirements.txt') as rt:
   requirements_txt = rt.read()
 
@@ -31,7 +42,7 @@ test_requirements = [
 ]
 
 setup(name='webauthn-rp',
-      version='0.0.3',
+      version=get_version(),
       description='Web Authentication Relying Party Library',
       author='enceladus-rex',
       packages=['webauthn_rp'],
