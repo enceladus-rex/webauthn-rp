@@ -33,7 +33,7 @@ def generate_ec2_private_key(crv: EC2KeyType.Value) -> EllipticCurvePrivateKey:
 
   curve = key_to_curve[crv]
 
-  return generate_private_key(curve(), default_backend())
+  return generate_private_key(curve(), default_backend())  # type: ignore
 
 
 def generate_ec2_public_key(crv: EC2KeyType.Value) -> EllipticCurvePublicKey:
@@ -70,7 +70,7 @@ def generate_okp_credential_public_key(
       OKPKeyType.Value.ED448: Ed448PrivateKey,
   }
 
-  private_key = private_key_generator[crv].generate()
+  private_key = private_key_generator[crv].generate()  # type: ignore
   public_number = private_key.public_key().public_bytes(
       Encoding.Raw, PublicFormat.Raw)
 

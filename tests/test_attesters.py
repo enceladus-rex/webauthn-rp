@@ -1,6 +1,7 @@
 import datetime
 import hashlib
-from typing import List, Optional
+from typing import List, Optional, Tuple
+from unittest.mock import MagicMock
 
 import cryptography
 import cryptography.x509
@@ -23,14 +24,13 @@ from webauthn_rp.attesters import attest
 from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
                                    KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN)
 from webauthn_rp.errors import ValidationError, VerificationError
-from webauthn_rp.types import (AndroidKeyAttestationStatement,
-                               AttestationObject,
-                               AttestationStatementFormatIdentifier,
-                               AttestationType, AttestedCredentialData,
-                               AuthenticatorData, COSEAlgorithmIdentifier,
-                               COSEKeyType, EC2CredentialPublicKey, EC2KeyType,
-                               FIDOU2FAttestationStatement,
-                               NoneAttestationStatement, PrivateKey, PublicKey)
+from webauthn_rp.types import (
+    AndroidKeyAttestationStatement, AttestationObject,
+    AttestationStatementFormatIdentifier, AttestationType,
+    AttestedCredentialData, AuthenticatorData, COSEAlgorithmIdentifier,
+    COSEKeyType, EC2CredentialPublicKey, EC2KeyType, EC2PrivateKey,
+    EC2PublicKey, FIDOU2FAttestationStatement, NoneAttestationStatement,
+    PrivateKey, PublicKey)
 
 TEST_RP_ID = b'example.org'
 TEST_RP_ID_HASH = hashlib.sha256(TEST_RP_ID).digest()
@@ -39,10 +39,11 @@ TEST_CREDENTIAL_ID_LENGTH = len(TEST_CREDENTIAL_ID)
 TEST_AAGUID = b'x' * 16
 
 
-def generate_x509_certificate(public_key: PublicKey,
-                              private_key: PrivateKey,
-                              algorithm: hashes.HashAlgorithm,
-                              extensions: Optional[List[Extension]] = None):
+def generate_x509_certificate(
+    public_key: PublicKey,
+    private_key: PrivateKey,
+    algorithm: hashes.HashAlgorithm,
+    extensions: Optional[List[Extension]] = None) -> x509.Certificate:
   if extensions is None:
     extensions = []
   builder = cryptography.x509.CertificateBuilder(
@@ -73,7 +74,9 @@ def generate_x509_certificate(public_key: PublicKey,
                       backend=default_backend())
 
 
-def generate_elliptic_curve_x509_certificate(curve: EllipticCurve):
+def generate_elliptic_curve_x509_certificate(
+    curve: EllipticCurve
+) -> Tuple[x509.Certificate, EC2PrivateKey, EC2PublicKey]:
   private_key = generate_private_key(curve, default_backend())
   public_key = private_key.public_key()
   return generate_x509_certificate(public_key, private_key,
@@ -81,7 +84,8 @@ def generate_elliptic_curve_x509_certificate(curve: EllipticCurve):
 
 
 def generate_elliptic_curve_x509_certificate_android(
-    curve: EllipticCurve, attestation_challenge: bytes):
+    curve: EllipticCurve, attestation_challenge: bytes
+) -> Tuple[x509.Certificate, EC2PrivateKey, EC2PublicKey]:
   android_key_oid = ObjectIdentifier('1.3.6.1.4.1.11129.2.1.17')
   android_key_description = KeyDescription()
   android_key_description['attestationVersion'] = 0
@@ -115,7 +119,7 @@ def generate_elliptic_curve_x509_certificate_android(
       extensions=extensions), private_key, public_key
 
 
-def generate_signature(private_key: PrivateKey, data: bytes) -> bytes:
+def generate_signature(private_key: EC2PrivateKey, data: bytes) -> bytes:
   return private_key.sign(data, ECDSA(hashes.SHA256()))
 
 
@@ -248,8 +252,6 @@ def test_attest_android_key():
     attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
 
 
-def test_attest_none(mocker):
-  mocker.patch('webauthn_rp.types.AttestationObject')
-  assert attest(NoneAttestationStatement(),
-                webauthn_rp.types.AttestationObject(), b'',
+def test_attest_none(monkeypatch):
+  assert attest(NoneAttestationStatement(), MagicMock(), b'',
                 b'') == (AttestationType.NONE, None)

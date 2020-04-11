@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 mypy --ignore-missing-imports webauthn_rp || exit
+mypy --ignore-missing-imports tests || exit
 pytest --cov=webauthn_rp || exit
 
 isort --recursive webauthn_rp
