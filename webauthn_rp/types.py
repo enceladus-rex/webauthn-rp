@@ -1214,7 +1214,7 @@ class COSEKeyOperation(metaclass=NameValueEnumsContainer):
     MAC_VERIFY = 10
 
 
-class EC2KeyType(metaclass=NameValueEnumsContainer):
+class EC2Curve(metaclass=NameValueEnumsContainer):
   """
   A metaclass for the COSEKeyOperation Name and Value Enums.
 
@@ -1239,7 +1239,7 @@ class EC2KeyType(metaclass=NameValueEnumsContainer):
     P_521 = 3
 
 
-class OKPKeyType(metaclass=NameValueEnumsContainer):
+class OKPCurve(metaclass=NameValueEnumsContainer):
   """
   A metaclass for the COSEKeyOperation Name and Value Enums.
 
@@ -1361,7 +1361,7 @@ class EC2CredentialPublicKey(CredentialPublicKey):
       algorithms lose security if the same IV is used twice.
     x (bytes): The Elliptic Curve X Coordinate.
     y (bytes): The Elliptic Curve Y Coordinate.
-    crv (Union[EC2KeyType.Name, EC2KeyType.Value]):
+    crv (Union[EC2Curve.Name, EC2Curve.Value]):
       The Elliptic Curve Identifier.
 
   References:
@@ -1383,7 +1383,7 @@ class EC2CredentialPublicKey(CredentialPublicKey):
       base_IV: Optional[bytes] = None,
       x: bytes,
       y: bytes,
-      crv: Union[EC2KeyType.Name, EC2KeyType.Value]):
+      crv: Union[EC2Curve.Name, EC2Curve.Value]):
     super().__init__(kty=kty,
                      kid=kid,
                      alg=alg,
@@ -1433,7 +1433,7 @@ class OKPCredentialPublicKey(CredentialPublicKey):
       algorithms lose security if the same IV is used twice.
     x (bytes): The Elliptic Curve X Coordinate.
     y (bytes): The Elliptic Curve Y Coordinate.
-    crv (Union[OKPKeyType.Name, OKPKeyType.Value]):
+    crv (Union[OKPCurve.Name, OKPCurve.Value]):
       The Elliptic Curve Identifier.
 
   References:
@@ -1453,7 +1453,7 @@ class OKPCredentialPublicKey(CredentialPublicKey):
       key_ops: Optional[Sequence[Union[COSEKeyOperation.Name,
                                        COSEKeyOperation.Value]]] = None,
       base_IV: Optional[bytes] = None,
-      crv: Union[OKPKeyType.Name, OKPKeyType.Value],
+      crv: Union[OKPCurve.Name, OKPCurve.Value],
       x: bytes):
     super().__init__(kty=kty,
                      kid=kid,

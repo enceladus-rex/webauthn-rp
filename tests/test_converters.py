@@ -17,69 +17,10 @@ from webauthn_rp.converters import (cose_key_from_ec2, cose_key_from_okp,
 from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.types import *
 
-from .common import assert_objects_equal
-
-
-def base64s(b: bytes) -> str:
-  return b64encode(b).decode('utf8')
-
-
-def generate_ec2_private_key(crv: EC2KeyType.Value) -> EllipticCurvePrivateKey:
-  key_to_curve = {
-      EC2KeyType.Value.P_256: SECP256R1,
-      EC2KeyType.Value.P_384: SECP384R1,
-      EC2KeyType.Value.P_521: SECP521R1,
-  }
-
-  curve = key_to_curve[crv]
-
-  return generate_private_key(curve(), default_backend())  # type: ignore
-
-
-def generate_ec2_public_key(crv: EC2KeyType.Value) -> EllipticCurvePublicKey:
-  return generate_ec2_private_key(crv).public_key()
-
-
-def generate_ec2_credential_public_key(
-    crv: EC2KeyType.Value,
-    alg: Optional[COSEAlgorithmIdentifier.Value] = None
-) -> EC2CredentialPublicKey:
-  key_to_klen = {
-      EC2KeyType.Value.P_256: EC2_P_256_NUMBER_LENGTH,
-      EC2KeyType.Value.P_384: EC2_P_384_NUMBER_LENGTH,
-      EC2KeyType.Value.P_521: EC2_P_521_NUMBER_LENGTH,
-  }
-
-  klen = key_to_klen[crv]
-
-  random_public_numbers = generate_ec2_public_key(crv).public_numbers()
-  return EC2CredentialPublicKey(
-      kty=COSEKeyType.Value.EC2,
-      crv=crv,
-      alg=alg or COSEAlgorithmIdentifier.Value.ES256,
-      x=random_public_numbers.x.to_bytes(klen, 'big'),
-      y=random_public_numbers.y.to_bytes(klen, 'big'),
-  )
-
-
-def generate_okp_credential_public_key(
-    crv: OKPKeyType.Value,
-    alg: Optional[COSEAlgorithmIdentifier.Value] = None):
-  private_key_generator = {
-      OKPKeyType.Value.ED25519: Ed25519PrivateKey,
-      OKPKeyType.Value.ED448: Ed448PrivateKey,
-  }
-
-  private_key = private_key_generator[crv].generate()  # type: ignore
-  public_number = private_key.public_key().public_bytes(
-      Encoding.Raw, PublicFormat.Raw)
-
-  return OKPCredentialPublicKey(
-      kty=COSEKeyType.Value.OKP,
-      crv=crv,
-      alg=alg or COSEAlgorithmIdentifier.Value.ES256,
-      x=public_number,
-  )
+from .common import (assert_objects_equal, base64s,
+                     generate_ec2_credential_public_key,
+                     generate_ec2_private_key, generate_ec2_public_key,
+                     generate_okp_credential_public_key, generate_private_key)
 
 
 def test_jsonify_credential_creation_options():
@@ -287,9 +228,9 @@ def test_jsonify_credential_request_options():
 
 def test_cryptography_ec2_public_key():
   key_data = (
-      (EC2KeyType.Value.P_256, 32),
-      (EC2KeyType.Value.P_384, 48),
-      (EC2KeyType.Value.P_521, 66),
+      (EC2Curve.Value.P_256, 32),
+      (EC2Curve.Value.P_384, 48),
+      (EC2Curve.Value.P_521, 66),
   )
 
   for crv, klen in key_data:
@@ -316,7 +257,7 @@ def test_cryptography_okp_public_key_ed25519():
 
   okp_key = OKPCredentialPublicKey(
       kty=COSEKeyType.Value.OKP,
-      crv=OKPKeyType.Value.ED25519,
+      crv=OKPCurve.Value.ED25519,
       x=ed25519_public_number,
   )
 
@@ -334,7 +275,7 @@ def test_cryptography_okp_public_key_ed448():
 
   okp_key = OKPCredentialPublicKey(
       kty=COSEKeyType.Value.OKP,
-      crv=OKPKeyType.Value.ED448,
+      crv=OKPCurve.Value.ED448,
       x=ed448_public_number,
   )
 
@@ -347,9 +288,9 @@ def test_cryptography_okp_public_key_ed448():
 
 def test_cose_key_from_ec2():
   crvs = (
-      EC2KeyType.Value.P_256,
-      EC2KeyType.Value.P_384,
-      EC2KeyType.Value.P_521,
+      EC2Curve.Value.P_256,
+      EC2Curve.Value.P_384,
+      EC2Curve.Value.P_521,
   )
 
   for crv in crvs:
@@ -361,8 +302,8 @@ def test_cose_key_from_ec2():
 
 def test_cose_key_from_okp():
   crvs = (
-      OKPKeyType.Value.ED25519,
-      OKPKeyType.Value.ED448,
+      OKPCurve.Value.ED25519,
+      OKPCurve.Value.ED448,
   )
 
   for crv in crvs:

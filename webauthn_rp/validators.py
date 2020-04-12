@@ -3,7 +3,9 @@ from enum import Enum
 from typing import Sequence, Union
 
 from webauthn_rp.errors import UnimplementedError, ValidationError
-from webauthn_rp.types import COSEKeyType, CredentialPublicKey
+from webauthn_rp.types import (COSEAlgorithmIdentifier, COSEKeyType,
+                               CredentialPublicKey, EC2CredentialPublicKey,
+                               EC2Curve, OKPCredentialPublicKey, OKPCurve)
 
 
 def validate_kty(validator_ktys: Union[str, Sequence[str]],
@@ -35,7 +37,7 @@ def validate_key_ops(validator_key_ops: Union[str, Sequence[str]],
     raise ValidationError('Missing key ops {}'.format(list(ops)))
 
 
-def ecdsa_validator(credential_public_key: CredentialPublicKey,
+def ecdsa_validator(credential_public_key: EC2CredentialPublicKey,
                     sign: bool = False,
                     verify: bool = False):
   validate_kty('EC2', credential_public_key)
@@ -43,9 +45,12 @@ def ecdsa_validator(credential_public_key: CredentialPublicKey,
   if sign: ops.append('SIGN')
   if verify: ops.append('VERIFY')
   validate_key_ops(ops, credential_public_key)
+  assert credential_public_key.crv is not None
+  if credential_public_key.crv.name not in {'P_256', 'P_384', 'P_521'}:
+    raise ValidationError('Invalid EC2 curve for key type')
 
 
-def eddsa_validator(credential_public_key: CredentialPublicKey,
+def eddsa_validator(credential_public_key: OKPCredentialPublicKey,
                     sign: bool = False,
                     verify: bool = False):
   validate_kty('OKP', credential_public_key)
@@ -53,6 +58,9 @@ def eddsa_validator(credential_public_key: CredentialPublicKey,
   if sign: ops.append('SIGN')
   if verify: ops.append('VERIFY')
   validate_key_ops(ops, credential_public_key)
+  assert credential_public_key.crv is not None
+  if credential_public_key.crv.name not in {'ED25519', 'ED448'}:
+    raise ValidationError('Invalid OKP curve for key type')
 
 
 class CredentialPublicKeyValidator(Enum):
@@ -63,7 +71,9 @@ class CredentialPublicKeyValidator(Enum):
   EDDSA = eddsa_validator
 
 
-def validate(credential_public_key: CredentialPublicKey):
+def validate(credential_public_key: CredentialPublicKey,
+             sign: bool = False,
+             verify: bool = False) -> None:
   if credential_public_key.alg is None: return
   try:
     validator = getattr(CredentialPublicKeyValidator,
@@ -73,4 +83,4 @@ def validate(credential_public_key: CredentialPublicKey):
         'Unsupported credential public key alg enum name {}'.format(
             credential_public_key.alg.name))
 
-  validator(credential_public_key)
+  validator(credential_public_key, sign=sign, verify=verify)

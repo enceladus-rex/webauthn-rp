@@ -10,9 +10,8 @@ from webauthn_rp.converters import cryptography_public_key
 from webauthn_rp.errors import (UnimplementedError, ValidationError,
                                 VerificationError)
 from webauthn_rp.types import (COSEAlgorithmIdentifier, CredentialPublicKey,
-                               EC2CredentialPublicKey, EC2KeyType,
-                               EC2PublicKey, OKPCredentialPublicKey,
-                               OKPKeyType, OKPPublicKey)
+                               EC2CredentialPublicKey, EC2Curve, EC2PublicKey,
+                               OKPCredentialPublicKey, OKPCurve, OKPPublicKey)
 
 
 @singledispatch

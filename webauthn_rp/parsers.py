@@ -23,9 +23,9 @@ from webauthn_rp.types import (
     AuthenticationExtensionsClientOutputs, AuthenticatorAssertionResponse,
     AuthenticatorAttestationResponse, AuthenticatorData, CollectedClientData,
     Coordinates, COSEAlgorithmIdentifier, COSEKeyOperation, COSEKeyType,
-    CredentialPublicKey, EC2CredentialPublicKey, EC2KeyType,
+    CredentialPublicKey, EC2CredentialPublicKey, EC2Curve,
     FIDOU2FAttestationStatement, NoneAttestationStatement,
-    OKPCredentialPublicKey, OKPKeyType, PackedAttestationStatement,
+    OKPCredentialPublicKey, OKPCurve, PackedAttestationStatement,
     PackedECDAAAttestationStatement, PackedX509AttestationStatement,
     PublicKeyCredential, TokenBinding, TokenBindingStatus,
     TPMAttestationStatement, TPMECDAAAttestationStatement,
@@ -193,44 +193,44 @@ def parse_credential_public_key_kwargs(credential_public_key: dict) -> dict:
   }
 
 
-def ec2_number_length(crv: Union[EC2KeyType.Name, EC2KeyType.Value]) -> int:
+def ec2_number_length(crv: Union[EC2Curve.Name, EC2Curve.Value]) -> int:
   key_to_length = {
-      EC2KeyType.Name.P_256: EC2_P_256_NUMBER_LENGTH,
-      EC2KeyType.Name.P_384: EC2_P_384_NUMBER_LENGTH,
-      EC2KeyType.Name.P_521: EC2_P_521_NUMBER_LENGTH,
-      EC2KeyType.Value.P_256: EC2_P_256_NUMBER_LENGTH,
-      EC2KeyType.Value.P_384: EC2_P_384_NUMBER_LENGTH,
-      EC2KeyType.Value.P_521: EC2_P_521_NUMBER_LENGTH,
+      EC2Curve.Name.P_256: EC2_P_256_NUMBER_LENGTH,
+      EC2Curve.Name.P_384: EC2_P_384_NUMBER_LENGTH,
+      EC2Curve.Name.P_521: EC2_P_521_NUMBER_LENGTH,
+      EC2Curve.Value.P_256: EC2_P_256_NUMBER_LENGTH,
+      EC2Curve.Value.P_384: EC2_P_384_NUMBER_LENGTH,
+      EC2Curve.Value.P_521: EC2_P_521_NUMBER_LENGTH,
   }
 
   return key_to_length[crv]
 
 
-def okp_number_length(crv: Union[OKPKeyType.Name, OKPKeyType.Value]) -> int:
+def okp_number_length(crv: Union[OKPCurve.Name, OKPCurve.Value]) -> int:
   key_to_length = {
-      OKPKeyType.Name.ED25519: OKP_ED25519_NUMBER_LENGTH,
-      OKPKeyType.Name.ED448: OKP_ED448_NUMBER_LENGTH,
-      OKPKeyType.Value.ED25519: OKP_ED25519_NUMBER_LENGTH,
-      OKPKeyType.Value.ED448: OKP_ED448_NUMBER_LENGTH,
+      OKPCurve.Name.ED25519: OKP_ED25519_NUMBER_LENGTH,
+      OKPCurve.Name.ED448: OKP_ED448_NUMBER_LENGTH,
+      OKPCurve.Value.ED25519: OKP_ED25519_NUMBER_LENGTH,
+      OKPCurve.Value.ED448: OKP_ED448_NUMBER_LENGTH,
   }
 
   return key_to_length[crv]
 
 
 def parse_ec2_public_key_crv(
-    credential_public_key: dict) -> Union[EC2KeyType.Name, EC2KeyType.Value]:
+    credential_public_key: dict) -> Union[EC2Curve.Name, EC2Curve.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
-    return EC2KeyType(crv_raw)  # type: ignore
+    return EC2Curve(crv_raw)  # type: ignore
   except KeyError:
     raise ValidationError('Invalid EC2 curve {}'.format(crv_raw))
 
 
 def parse_okp_public_key_crv(
-    credential_public_key: dict) -> Union[OKPKeyType.Name, OKPKeyType.Value]:
+    credential_public_key: dict) -> Union[OKPCurve.Name, OKPCurve.Value]:
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
-    return OKPKeyType(crv_raw)  # type: ignore
+    return OKPCurve(crv_raw)  # type: ignore
   except KeyError:
     raise ValidationError('Invalid OKP curve {}'.format(crv_raw))
 

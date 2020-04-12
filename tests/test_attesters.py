@@ -28,99 +28,15 @@ from webauthn_rp.types import (
     AndroidKeyAttestationStatement, AttestationObject,
     AttestationStatementFormatIdentifier, AttestationType,
     AttestedCredentialData, AuthenticatorData, COSEAlgorithmIdentifier,
-    COSEKeyType, EC2CredentialPublicKey, EC2KeyType, EC2PrivateKey,
-    EC2PublicKey, FIDOU2FAttestationStatement, NoneAttestationStatement,
-    PrivateKey, PublicKey)
+    COSEKeyType, EC2CredentialPublicKey, EC2Curve, EC2PrivateKey, EC2PublicKey,
+    FIDOU2FAttestationStatement, NoneAttestationStatement, PrivateKey,
+    PublicKey)
 
-TEST_RP_ID = b'example.org'
-TEST_RP_ID_HASH = hashlib.sha256(TEST_RP_ID).digest()
-TEST_CREDENTIAL_ID = b'credential-id'
-TEST_CREDENTIAL_ID_LENGTH = len(TEST_CREDENTIAL_ID)
-TEST_AAGUID = b'x' * 16
-
-
-def generate_x509_certificate(
-    public_key: PublicKey,
-    private_key: PrivateKey,
-    algorithm: hashes.HashAlgorithm,
-    extensions: Optional[List[Extension]] = None) -> x509.Certificate:
-  if extensions is None:
-    extensions = []
-  builder = cryptography.x509.CertificateBuilder(
-      issuer_name=x509.Name(
-          [x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, 'issuer')]),
-      subject_name=x509.Name(
-          [x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, 'subject')]),
-      serial_number=1,
-      not_valid_before=datetime.datetime(2000,
-                                         1,
-                                         1,
-                                         0,
-                                         0,
-                                         0,
-                                         tzinfo=datetime.timezone.utc),
-      not_valid_after=datetime.datetime(3000,
-                                        1,
-                                        1,
-                                        0,
-                                        0,
-                                        0,
-                                        tzinfo=datetime.timezone.utc),
-      public_key=public_key,
-      extensions=extensions)
-
-  return builder.sign(private_key=private_key,
-                      algorithm=algorithm,
-                      backend=default_backend())
-
-
-def generate_elliptic_curve_x509_certificate(
-    curve: EllipticCurve
-) -> Tuple[x509.Certificate, EC2PrivateKey, EC2PublicKey]:
-  private_key = generate_private_key(curve, default_backend())
-  public_key = private_key.public_key()
-  return generate_x509_certificate(public_key, private_key,
-                                   hashes.SHA256()), private_key, public_key
-
-
-def generate_elliptic_curve_x509_certificate_android(
-    curve: EllipticCurve, attestation_challenge: bytes
-) -> Tuple[x509.Certificate, EC2PrivateKey, EC2PublicKey]:
-  android_key_oid = ObjectIdentifier('1.3.6.1.4.1.11129.2.1.17')
-  android_key_description = KeyDescription()
-  android_key_description['attestationVersion'] = 0
-  android_key_description['attestationSecurityLevel'] = 0
-  android_key_description['keymasterVersion'] = 0
-  android_key_description['keymasterSecurityLevel'] = 0
-  android_key_description['attestationChallenge'] = attestation_challenge
-  android_key_description['uniqueId'] = b'unique'
-
-  software_enforced = AuthorizationList()
-  software_enforced['origin'] = KM_ORIGIN_GENERATED
-  software_enforced['purpose'].append(KM_PURPOSE_SIGN)
-  android_key_description['softwareEnforced'] = software_enforced
-
-  tee_enforced = AuthorizationList()
-  tee_enforced['origin'] = KM_ORIGIN_GENERATED
-  tee_enforced['purpose'].append(KM_PURPOSE_SIGN)
-  android_key_description['teeEnforced'] = tee_enforced
-
-  der_key = encode(android_key_description)
-
-  extensions = [
-      Extension(android_key_oid, False,
-                UnrecognizedExtension(android_key_oid, der_key))
-  ]
-
-  private_key = generate_private_key(curve, default_backend())
-  public_key = private_key.public_key()
-  return generate_x509_certificate(
-      public_key, private_key, hashes.SHA256(),
-      extensions=extensions), private_key, public_key
-
-
-def generate_signature(private_key: EC2PrivateKey, data: bytes) -> bytes:
-  return private_key.sign(data, ECDSA(hashes.SHA256()))
+from .common import (TEST_AAGUID, TEST_CREDENTIAL_ID,
+                     TEST_CREDENTIAL_ID_LENGTH, TEST_RP_ID, TEST_RP_ID_HASH,
+                     generate_elliptic_curve_x509_certificate,
+                     generate_elliptic_curve_x509_certificate_android,
+                     generate_signature, generate_x509_certificate)
 
 
 def test_attest_fido_u2f():
@@ -145,7 +61,7 @@ def test_attest_fido_u2f():
       x=x,
       y=y,
       kty=COSEKeyType.Name.EC2,
-      crv=EC2KeyType.Name.P_256,
+      crv=EC2Curve.Name.P_256,
   )
 
   attested_credential_data = AttestedCredentialData(
@@ -205,7 +121,7 @@ def test_attest_android_key():
       x=x,
       y=y,
       kty=COSEKeyType.Name.EC2,
-      crv=EC2KeyType.Name.P_256,
+      crv=EC2Curve.Name.P_256,
   )
 
   attested_credential_data = AttestedCredentialData(
