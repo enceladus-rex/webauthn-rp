@@ -1,8 +1,32 @@
 import base64
 import re
+from typing import Union
 from urllib.parse import urlparse
 
+from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512,
+                                                   HashAlgorithm)
+
+from webauthn_rp import types
+from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
+                                   EC2_P_384_NUMBER_LENGTH,
+                                   EC2_P_521_NUMBER_LENGTH,
+                                   OKP_ED448_NUMBER_LENGTH,
+                                   OKP_ED25519_NUMBER_LENGTH)
 from webauthn_rp.errors import ValidationError
+
+CURVE_COORDINATE_BYTE_LENGTHS = {
+    'P_256': EC2_P_256_NUMBER_LENGTH,
+    'P_384': EC2_P_384_NUMBER_LENGTH,
+    'P_521': EC2_P_521_NUMBER_LENGTH,
+    'ED25519': OKP_ED25519_NUMBER_LENGTH,
+    'ED448': OKP_ED448_NUMBER_LENGTH,
+}
+
+EC2_HASH_ALGORITHMS = {
+    'ES256': SHA256,
+    'ES384': SHA384,
+    'ES512': SHA512,
+}
 
 
 def snake_to_camel_case(s: str) -> str:
@@ -35,9 +59,25 @@ def url_base64_decode(s: str) -> bytes:
 def extract_origin(url: str) -> str:
   parsed_url = urlparse(url)
   if parsed_url.netloc is None:
-    raise ValidationError('Origin must contain hostname')
+    raise ValidationError('Origin must contain hostname[:port]')
 
   if parsed_url.scheme is None:
     raise ValidationError('Origin must contain scheme')
 
   return parsed_url.scheme + '://' + parsed_url.netloc
+
+
+def curve_coordinate_byte_length(
+    crv: Union['types.EC2Curve.Name', 'types.EC2Curve.Value',
+               'types.OKPCurve.Name', 'types.OKPCurve.Value']
+) -> int:
+  assert crv.name in CURVE_COORDINATE_BYTE_LENGTHS, 'Unexpected curve'
+  return CURVE_COORDINATE_BYTE_LENGTHS[crv.name]
+
+
+def ec2_hash_algorithm(
+    alg: Union['types.COSEAlgorithmIdentifier.Name',
+               'types.COSEAlgorithmIdentifier.Value']
+) -> HashAlgorithm:
+  assert alg.name in EC2_HASH_ALGORITHMS, 'Invalid COSE algorithm'
+  return EC2_HASH_ALGORITHMS[alg.name]()

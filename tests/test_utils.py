@@ -1,6 +1,9 @@
 import pytest
 
-from webauthn_rp.utils import (camel_to_snake_case, extract_origin,
+from webauthn_rp.types import COSEAlgorithmIdentifier, EC2Curve, OKPCurve
+from webauthn_rp.utils import (camel_to_snake_case,
+                               curve_coordinate_byte_length,
+                               ec2_hash_algorithm, extract_origin,
                                snake_to_camel_case, url_base64_decode,
                                url_base64_encode)
 
@@ -54,3 +57,33 @@ def test_extract_origin():
       'http://example.com:81')
   assert extract_origin('https://example.com:444/path') == (
       'https://example.com:444')
+
+
+@pytest.mark.parametrize('crv',
+                         list(EC2Curve.Name) + list(EC2Curve.Value) +
+                         list(OKPCurve.Name) + list(OKPCurve.Value))
+def test_curve_coordinate_byte_length(crv):
+  l = curve_coordinate_byte_length(crv)
+  assert type(l) is int
+  assert l > 0
+
+
+@pytest.mark.parametrize('alg', [
+    COSEAlgorithmIdentifier.Name.ES256,
+    COSEAlgorithmIdentifier.Name.ES256,
+    COSEAlgorithmIdentifier.Name.ES256,
+    COSEAlgorithmIdentifier.Value.ES256,
+    COSEAlgorithmIdentifier.Value.ES256,
+    COSEAlgorithmIdentifier.Value.ES256,
+])
+def test_ec2_hash_algorithm_success(alg):
+  ec2_hash_algorithm(alg)
+
+
+@pytest.mark.parametrize('alg', [
+    COSEAlgorithmIdentifier.Name.EDDSA,
+    COSEAlgorithmIdentifier.Value.EDDSA,
+])
+def test_ec2_hash_algorithm_error(alg):
+  with pytest.raises(AssertionError):
+    ec2_hash_algorithm(alg)

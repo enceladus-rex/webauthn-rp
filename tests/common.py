@@ -1,8 +1,9 @@
 import datetime
 import hashlib
+import random
 from base64 import b64encode
 from pprint import pprint
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import cryptography
 import cryptography.x509
@@ -22,13 +23,7 @@ from pyasn1.codec.der.decoder import decode
 from pyasn1.codec.der.encoder import encode
 
 from webauthn_rp.asn1 import AuthorizationList, KeyDescription
-from webauthn_rp.attesters import attest
 from webauthn_rp.constants import *
-from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
-                                   KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN)
-from webauthn_rp.converters import (cose_key_from_ec2, cose_key_from_okp,
-                                    cryptography_ec2_public_key,
-                                    cryptography_okp_public_key, jsonify)
 from webauthn_rp.errors import ValidationError, VerificationError
 from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.types import *
@@ -42,6 +37,25 @@ TEST_AAGUID = b'x' * 16
 
 def base64s(b: bytes) -> str:
   return b64encode(b).decode('utf8')
+
+
+def generate_pseudorandom_bytes(num_bytes: int, seed: Any = None) -> bytes:
+  rs = random.Random()
+  if seed is not None:
+    rs.seed(seed)
+
+  b = []
+  for _ in range(num_bytes):
+    b.append(rs.randint(0, 255))
+  return bytes(b)
+
+
+def single_byte_errors(data: bytes) -> List[bytes]:
+  errors = []
+  for i in range(len(data)):
+    e = bytes([(data[i] + 1) % 256])
+    errors.append(data[:i - 1] + e + data[i + 1:])
+  return errors
 
 
 def generate_x509_certificate(
@@ -164,6 +178,16 @@ def generate_ec2_credential_public_key(
       x=random_public_numbers.x.to_bytes(klen, 'big'),
       y=random_public_numbers.y.to_bytes(klen, 'big'),
   )
+
+
+def generate_okp_private_key(
+    crv: OKPCurve.Value) -> Union[Ed25519PrivateKey, Ed448PrivateKey]:
+  crv_to_pk = {
+      OKPCurve.Value.ED25519: Ed25519PrivateKey,
+      OKPCurve.Value.ED448: Ed448PrivateKey,
+  }
+
+  return crv_to_pk[crv].generate()  # type: ignore
 
 
 def generate_okp_credential_public_key(

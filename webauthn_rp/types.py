@@ -1216,7 +1216,7 @@ class COSEKeyOperation(metaclass=NameValueEnumsContainer):
 
 class EC2Curve(metaclass=NameValueEnumsContainer):
   """
-  A metaclass for the COSEKeyOperation Name and Value Enums.
+  A metaclass for the EC2Curve Name and Value Enums.
 
   Both the Name and Value Enums share the following documentation.
 
@@ -1241,7 +1241,7 @@ class EC2Curve(metaclass=NameValueEnumsContainer):
 
 class OKPCurve(metaclass=NameValueEnumsContainer):
   """
-  A metaclass for the COSEKeyOperation Name and Value Enums.
+  A metaclass for the OKPCurve Name and Value Enums.
 
   Both the Name and Value Enums share the following documentation.
 

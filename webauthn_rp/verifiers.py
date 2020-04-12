@@ -12,6 +12,7 @@ from webauthn_rp.errors import (UnimplementedError, ValidationError,
 from webauthn_rp.types import (COSEAlgorithmIdentifier, CredentialPublicKey,
                                EC2CredentialPublicKey, EC2Curve, EC2PublicKey,
                                OKPCredentialPublicKey, OKPCurve, OKPPublicKey)
+from webauthn_rp.utils import ec2_hash_algorithm
 
 
 @singledispatch
@@ -30,21 +31,10 @@ def verify_ec2_credential_public_key(
   if credential_public_key.alg is None:
     raise ValidationError('alg must not be None')
 
-  alg_name = credential_public_key.alg.name
-  alg_to_hash = {
-      'ES256': SHA256,
-      'ES384': SHA384,
-      'ES512': SHA512,
-  }
-
-  hash_algorithm = None
-  if alg_name in alg_to_hash:
-    hash_algorithm = ECDSA(alg_to_hash[alg_name]())
-  else:
-    raise ValidationError('Unsupported EC2 alg {}'.format(alg_name))
+  signature_algorithm = ECDSA(ec2_hash_algorithm(credential_public_key.alg))
 
   try:
-    public_key.verify(signature, data, hash_algorithm)
+    public_key.verify(signature, data, signature_algorithm)
   except cryptography.exceptions.InvalidSignature:
     raise VerificationError('EC2 verification failure')
 
