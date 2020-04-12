@@ -34,6 +34,10 @@ class ValidationError(WebAuthnRPError):
   pass
 
 
+class BuilderError(WebAuthnRPError):
+  pass
+
+
 class NotFoundError(WebAuthnRPError):
   pass
 
