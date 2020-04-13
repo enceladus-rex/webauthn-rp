@@ -2,9 +2,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from webauthn_rp.builders import CredentialCreationOptionsBuilder
+from webauthn_rp.builders import (CredentialCreationOptionsBuilder,
+                                  CredentialRequestOptionsBuilder)
 from webauthn_rp.errors import BuilderError
-from webauthn_rp.types import CredentialCreationOptions
+from webauthn_rp.types import (CredentialCreationOptions,
+                               CredentialRequestOptions)
 
 
 def test_credential_creation_options_builder_success():
@@ -42,3 +44,36 @@ def test_credential_creation_options_builder_error():
 
   with pytest.raises(BuilderError):
     builder.build(user=MagicMock(), challenge=MagicMock())
+
+
+def test_credential_request_options_builder_success():
+  builder = CredentialRequestOptionsBuilder(
+      mediation=MagicMock(),
+      timeout=MagicMock(),
+      rp_id=MagicMock(),
+      extensions=MagicMock(),
+      allow_credentials=MagicMock(),
+      user_verification=MagicMock(),
+  )
+
+  assert isinstance(builder.build(challenge=MagicMock()),
+                    CredentialRequestOptions)
+
+  builder = CredentialRequestOptionsBuilder()
+  assert isinstance(builder.build(challenge=MagicMock()),
+                    CredentialRequestOptions)
+
+  funcs = ('mediation', 'timeout', 'rp_id', 'extensions', 'allow_credentials',
+           'user_verification')
+  for fn in funcs:
+    b = getattr(builder, fn)(MagicMock())
+    isinstance(b.build(challenge=MagicMock()), CredentialRequestOptions)
+
+
+def test_credential_request_options_builder_error():
+  builder = CredentialRequestOptionsBuilder()
+
+  funcs = ('mediation', )
+  for fn in funcs:
+    with pytest.raises(AssertionError):
+      getattr(builder, fn)(None)

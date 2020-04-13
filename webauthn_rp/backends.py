@@ -33,10 +33,6 @@ class CredentialsBackend:
     if not self.registrar.register_creation_options(options):
       raise RegistrationError('Failed to register creation options')
 
-  def handle_request_options(self, *, options: CredentialRequestOptions):
-    if not self.registrar.register_request_options(options):
-      raise RegistrationError('Failed to register request options')
-
   def handle_credential_creation(
       self,
       *,
@@ -128,6 +124,10 @@ class CredentialsBackend:
         trusted_path=trusted_path,
     ):
       raise RegistrationError('Failed to register credential creation')
+
+  def handle_request_options(self, *, options: CredentialRequestOptions):
+    if not self.registrar.register_request_options(options):
+      raise RegistrationError('Failed to register request options')
 
   def handle_credential_request(
       self,

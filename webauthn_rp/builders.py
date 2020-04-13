@@ -5,9 +5,11 @@ from webauthn_rp.errors import BuilderError
 from webauthn_rp.types import (
     AttestationConveyancePreference, AuthenticationExtensionsClientInputs,
     AuthenticatorSelectionCriteria, CredentialCreationOptions,
-    CredentialRequestOptions, PublicKeyCredentialCreationOptions,
-    PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
-    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity)
+    CredentialMediationRequirement, CredentialRequestOptions,
+    PublicKeyCredentialCreationOptions, PublicKeyCredentialDescriptor,
+    PublicKeyCredentialParameters, PublicKeyCredentialRequestOptions,
+    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
+    UserVerificationRequirement)
 
 
 class CredentialCreationOptionsBuilder:
@@ -122,3 +124,79 @@ class CredentialCreationOptionsBuilder:
             extensions=self._extensions,
             attestation=self._attestation,
             exclude_credentials=self._exclude_credentials))
+
+
+class CredentialRequestOptionsBuilder:
+  def __init__(
+      self,
+      *,
+      mediation: CredentialMediationRequirement = (
+          CredentialMediationRequirement.OPTIONAL),
+      timeout: Optional[int] = None,
+      rp_id: Optional[str] = None,
+      extensions: Optional[AuthenticationExtensionsClientInputs] = None,
+      allow_credentials: Optional[
+          Sequence[PublicKeyCredentialDescriptor]] = None,
+      user_verification: Optional[UserVerificationRequirement] = (
+          UserVerificationRequirement.PREFERRED)):
+    self._mediation = mediation
+    self._timeout = timeout
+    self._rp_id = rp_id
+    self._extensions = extensions
+    self._allow_credentials = allow_credentials
+    self._user_verification = user_verification
+
+  def _copy(self) -> 'CredentialRequestOptionsBuilder':
+    return deepcopy(self)
+
+  def mediation(
+      self, mediation: CredentialMediationRequirement
+  ) -> 'CredentialRequestOptionsBuilder':
+    assert mediation is not None
+    c = self._copy()
+    c._mediation = mediation
+    return c
+
+  def timeout(self,
+              timeout: Optional[int]) -> 'CredentialRequestOptionsBuilder':
+    c = self._copy()
+    c._timeout = timeout
+    return c
+
+  def rp_id(self, rp_id: Optional[str]) -> 'CredentialRequestOptionsBuilder':
+    c = self._copy()
+    c._rp_id = rp_id
+    return c
+
+  def extensions(
+      self, extensions: Optional[AuthenticationExtensionsClientInputs]
+  ) -> 'CredentialRequestOptionsBuilder':
+    c = self._copy()
+    c._extensions = extensions
+    return c
+
+  def allow_credentials(
+      self,
+      allow_credentials: Optional[Sequence[PublicKeyCredentialDescriptor]]
+  ) -> 'CredentialRequestOptionsBuilder':
+    c = self._copy()
+    c._allow_credentials = allow_credentials
+    return c
+
+  def user_verification(
+      self, user_verification: Optional[UserVerificationRequirement]
+  ) -> 'CredentialRequestOptionsBuilder':
+    c = self._copy()
+    c._user_verification = user_verification
+    return c
+
+  def build(self, *, challenge: bytes) -> CredentialRequestOptions:
+    return CredentialRequestOptions(
+        mediation=self._mediation,
+        public_key=PublicKeyCredentialRequestOptions(
+            challenge=challenge,
+            timeout=self._timeout,
+            rp_id=self._rp_id,
+            extensions=self._extensions,
+            allow_credentials=self._allow_credentials,
+            user_verification=self._user_verification))
