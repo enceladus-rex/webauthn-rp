@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import random
 from base64 import b64encode
+from enum import Enum
 from pprint import pprint
 from typing import Any, Dict, List, Optional, Tuple, Type
 
@@ -210,4 +211,20 @@ def generate_okp_credential_public_key(
 
 
 def assert_objects_equal(a, b):
-  assert a.__dict__ == b.__dict__
+  assert type(a) is type(b)
+
+  if isinstance(a, (int, str, float, bytes, Enum)):
+    assert a == b
+  elif isinstance(a, (list, tuple)):
+    assert len(a) == len(b)
+    for x, y in zip(a, b):
+      assert_objects_equal(x, y)
+  elif isinstance(a, set):
+    assert a == b
+  elif a is None:
+    assert a == b
+  else:
+    assert set(a.__dict__.keys()) == set(b.__dict__.keys())
+
+    for k in a.__dict__:
+      assert_objects_equal(a.__dict__[k], b.__dict__[k])

@@ -66,13 +66,6 @@ def bytes_from_base64(s: str) -> bytes:
     raise ValidationError('Invalid base64 string')
 
 
-def bytes_from_array(arr: Sequence[Any]) -> bytes:
-  try:
-    return bytes(arr)
-  except binascii.Error:
-    raise ValidationError('Invalid array type')
-
-
 def parse_public_key_credential(data: dict) -> PublicKeyCredential:
   check_unsupported_keys({'id', 'rawId', 'response', 'type'}, data)
   id_ = parse_dictionary_field('id', str, data)
@@ -106,8 +99,8 @@ def parse_public_key_credential(data: dict) -> PublicKeyCredential:
         parse_dictionary_field('authenticatorData', str, response))
     signature = bytes_from_base64(
         parse_dictionary_field('signature', str, response))
-    user_handle_b64s = parse_dictionary_field('userHandle', (list, tuple),
-                                              response, False)
+    user_handle_b64s = parse_dictionary_field('userHandle', str, response,
+                                              False)
     user_handle = None
     if user_handle_b64s is not None:
       user_handle = bytes_from_base64(user_handle_b64s)
