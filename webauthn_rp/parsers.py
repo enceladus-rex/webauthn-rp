@@ -14,6 +14,7 @@ from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
                                    EC2_P_521_NUMBER_LENGTH,
                                    OKP_ED448_NUMBER_LENGTH,
                                    OKP_ED25519_NUMBER_LENGTH)
+from webauthn_rp.utils import curve_coordinate_byte_length
 from webauthn_rp.errors import (DecodingError, TokenBindingError,
                                 ValidationError)
 from webauthn_rp.types import (
@@ -122,7 +123,7 @@ def parse_credential_public_key_kty(
   try:
     kty = cast(Union[COSEKeyType.Name, COSEKeyType.Value],
                COSEKeyType(kty_raw))  # type: ignore
-  except KeyError:
+  except (KeyError, ValueError):
     raise ValidationError(
         'Invalid credential public key type {}'.format(kty_raw))
   return kty
@@ -137,7 +138,7 @@ def parse_credential_public_key_alg(
     alg = cast(Union[COSEAlgorithmIdentifier.Name,
                      COSEAlgorithmIdentifier.Value],
                COSEAlgorithmIdentifier(alg_raw))  # type: ignore
-  except KeyError:
+  except (KeyError, ValueError):
     raise ValidationError(
         'Invalid credential public key alg type {}'.format(alg_raw))
   return alg
@@ -164,7 +165,7 @@ def parse_credential_public_key_key_ops(
 
     try:
       key_ops.append(COSEKeyOperation(ko))  # type: ignore
-    except KeyError:
+    except (KeyError, ValueError):
       raise ValidationError('Invalid credential public key key op {}'.format(
           credential_public_key[4]))
 
@@ -184,30 +185,6 @@ def parse_credential_public_key_kwargs(credential_public_key: dict) -> dict:
       'key_ops': key_ops,
       'base_IV': base_IV
   }
-
-
-def ec2_number_length(crv: Union[EC2Curve.Name, EC2Curve.Value]) -> int:
-  key_to_length = {
-      EC2Curve.Name.P_256: EC2_P_256_NUMBER_LENGTH,
-      EC2Curve.Name.P_384: EC2_P_384_NUMBER_LENGTH,
-      EC2Curve.Name.P_521: EC2_P_521_NUMBER_LENGTH,
-      EC2Curve.Value.P_256: EC2_P_256_NUMBER_LENGTH,
-      EC2Curve.Value.P_384: EC2_P_384_NUMBER_LENGTH,
-      EC2Curve.Value.P_521: EC2_P_521_NUMBER_LENGTH,
-  }
-
-  return key_to_length[crv]
-
-
-def okp_number_length(crv: Union[OKPCurve.Name, OKPCurve.Value]) -> int:
-  key_to_length = {
-      OKPCurve.Name.ED25519: OKP_ED25519_NUMBER_LENGTH,
-      OKPCurve.Name.ED448: OKP_ED448_NUMBER_LENGTH,
-      OKPCurve.Value.ED25519: OKP_ED25519_NUMBER_LENGTH,
-      OKPCurve.Value.ED448: OKP_ED448_NUMBER_LENGTH,
-  }
-
-  return key_to_length[crv]
 
 
 def parse_ec2_public_key_crv(
@@ -231,7 +208,7 @@ def parse_okp_public_key_crv(
 def parse_okp_public_key(credential_public_key: dict) -> CredentialPublicKey:
   x = parse_dictionary_field(-2, bytes, credential_public_key)
   crv = parse_okp_public_key_crv(credential_public_key)
-  crv_len = okp_number_length(crv)
+  crv_len = curve_coordinate_byte_length(crv)
   if len(x) != crv_len:
     raise ValidationError(
         'Packed credential public key x and y must be {} bytes'.format(
@@ -249,7 +226,7 @@ def parse_ec2_public_key(
   x = parse_dictionary_field(-2, bytes, credential_public_key)
   y = parse_dictionary_field(-3, bytes, credential_public_key)
   crv = parse_ec2_public_key_crv(credential_public_key)
-  crv_len = ec2_number_length(crv)
+  crv_len = curve_coordinate_byte_length(crv)
   if len(x) != crv_len or len(y) != crv_len:
     raise ValidationError(
         'Packed credential public key x and y must be {} bytes'.format(
