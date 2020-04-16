@@ -7,11 +7,11 @@ from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512,
                                                    HashAlgorithm)
 
 from webauthn_rp import types
-from webauthn_rp.constants import (P_256_COORDINATE_BYTE_LENGTH,
+from webauthn_rp.constants import (ED448_COORDINATE_BYTE_LENGTH,
+                                   ED25519_COORDINATE_BYTE_LENGTH,
+                                   P_256_COORDINATE_BYTE_LENGTH,
                                    P_384_COORDINATE_BYTE_LENGTH,
-                                   P_521_COORDINATE_BYTE_LENGTH,
-                                   ED448_COORDINATE_BYTE_LENGTH,
-                                   ED25519_COORDINATE_BYTE_LENGTH)
+                                   P_521_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.errors import ValidationError
 
 CURVE_COORDINATE_BYTE_LENGTHS = {

@@ -9,12 +9,11 @@ from typing import Any, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import cbor
 
-from webauthn_rp.constants import (P_256_COORDINATE_BYTE_LENGTH,
+from webauthn_rp.constants import (ED448_COORDINATE_BYTE_LENGTH,
+                                   ED25519_COORDINATE_BYTE_LENGTH,
+                                   P_256_COORDINATE_BYTE_LENGTH,
                                    P_384_COORDINATE_BYTE_LENGTH,
-                                   P_521_COORDINATE_BYTE_LENGTH,
-                                   ED448_COORDINATE_BYTE_LENGTH,
-                                   ED25519_COORDINATE_BYTE_LENGTH)
-from webauthn_rp.utils import curve_coordinate_byte_length
+                                   P_521_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.errors import (DecodingError, TokenBindingError,
                                 ValidationError)
 from webauthn_rp.types import (
@@ -31,6 +30,7 @@ from webauthn_rp.types import (
     PublicKeyCredential, TokenBinding, TokenBindingStatus,
     TPMAttestationStatement, TPMECDAAAttestationStatement,
     TPMX509AttestationStatement)
+from webauthn_rp.utils import curve_coordinate_byte_length
 from webauthn_rp.validators import validate
 
 

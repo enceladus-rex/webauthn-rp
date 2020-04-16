@@ -21,8 +21,8 @@ from pyasn1.codec.der.encoder import encode
 import webauthn_rp.types
 from webauthn_rp.asn1 import AuthorizationList, KeyDescription
 from webauthn_rp.attesters import attest
-from webauthn_rp.constants import (P_256_COORDINATE_BYTE_LENGTH,
-                                   KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN)
+from webauthn_rp.constants import (KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN,
+                                   P_256_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.errors import ValidationError, VerificationError
 from webauthn_rp.types import (
     AndroidKeyAttestationStatement, AttestationObject,
