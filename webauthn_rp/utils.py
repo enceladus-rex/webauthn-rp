@@ -7,19 +7,19 @@ from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512,
                                                    HashAlgorithm)
 
 from webauthn_rp import types
-from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
-                                   EC2_P_384_NUMBER_LENGTH,
-                                   EC2_P_521_NUMBER_LENGTH,
-                                   OKP_ED448_NUMBER_LENGTH,
-                                   OKP_ED25519_NUMBER_LENGTH)
+from webauthn_rp.constants import (P_256_COORDINATE_BYTE_LENGTH,
+                                   P_384_COORDINATE_BYTE_LENGTH,
+                                   P_521_COORDINATE_BYTE_LENGTH,
+                                   ED448_COORDINATE_BYTE_LENGTH,
+                                   ED25519_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.errors import ValidationError
 
 CURVE_COORDINATE_BYTE_LENGTHS = {
-    'P_256': EC2_P_256_NUMBER_LENGTH,
-    'P_384': EC2_P_384_NUMBER_LENGTH,
-    'P_521': EC2_P_521_NUMBER_LENGTH,
-    'ED25519': OKP_ED25519_NUMBER_LENGTH,
-    'ED448': OKP_ED448_NUMBER_LENGTH,
+    'P_256': P_256_COORDINATE_BYTE_LENGTH,
+    'P_384': P_384_COORDINATE_BYTE_LENGTH,
+    'P_521': P_521_COORDINATE_BYTE_LENGTH,
+    'ED25519': ED25519_COORDINATE_BYTE_LENGTH,
+    'ED448': ED448_COORDINATE_BYTE_LENGTH,
 }
 
 EC2_HASH_ALGORITHMS = {

@@ -28,6 +28,7 @@ from webauthn_rp.constants import *
 from webauthn_rp.errors import ValidationError, VerificationError
 from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.types import *
+from webauthn_rp.utils import curve_coordinate_byte_length
 
 TEST_RP_ID = b'example.org'
 TEST_RP_ID_HASH = hashlib.sha256(TEST_RP_ID).digest()
@@ -151,7 +152,6 @@ def generate_ec2_private_key(crv: EC2Curve.Value) -> EllipticCurvePrivateKey:
   }
 
   curve = key_to_curve[crv]
-
   return generate_private_key(curve(), default_backend())  # type: ignore
 
 
@@ -163,21 +163,14 @@ def generate_ec2_credential_public_key(
     crv: EC2Curve.Value,
     alg: Optional[COSEAlgorithmIdentifier.Value] = None
 ) -> EC2CredentialPublicKey:
-  key_to_klen = {
-      EC2Curve.Value.P_256: EC2_P_256_NUMBER_LENGTH,
-      EC2Curve.Value.P_384: EC2_P_384_NUMBER_LENGTH,
-      EC2Curve.Value.P_521: EC2_P_521_NUMBER_LENGTH,
-  }
-
-  klen = key_to_klen[crv]
-
+  clen = curve_coordinate_byte_length(crv)
   random_public_numbers = generate_ec2_public_key(crv).public_numbers()
   return EC2CredentialPublicKey(
       kty=COSEKeyType.Value.EC2,
       crv=crv,
       alg=alg or COSEAlgorithmIdentifier.Value.ES256,
-      x=random_public_numbers.x.to_bytes(klen, 'big'),
-      y=random_public_numbers.y.to_bytes(klen, 'big'),
+      x=random_public_numbers.x.to_bytes(clen, 'big'),
+      y=random_public_numbers.y.to_bytes(clen, 'big'),
   )
 
 

@@ -9,11 +9,11 @@ from typing import Any, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import cbor
 
-from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
-                                   EC2_P_384_NUMBER_LENGTH,
-                                   EC2_P_521_NUMBER_LENGTH,
-                                   OKP_ED448_NUMBER_LENGTH,
-                                   OKP_ED25519_NUMBER_LENGTH)
+from webauthn_rp.constants import (P_256_COORDINATE_BYTE_LENGTH,
+                                   P_384_COORDINATE_BYTE_LENGTH,
+                                   P_521_COORDINATE_BYTE_LENGTH,
+                                   ED448_COORDINATE_BYTE_LENGTH,
+                                   ED25519_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.utils import curve_coordinate_byte_length
 from webauthn_rp.errors import (DecodingError, TokenBindingError,
                                 ValidationError)
@@ -192,7 +192,7 @@ def parse_ec2_public_key_crv(
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
     return EC2Curve(crv_raw)  # type: ignore
-  except KeyError:
+  except (KeyError, ValueError):
     raise ValidationError('Invalid EC2 curve {}'.format(crv_raw))
 
 
@@ -201,7 +201,7 @@ def parse_okp_public_key_crv(
   crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
     return OKPCurve(crv_raw)  # type: ignore
-  except KeyError:
+  except (KeyError, ValueError):
     raise ValidationError('Invalid OKP curve {}'.format(crv_raw))
 
 
@@ -365,7 +365,7 @@ def parse_attestation_statement_alg(
 
   try:
     alg = COSEAlgorithmIdentifier(alg)  # type: ignore
-  except KeyError:
+  except (KeyError, ValueError):
     raise ValidationError('Invalid algorithm identifier {}'.format(alg))
   return alg
 
@@ -614,7 +614,7 @@ def parse_attestation(
 
     try:
       asfi = AttestationStatementFormatIdentifier(fmt)
-    except KeyError:
+    except (KeyError, ValueError):
       raise ValidationError('Invalid attestation statement format identifier')
 
     if type(auth_data) is not bytes:

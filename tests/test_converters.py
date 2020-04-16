@@ -228,9 +228,9 @@ def test_jsonify_credential_request_options():
 
 def test_cryptography_ec2_public_key():
   key_data = (
-      (EC2Curve.Value.P_256, 32),
-      (EC2Curve.Value.P_384, 48),
-      (EC2Curve.Value.P_521, 66),
+      (EC2Curve.Value.P_256, P_256_COORDINATE_BYTE_LENGTH),
+      (EC2Curve.Value.P_384, P_384_COORDINATE_BYTE_LENGTH),
+      (EC2Curve.Value.P_521, P_521_COORDINATE_BYTE_LENGTH),
   )
 
   for crv, klen in key_data:
@@ -287,13 +287,7 @@ def test_cryptography_okp_public_key_ed448():
 
 
 def test_cose_key_from_ec2():
-  crvs = (
-      EC2Curve.Value.P_256,
-      EC2Curve.Value.P_384,
-      EC2Curve.Value.P_521,
-  )
-
-  for crv in crvs:
+  for crv in EC2Curve.Value:
     ec2_key = generate_ec2_credential_public_key(crv)
     cose_key = cose_key_from_ec2(ec2_key)
     parsed_ec2_key = parse_cose_key(cose_key)
@@ -301,12 +295,7 @@ def test_cose_key_from_ec2():
 
 
 def test_cose_key_from_okp():
-  crvs = (
-      OKPCurve.Value.ED25519,
-      OKPCurve.Value.ED448,
-  )
-
-  for crv in crvs:
+  for crv in OKPCurve.Value:
     okp_key = generate_okp_credential_public_key(crv)
     cose_key = cose_key_from_okp(okp_key)
     parsed_okp_key = parse_cose_key(cose_key)

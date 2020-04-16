@@ -3,11 +3,6 @@ from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
 from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
-                                   EC2_P_384_NUMBER_LENGTH,
-                                   EC2_P_521_NUMBER_LENGTH,
-                                   OKP_ED448_NUMBER_LENGTH,
-                                   OKP_ED25519_NUMBER_LENGTH)
 from webauthn_rp.errors import VerificationError
 from webauthn_rp.types import (COSEAlgorithmIdentifier, COSEKeyType,
                                EC2CredentialPublicKey, EC2Curve,

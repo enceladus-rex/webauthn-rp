@@ -21,7 +21,7 @@ from pyasn1.codec.der.encoder import encode
 import webauthn_rp.types
 from webauthn_rp.asn1 import AuthorizationList, KeyDescription
 from webauthn_rp.attesters import attest
-from webauthn_rp.constants import (EC2_P_256_NUMBER_LENGTH,
+from webauthn_rp.constants import (P_256_COORDINATE_BYTE_LENGTH,
                                    KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN)
 from webauthn_rp.errors import ValidationError, VerificationError
 from webauthn_rp.types import (
@@ -46,8 +46,8 @@ def test_attest_fido_u2f():
       SECP256R1())
   public_numbers = private_key.private_numbers().public_numbers
 
-  x = public_numbers.x.to_bytes(EC2_P_256_NUMBER_LENGTH, 'big')
-  y = public_numbers.y.to_bytes(EC2_P_256_NUMBER_LENGTH, 'big')
+  x = public_numbers.x.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+  y = public_numbers.y.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
   public_key_u2f = b'\x04' + x + y
   verification_data = b''.join([
       b'\x00',
@@ -112,8 +112,8 @@ def test_attest_android_key():
       SECP256R1(), client_data_hash)
   public_numbers = private_key.private_numbers().public_numbers
 
-  x = public_numbers.x.to_bytes(EC2_P_256_NUMBER_LENGTH, 'big')
-  y = public_numbers.y.to_bytes(EC2_P_256_NUMBER_LENGTH, 'big')
+  x = public_numbers.x.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+  y = public_numbers.y.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
   public_key_android = b'\x04' + x + y
   verification_data = auth_data + client_data_hash
 

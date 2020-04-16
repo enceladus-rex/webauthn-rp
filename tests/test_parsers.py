@@ -4,18 +4,21 @@ import pytest
 
 from itertools import chain
 
+from webauthn_rp.constants import *
 from webauthn_rp.errors import ValidationError
 from webauthn_rp.parsers import (
     bytes_from_base64, check_unsupported_keys, parse_dictionary_field,
     parse_public_key_credential, parse_credential_public_key_kty,
     parse_credential_public_key_alg, parse_credential_public_key_key_ops,
     parse_credential_public_key_kwargs, parse_ec2_public_key_crv,
-    parse_okp_public_key_crv)
+    parse_okp_public_key_crv, parse_okp_public_key,
+    parse_ec2_public_key)
 from webauthn_rp.types import (AuthenticatorAssertionResponse,
                                AuthenticatorAttestationResponse,
                                PublicKeyCredential, COSEKeyType,
                                COSEAlgorithmIdentifier, COSEKeyOperation,
-                               EC2Curve, OKPCurve)
+                               EC2Curve, OKPCurve, CredentialPublicKey,
+                               OKPCredentialPublicKey, EC2CredentialPublicKey)
 
 from .common import assert_objects_equal
 
@@ -371,6 +374,8 @@ def test_parse_ec2_public_key_crv_success(data, expected):
 @pytest.mark.parametrize('data', [
   {-1: b''},
   {-1: 1.},
+  {-1: 'x'},
+  {-1: -1},
   {},
   {2: 1},
 ])
@@ -389,9 +394,397 @@ def test_parse_okp_public_key_crv_success(data, expected):
 @pytest.mark.parametrize('data', [
   {-1: b''},
   {-1: 1.},
+  {-1: 'x'},
+  {-1: -1},
   {},
   {2: 1},
 ])
 def test_parse_okp_public_key_crv_error(data):
   with pytest.raises(ValidationError):
     parse_okp_public_key_crv(data)
+
+
+@pytest.mark.parametrize('data, expected', [
+  (
+    {
+      -2: b'x' * ED25519_COORDINATE_BYTE_LENGTH,
+      -1: OKPCurve.Value.ED25519.value,
+      1: COSEKeyType.Value.OKP.value,
+      2: b'kid',
+      3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+      4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+      5: b'base-IV',
+    },
+    OKPCredentialPublicKey(
+      kty=COSEKeyType.Value.OKP,
+      kid=b'kid',
+      alg=COSEAlgorithmIdentifier.Value.EDDSA,
+      key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+      base_IV=b'base-IV',
+      x=b'x' * ED25519_COORDINATE_BYTE_LENGTH,
+      crv=OKPCurve.Value.ED25519,
+    )
+  ),
+  (
+    {
+      -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+      -1: OKPCurve.Value.ED448.value,
+      1: COSEKeyType.Value.OKP.value,
+      2: b'kid',
+      3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+      4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+      5: b'base-IV',
+    },
+    OKPCredentialPublicKey(
+      kty=COSEKeyType.Value.OKP,
+      kid=b'kid',
+      alg=COSEAlgorithmIdentifier.Value.EDDSA,
+      key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+      base_IV=b'base-IV',
+      x=b'x' * ED448_COORDINATE_BYTE_LENGTH,
+      crv=OKPCurve.Value.ED448,
+    )
+  ),
+  (
+    {
+      -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+      -1: OKPCurve.Value.ED448.value,
+      1: COSEKeyType.Value.OKP.value,
+      2: b'kid',
+      3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+      4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+      5: b'base-IV',
+    },
+    OKPCredentialPublicKey(
+      kty=COSEKeyType.Value.OKP,
+      kid=b'kid',
+      alg=COSEAlgorithmIdentifier.Value.EDDSA,
+      key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+      base_IV=b'base-IV',
+      x=b'x' * ED448_COORDINATE_BYTE_LENGTH,
+      crv=OKPCurve.Value.ED448,
+    )
+  ),
+])
+def test_parse_okp_public_key_success(data, expected):
+  assert_objects_equal(parse_okp_public_key(data), expected)
+
+
+@pytest.mark.parametrize('data', [
+  {
+    -2: 'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: 'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: 'base-IV',
+  },{
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: 'invalid',
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: -1,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: 'invalid',
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [-3],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_256_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_256_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_256.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES256.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_384_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_384_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_384.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES384.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_521.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES512.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  }
+])
+def test_parse_okp_public_key_error(data):
+  with pytest.raises(ValidationError):
+    parse_okp_public_key(data)
+
+
+@pytest.mark.parametrize('data, expected', [
+  (
+    {
+      -3: b'y' * P_256_COORDINATE_BYTE_LENGTH,
+      -2: b'x' * P_256_COORDINATE_BYTE_LENGTH,
+      -1: EC2Curve.Value.P_256.value,
+      1: COSEKeyType.Value.EC2.value,
+      2: b'kid',
+      3: COSEAlgorithmIdentifier.Value.ES256.value,
+      4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+      5: b'base-IV',
+    },
+    EC2CredentialPublicKey(
+      kty=COSEKeyType.Value.EC2,
+      kid=b'kid',
+      alg=COSEAlgorithmIdentifier.Value.ES256,
+      key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+      base_IV=b'base-IV',
+      x=b'x' * P_256_COORDINATE_BYTE_LENGTH,
+      y=b'y' * P_256_COORDINATE_BYTE_LENGTH,
+      crv=EC2Curve.Value.P_256,
+    )
+  ),
+  (
+    {
+      -3: b'y' * P_384_COORDINATE_BYTE_LENGTH,
+      -2: b'x' * P_384_COORDINATE_BYTE_LENGTH,
+      -1: EC2Curve.Value.P_384.value,
+      1: COSEKeyType.Value.EC2.value,
+      2: b'kid',
+      3: COSEAlgorithmIdentifier.Value.ES384.value,
+      4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+      5: b'base-IV',
+    },
+    EC2CredentialPublicKey(
+      kty=COSEKeyType.Value.EC2,
+      kid=b'kid',
+      alg=COSEAlgorithmIdentifier.Value.ES384,
+      key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+      base_IV=b'base-IV',
+      x=b'x' * P_384_COORDINATE_BYTE_LENGTH,
+      y=b'y' * P_384_COORDINATE_BYTE_LENGTH,
+      crv=EC2Curve.Value.P_384,
+    )
+  ),
+  (
+    {
+      -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+      -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+      -1: EC2Curve.Value.P_521.value,
+      1: COSEKeyType.Value.EC2.value,
+      2: b'kid',
+      3: COSEAlgorithmIdentifier.Value.ES512.value,
+      4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+      5: b'base-IV',
+    },
+    EC2CredentialPublicKey(
+      kty=COSEKeyType.Value.EC2,
+      kid=b'kid',
+      alg=COSEAlgorithmIdentifier.Value.ES512,
+      key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+      base_IV=b'base-IV',
+      x=b'x' * P_521_COORDINATE_BYTE_LENGTH,
+      y=b'y' * P_521_COORDINATE_BYTE_LENGTH,
+      crv=EC2Curve.Value.P_521,
+    )
+  ),
+])
+def test_parse_ec2_public_key_success(data, expected):
+  assert_objects_equal(parse_ec2_public_key(data), expected)
+
+
+@pytest.mark.parametrize('data', [
+  {
+    -2: 'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: 'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: 'base-IV',
+  },{
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: 'invalid',
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: -1,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: 'invalid',
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -2: b'x' * ED448_COORDINATE_BYTE_LENGTH,
+    -1: OKPCurve.Value.ED448.value,
+    1: COSEKeyType.Value.OKP.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+    4: [-3],
+    5: b'base-IV',
+  },
+  {
+    -3: 'y' * P_256_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_256_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_256.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES256.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_384_COORDINATE_BYTE_LENGTH,
+    -2: 'x' * P_384_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_384.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES384.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: 'invalid',
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES512.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_521.value,
+    1: -3,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES512.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_521.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: 'kid',
+    3: COSEAlgorithmIdentifier.Value.ES512.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_521.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: 'invalid',
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_521.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES512.value,
+    4: [b'x', COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: b'base-IV',
+  },
+  {
+    -3: b'y' * P_521_COORDINATE_BYTE_LENGTH,
+    -2: b'x' * P_521_COORDINATE_BYTE_LENGTH,
+    -1: EC2Curve.Value.P_521.value,
+    1: COSEKeyType.Value.EC2.value,
+    2: b'kid',
+    3: COSEAlgorithmIdentifier.Value.ES512.value,
+    4: [COSEKeyOperation.Value.SIGN.value, COSEKeyOperation.Value.VERIFY.value],
+    5: 'base-IV',
+  }
+])
+def test_parse_ec2_public_key_error(data):
+  with pytest.raises(ValidationError):
+    parse_ec2_public_key(data)
