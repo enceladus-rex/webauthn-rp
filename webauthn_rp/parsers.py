@@ -7,7 +7,7 @@ from enum import Enum
 from functools import singledispatch
 from typing import Any, List, Optional, Sequence, Set, Tuple, Union, cast
 
-import cbor
+import cbor2
 
 from webauthn_rp.constants import (ED448_COORDINATE_BYTE_LENGTH,
                                    ED25519_COORDINATE_BYTE_LENGTH,
@@ -21,10 +21,10 @@ from webauthn_rp.types import (
     AttestationObject, AttestationStatement,
     AttestationStatementFormatIdentifier, AttestedCredentialData,
     AuthenticationExtensionsClientOutputs, AuthenticatorAssertionResponse,
-    AuthenticatorAttestationResponse, AuthenticatorData, CollectedClientData,
-    Coordinates, COSEAlgorithmIdentifier, COSEKeyOperation, COSEKeyType,
-    CredentialPublicKey, EC2CredentialPublicKey, EC2Curve,
-    FIDOU2FAttestationStatement, NoneAttestationStatement,
+    AuthenticatorAttestationResponse, AuthenticatorData, AuthenticatorDataFlag,
+    CollectedClientData, Coordinates, COSEAlgorithmIdentifier,
+    COSEKeyOperation, COSEKeyType, CredentialPublicKey, EC2CredentialPublicKey,
+    EC2Curve, FIDOU2FAttestationStatement, NoneAttestationStatement,
     OKPCredentialPublicKey, OKPCurve, PackedAttestationStatement,
     PackedECDAAAttestationStatement, PackedX509AttestationStatement,
     PublicKeyCredential, TokenBinding, TokenBindingStatus,
@@ -492,6 +492,9 @@ def parse_client_data(
   except (UnicodeDecodeError, json.JSONDecodeError):
     raise DecodingError('Could not decode the client data JSON')
 
+  if type(client_data) is not dict:
+    raise ValidationError('Client data JSON must be a dictionary')
+
   type_ = client_data.get('type')
   challenge = client_data.get('challenge')
   origin = client_data.get('origin')
@@ -502,16 +505,28 @@ def parse_client_data(
   token_binding_data = client_data.get('tokenBinding')
   token_binding = None
   if token_binding_data is not None:
+    if type(token_binding_data) is not dict:
+      raise ValidationError('Token Binding data must be a dictionary')
+
     token_binding_status = token_binding_data.get('status')
     token_binding_id = token_binding_data.get('id')
 
-    if token_binding_status == TokenBindingStatus.PRESENT and (token_binding_id
-                                                               is None):
+    if token_binding_status is None:
+      raise ValidationError('Token Binding status must be present')
+
+    try:
+      token_binding_status_enum = TokenBindingStatus(token_binding_status)
+    except ValueError:
+      raise ValidationError(
+          'Invalid Token Binding status {}'.format(token_binding_status))
+
+    if token_binding_status_enum == TokenBindingStatus.PRESENT and (
+        token_binding_id is None):
       raise TokenBindingError(
           'Token Binding must contain an id if status is {}'.format(
               TokenBindingStatus.PRESENT))
 
-    token_binding = TokenBinding(status=token_binding_status,
+    token_binding = TokenBinding(status=token_binding_status_enum,
                                  id=token_binding_id)
 
   return CollectedClientData(type=type_,
@@ -523,18 +538,33 @@ def parse_client_data(
 def parse_cose_key(
     credential_public_key: Union[dict, bytes]) -> CredentialPublicKey:
   if type(credential_public_key) is bytes:
-    credential_public_key = cbor.loads(credential_public_key)
+    try:
+      credential_public_key = cbor2.loads(credential_public_key)
+    except cbor2.CBORDecodeError:
+      raise ValidationError('Could not decode credential public key CBOR')
 
-  cose_key_type = cast(Union[COSEKeyType.Name, COSEKeyType.Value],
-                       COSEKeyType(credential_public_key[1]))  # type: ignore
+    if type(credential_public_key) is not dict:
+      raise ValidationError('Credential public key CBOR must be a dictionary')
+  try:
+    cose_key_type = COSEKeyType(credential_public_key[1])  # type: ignore
+  except (KeyError, ValueError):
+    raise ValidationError('Invalid or missing COSE key type encountered')
 
   try:
-    cpk_parser = getattr(CredentialPublicKeyParser, cose_key_type.name)
+    cpk_parser = getattr(CredentialPublicKeyParser,
+                         cose_key_type.name)  # type: ignore
   except AttributeError:
     raise ValidationError('Parser not supported for key type {}'.format(
-        cose_key_type.name))
+        cose_key_type.name))  # type: ignore
 
   return cpk_parser(credential_public_key)
+
+
+def _read_bytes(bio: io.BytesIO, n: int) -> bytes:
+  x = bio.read1(n)
+  if len(x) != n:
+    raise EOFError('Unexpected number of bytes read')
+  return x
 
 
 def parse_authenticator_data(
@@ -549,44 +579,62 @@ def parse_authenticator_data(
   signature_counter_bytes = auth_data[33:37]
   signature_counter_uint32, = struct.unpack('>I', signature_counter_bytes)
 
+  attested_credential_data_included = bool(flags
+                                           & AuthenticatorDataFlag.AT.value)
+  extension_data_included = bool(flags & AuthenticatorDataFlag.ED.value)
+
+  remaining_bytes_io = io.BytesIO(auth_data[37:])
+
   attested_credential_data = None
   aeci = None
-  if len(auth_data) >= 53:
-    aaguid = auth_data[37:53]
-    credential_id_length_bytes = auth_data[53:55]
-    credential_id_length_uint16, = struct.unpack('>H',
-                                                 credential_id_length_bytes)
-    credential_id = auth_data[55:(55 + credential_id_length_uint16)]
-    credential_public_key_bytes = auth_data[(55 +
-                                             credential_id_length_uint16):]
 
+  if attested_credential_data_included:
     try:
-      credential_public_key, bytes_read = cbor.cbor._loads(
-          io.BytesIO(credential_public_key_bytes))
-    except ValueError:
-      raise DecodingError('Could not decode the credential public key CBOR')
+      aaguid = _read_bytes(remaining_bytes_io, 16)
+      credential_id_length_bytes = _read_bytes(remaining_bytes_io, 2)
+      credential_id_length_uint16, = struct.unpack('>H',
+                                                   credential_id_length_bytes)
+      credential_id = _read_bytes(remaining_bytes_io,
+                                  credential_id_length_uint16)
 
-    if type(credential_public_key) is not dict:
-      raise ValidationError('Credential public key must be a dictionary')
-
-    cpk = parse_cose_key(credential_public_key)
-    validate(cpk)
-
-    extension_bytes = credential_public_key_bytes[bytes_read:]
-
-    if extension_bytes:
       try:
-        extensions = cbor.loads(extension_bytes)
-      except ValueError:
-        raise DecodingError('Could not decode the extensions CBOR')
-      aeci = parse_extensions(extensions)
+        credential_public_key = cbor2.load(remaining_bytes_io)
+      except cbor2.CBORDecodeError:
+        raise DecodingError('Could not decode the credential public key CBOR')
 
-    attested_credential_data = AttestedCredentialData(
-        aaguid=aaguid,
-        credential_id_length=credential_id_length_uint16,
-        credential_id=credential_id,
-        credential_public_key=cpk,
-    )
+      if type(credential_public_key) is not dict:
+        raise ValidationError('Credential public key must be a dictionary')
+
+      cpk = parse_cose_key(credential_public_key)
+      validate(cpk)
+
+      attested_credential_data = AttestedCredentialData(
+          aaguid=aaguid,
+          credential_id_length=credential_id_length_uint16,
+          credential_id=credential_id,
+          credential_public_key=cpk,
+      )
+    except EOFError:
+      raise ValidationError(
+          'Could not read the included attested credential data')
+
+  if extension_data_included:
+    try:
+      try:
+        extensions = cbor2.load(remaining_bytes_io)
+      except cbor2.CBORDecodeError:
+        raise DecodingError('Could not decode the extensions CBOR')
+
+      if type(extensions) is not dict:
+        raise ValidationError('Extension data CBOR must be a dictionary')
+
+      aeci = parse_extensions(extensions)
+    except EOFError:
+      raise ValidationError('Could not read the included extension data')
+
+  if remaining_bytes_io.read1(1) != b'':
+    raise ValidationError(
+        'The authenticator data has unexpected leftover bytes')
 
   return AuthenticatorData(
       rp_id_hash=rp_id_hash,
@@ -600,9 +648,12 @@ def parse_authenticator_data(
 def parse_attestation(
     attestation_object: bytes) -> Tuple[AttestationObject, dict]:
   try:
-    attestation_object_data = cbor.loads(attestation_object)
-  except ValueError:
+    attestation_object_data = cbor2.loads(attestation_object)
+  except cbor2.CBORDecodeError:
     raise DecodingError('Could not decode the attestation object CBOR')
+
+  if type(attestation_object_data) is not dict:
+    raise ValidationError('Attestation object CBOR must be a dictionary')
 
   try:
     auth_data = attestation_object_data['authData']
@@ -614,7 +665,7 @@ def parse_attestation(
 
     try:
       asfi = AttestationStatementFormatIdentifier(fmt)
-    except (KeyError, ValueError):
+    except ValueError:
       raise ValidationError('Invalid attestation statement format identifier')
 
     if type(auth_data) is not bytes:
@@ -622,7 +673,7 @@ def parse_attestation(
 
     authenticator_data = parse_authenticator_data(auth_data, asfi)
   except KeyError as e:
-    raise ValidationError('Missing {} in attestation'.format(str(e)))
+    raise ValidationError('Missing key in attestation ({})'.format(str(e)))
 
   if type(att_stmt) is not dict:
     raise ValidationError('attStmt must be a dictionary')

@@ -1,17 +1,14 @@
 import base64
 from itertools import chain, combinations
 
+import cbor2
 import pytest
 
 from webauthn_rp.constants import *
-from webauthn_rp.errors import ValidationError
+from webauthn_rp.errors import (DecodingError, TokenBindingError,
+                                ValidationError)
 from webauthn_rp.parsers import *
-from webauthn_rp.types import (
-    AuthenticationExtensionsClientOutputs, AuthenticationExtensionsSupported,
-    AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
-    Coordinates, COSEAlgorithmIdentifier, COSEKeyOperation, COSEKeyType,
-    CredentialPublicKey, EC2CredentialPublicKey, EC2Curve,
-    OKPCredentialPublicKey, OKPCurve, PublicKeyCredential, UvmEntries)
+from webauthn_rp.types import *
 
 from .common import assert_objects_equal
 
@@ -933,12 +930,12 @@ def test_parse_ec2_public_key_error(data):
     [
         (dict(), AuthenticationExtensionsClientOutputs()),
     ] + [
-        (
+        (  # type: ignore
             {
                 x[0]: x[-2]  # type: ignore
                 for x in c
             },
-            AuthenticationExtensionsClientOutputs(**{
+            AuthenticationExtensionsClientOutputs(**{  # type: ignore
                 x[1]: x[-1]  # type: ignore
                 for x in c
             })) for c in combinations((
@@ -1030,7 +1027,7 @@ def test_parse_extensions_error(data):
     for x in chain(COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value)
 ])
 def test_parse_attestation_statement_alg_success(data, expected):
-  parse_attestation_statement_alg(data) == expected
+  assert_objects_equal(parse_attestation_statement_alg(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1056,7 +1053,7 @@ def test_parse_attestation_statement_alg_error(data):
     }, (b'x', b'y')),
 ])
 def test_parse_attestation_statement_x5c_success(data, expected):
-  parse_attestation_statement_x5c(data) == expected
+  assert_objects_equal(parse_attestation_statement_x5c(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1110,7 +1107,7 @@ def test_parse_attestation_statement_x5c_error(data):
                                      ecdaa_key_id=b'key-id')),
 ])
 def test_parse_packed_attestation_statement_success(data, expected):
-  parse_packed_attestation_statement(data) == expected
+  assert_objects_equal(parse_packed_attestation_statement(data), expected)
 
 
 @pytest.mark.parametrize('data', [{}, {
@@ -1129,89 +1126,956 @@ def test_parse_packed_attestation_statement_error(data):
     parse_packed_attestation_statement(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+@pytest.mark.parametrize('data, expected', [
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'ver': '1',
+        'certInfo': b'cert-info',
+        'pubArea': b'pub-area',
+    },
+     TPMAttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                             sig=b'signature',
+                             ver='1',
+                             cert_info=b'cert-info',
+                             pub_area=b'pub-area')),
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'ver': '1',
+        'certInfo': b'cert-info',
+        'pubArea': b'pub-area',
+        'x5c': [b'x', b'y']
+    },
+     TPMX509AttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                 sig=b'signature',
+                                 ver='1',
+                                 cert_info=b'cert-info',
+                                 pub_area=b'pub-area',
+                                 x5c=[b'x', b'y'])),
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'ver': '1',
+        'certInfo': b'cert-info',
+        'pubArea': b'pub-area',
+        'ecdaaKeyId': b'key-id'
+    },
+     TPMECDAAAttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                  sig=b'signature',
+                                  ver='1',
+                                  cert_info=b'cert-info',
+                                  pub_area=b'pub-area',
+                                  ecdaa_key_id=b'key-id')),
+])
 def test_parse_tpm_attestation_statement_success(data, expected):
-  parse_tpm_attestation_statement(data) == expected
+  assert_objects_equal(parse_tpm_attestation_statement(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [{}, {
+    'alg': -1,
+    'sig': b'signature',
+    'ver': '1',
+    'certInfo': b'cert-info',
+    'pubArea': b'pub-area',
+}, {
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': 'signature',
+    'ver': '1',
+    'certInfo': b'cert-info',
+    'pubArea': b'pub-area',
+}, {
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': 'signature',
+    'ver': b'1',
+    'certInfo': b'cert-info',
+    'pubArea': b'pub-area',
+}, {
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': 'signature',
+    'ver': '1',
+    'certInfo': 'cert-info',
+    'pubArea': b'pub-area',
+}, {
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': 'signature',
+    'ver': '1',
+    'certInfo': b'cert-info',
+    'pubArea': 'pub-area',
+}, {
+    'invalid': 'data',
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': b'signature',
+    'ver': '1',
+    'certInfo': b'cert-info',
+    'pubArea': b'pub-area',
+}, {
+    'invalid': 'data',
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': b'signature',
+    'ver': '1',
+    'certInfo': b'cert-info',
+    'pubArea': b'pub-area',
+    'x5c': [b'x', b'y']
+}, {
+    'invalid': 'data',
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': b'signature',
+    'ver': '1',
+    'certInfo': b'cert-info',
+    'pubArea': b'pub-area',
+    'ecdaaKeyId': b'key-id'
+}])
 def test_parse_tpm_attestation_statement_error(data):
   with pytest.raises(ValidationError):
     parse_tpm_attestation_statement(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+@pytest.mark.parametrize('data, expected', [
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'x5c': [b'x', b'y']
+    },
+     AndroidKeyAttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                    sig=b'signature',
+                                    x5c=[b'x', b'y'])),
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'x5c': [b'x', b'y']
+    },
+     AndroidKeyAttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                    sig=b'signature',
+                                    x5c=[b'x', b'y'])),
+])
 def test_parse_android_key_attestation_statement_success(data, expected):
-  parse_android_key_attestation_statement(data) == expected
+  assert_objects_equal(parse_android_key_attestation_statement(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [
+    {},
+    {
+        'alg': -1,
+        'sig': b'signature',
+        'x5c': [b'x', b'y']
+    },
+    {
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': 'signature',
+        'x5c': [b'x', b'y']
+    },
+    {
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'x5c': b'x'
+    },
+    {
+        'invalid': 'x',
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'x5c': [b'x', b'y']
+    },
+])
 def test_parse_android_key_attestation_statement_error(data):
   with pytest.raises(ValidationError):
     parse_android_key_attestation_statement(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+@pytest.mark.parametrize('data, expected', [({
+    'ver': '1',
+    'response': b'response'
+}, AndroidSafetyNetAttestationStatement(ver='1', response=b'response'))])
 def test_parse_android_safetynet_attestation_statement_success(data, expected):
-  parse_android_safetynet_attestation_statement(data) == expected
+  assert_objects_equal(parse_android_safetynet_attestation_statement(data),
+                       expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [
+    {},
+    {
+        'ver': b'1',
+        'response': b'response'
+    },
+    {
+        'ver': '1',
+        'response': 'response'
+    },
+    {
+        'invalid': '1',
+        'ver': '1',
+        'response': b'response'
+    },
+])
 def test_parse_android_safetynet_attestation_statement_error(data):
   with pytest.raises(ValidationError):
     parse_android_safetynet_attestation_statement(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+@pytest.mark.parametrize(
+    'data, expected',
+    [({
+        'sig': b'signature',
+        'x5c': [b'x']
+    }, FIDOU2FAttestationStatement(sig=b'signature', x5c=[b'x'])),
+     ({
+         'sig': b'signature',
+         'x5c': [b'x', b'y']
+     }, FIDOU2FAttestationStatement(sig=b'signature', x5c=[b'x', b'y']))])
 def test_parse_fido_u2f_attestation_statement_success(data, expected):
-  parse_fido_u2f_attestation_statement(data) == expected
+  assert_objects_equal(parse_fido_u2f_attestation_statement(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [
+    {},
+    {
+        'sig': 'signature',
+        'x5c': [b'x', b'y']
+    },
+    {
+        'sig': b'signature',
+        'x5c': ['x', b'y']
+    },
+    {
+        'sig': b'signature',
+        'x5c': b'x'
+    },
+])
 def test_parse_fido_u2f_attestation_statement_error(data):
   with pytest.raises(ValidationError):
     parse_fido_u2f_attestation_statement(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
-def test_parse_client_data_success(data, expected):
-  parse_client_data(data) == expected
+@pytest.mark.parametrize('data, expected', [
+    ({}, NoneAttestationStatement()),
+])
+def test_parse_none_attestation_statement_success(data, expected):
+  assert_objects_equal(parse_none_attestation_statement(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
-def test_parse_client_data_error(data):
+@pytest.mark.parametrize('data', [{
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': b'signature',
+}, {
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': b'signature',
+    'x5c': [b'x']
+}, {
+    'sig': b'signature',
+    'x5c': [b'x']
+}, {
+    'invalid': '1',
+}])
+def test_parse_none_attestation_statement_error(data):
   with pytest.raises(ValidationError):
+    parse_none_attestation_statement(data)
+
+
+def _json_bytes(x: dict) -> bytes:
+  return json.dumps(x).encode('utf-8')
+
+
+@pytest.mark.parametrize('data, expected', [
+    (_json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+    }),
+     CollectedClientData(
+         type='type', challenge='challenge', origin='http://example.com')),
+    (_json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': {
+            'status': TokenBindingStatus.SUPPORTED.value
+        }
+    }),
+     CollectedClientData(
+         type='type',
+         challenge='challenge',
+         origin='http://example.com',
+         token_binding=TokenBinding(status=TokenBindingStatus.SUPPORTED))),
+    (_json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': {
+            'status': TokenBindingStatus.PRESENT.value,
+            'id': 'binding-id'
+        }
+    }),
+     CollectedClientData(type='type',
+                         challenge='challenge',
+                         origin='http://example.com',
+                         token_binding=TokenBinding(
+                             status=TokenBindingStatus.PRESENT,
+                             id='binding-id'))),
+])
+def test_parse_client_data_success(data, expected):
+  assert_objects_equal(parse_client_data(data), expected)
+
+
+@pytest.mark.parametrize('data', [
+    _json_bytes({
+        'type': -1,
+        'challenge': 'challenge',
+        'origin': 'http://example.com'
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': -1,
+        'origin': 'http://example.com'
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': -1,
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': 'x'
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': {}
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': {
+            'status': -1
+        }
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': {
+            'status': '----'
+        }
+    }),
+    _json_bytes({
+        'type': 'type',
+        'challenge': 'challenge',
+        'origin': 'http://example.com',
+        'tokenBinding': {
+            'status': TokenBindingStatus.PRESENT.value,
+        }
+    }),
+])
+def test_parse_client_data_error(data):
+  with pytest.raises((ValidationError, TokenBindingError)):
     parse_client_data(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+@pytest.mark.parametrize('data, expected', [
+    ({
+        -2:
+        b'x' * ED25519_COORDINATE_BYTE_LENGTH,
+        -1:
+        OKPCurve.Value.ED25519.value,
+        1:
+        COSEKeyType.Value.OKP.value,
+        2:
+        b'kid',
+        3:
+        COSEAlgorithmIdentifier.Value.EDDSA.value,
+        4: [
+            COSEKeyOperation.Value.SIGN.value,
+            COSEKeyOperation.Value.VERIFY.value
+        ],
+        5:
+        b'base-IV',
+    },
+     OKPCredentialPublicKey(
+         kty=COSEKeyType.Value.OKP,
+         kid=b'kid',
+         alg=COSEAlgorithmIdentifier.Value.EDDSA,
+         key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+         base_IV=b'base-IV',
+         x=b'x' * ED25519_COORDINATE_BYTE_LENGTH,
+         crv=OKPCurve.Value.ED25519,
+     )),
+    ({
+        -3:
+        b'y' * P_256_COORDINATE_BYTE_LENGTH,
+        -2:
+        b'x' * P_256_COORDINATE_BYTE_LENGTH,
+        -1:
+        EC2Curve.Value.P_256.value,
+        1:
+        COSEKeyType.Value.EC2.value,
+        2:
+        b'kid',
+        3:
+        COSEAlgorithmIdentifier.Value.ES256.value,
+        4: [
+            COSEKeyOperation.Value.SIGN.value,
+            COSEKeyOperation.Value.VERIFY.value
+        ],
+        5:
+        b'base-IV',
+    },
+     EC2CredentialPublicKey(
+         kty=COSEKeyType.Value.EC2,
+         kid=b'kid',
+         alg=COSEAlgorithmIdentifier.Value.ES256,
+         key_ops=[COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY],
+         base_IV=b'base-IV',
+         x=b'x' * P_256_COORDINATE_BYTE_LENGTH,
+         y=b'y' * P_256_COORDINATE_BYTE_LENGTH,
+         crv=EC2Curve.Value.P_256,
+     )),
+])
 def test_parse_cose_key_success(data, expected):
-  parse_cose_key(data) == expected
+  assert_objects_equal(parse_cose_key(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [
+    {
+        -2: 'x' * ED448_COORDINATE_BYTE_LENGTH,
+        -1: OKPCurve.Value.ED448.value,
+        1: b'invalid',
+        2: b'kid',
+        3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+        4: [
+            COSEKeyOperation.Value.SIGN.value,
+            COSEKeyOperation.Value.VERIFY.value
+        ],
+        5: b'base-IV',
+    },
+    {
+        -2: 'x' * ED448_COORDINATE_BYTE_LENGTH,
+        -1: OKPCurve.Value.ED448.value,
+        1: 'invalid',
+        2: b'kid',
+        3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+        4: [
+            COSEKeyOperation.Value.SIGN.value,
+            COSEKeyOperation.Value.VERIFY.value
+        ],
+        5: b'base-IV',
+    },
+    {
+        -2: 'x' * ED448_COORDINATE_BYTE_LENGTH,
+        -1: OKPCurve.Value.ED448.value,
+        1: COSEKeyType.Value.OKP.value,
+        2: b'kid',
+        3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+        4: [
+            COSEKeyOperation.Value.SIGN.value,
+            COSEKeyOperation.Value.VERIFY.value
+        ],
+        5: b'base-IV',
+    },
+    {
+        -2: 'x' * ED448_COORDINATE_BYTE_LENGTH,
+        -1: OKPCurve.Value.ED448.value,
+        1: COSEKeyType.Value.OKP.value,
+        2: b'kid',
+        3: COSEAlgorithmIdentifier.Value.EDDSA.value,
+        4: [
+            COSEKeyOperation.Value.SIGN.value,
+            COSEKeyOperation.Value.VERIFY.value
+        ],
+        5: b'base-IV',
+    },
+])
 def test_parse_cose_key_error(data):
   with pytest.raises(ValidationError):
     parse_cose_key(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+def _authenticator_data(rp_id_hash: bytes,
+                        flags: int,
+                        sign_count: bytes,
+                        attested_credential_data: Optional[bytes] = None,
+                        extensions: Optional[bytes] = None) -> bytes:
+  return b''.join([
+      rp_id_hash,
+      bytes([flags]),
+      sign_count,
+      attested_credential_data or b'',
+      extensions or b'',
+  ])
+
+
+def _attested_credential_data(aaguid: bytes, credential_id_length: int,
+                              credential_id: bytes,
+                              credential_public_key: bytes):
+  return b''.join([
+      aaguid,
+      credential_id_length.to_bytes(2, 'big'),
+      credential_id,
+      credential_public_key,
+  ])
+
+
+@pytest.mark.parametrize('data, expected', [
+    (_authenticator_data(
+        b'x' * 32,
+        AuthenticatorDataFlag.UP.value,
+        b'y' * 4,
+    ),
+     AuthenticatorData(
+         rp_id_hash=b'x' * 32,
+         flags=AuthenticatorDataFlag.UP.value,
+         sign_count=int.from_bytes(b'y' * 4, 'big'),
+     )),
+    (_authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+         | AuthenticatorDataFlag.ED.value), b'y' * 4,
+        _attested_credential_data(
+            b'z' * 16,
+            10,
+            b'a' * 10,
+            cbor2.dumps({
+                -3:
+                b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                -2:
+                b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                -1:
+                EC2Curve.Value.P_256.value,
+                1:
+                COSEKeyType.Value.EC2.value,
+                2:
+                b'kid',
+                3:
+                COSEAlgorithmIdentifier.Value.ES256.value,
+                4: [
+                    COSEKeyOperation.Value.SIGN.value,
+                    COSEKeyOperation.Value.VERIFY.value
+                ],
+                5:
+                b'base-IV',
+            }),
+        ), cbor2.dumps({
+            'appid': True,
+        })),
+     AuthenticatorData(
+         rp_id_hash=b'x' * 32,
+         flags=(AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+                | AuthenticatorDataFlag.ED.value),
+         sign_count=int.from_bytes(b'y' * 4, 'big'),
+         attested_credential_data=AttestedCredentialData(
+             aaguid=b'z' * 16,
+             credential_id_length=10,
+             credential_id=b'a' * 10,
+             credential_public_key=EC2CredentialPublicKey(
+                 kty=COSEKeyType.Value.EC2,
+                 kid=b'kid',
+                 alg=COSEAlgorithmIdentifier.Value.ES256,
+                 key_ops=[
+                     COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY
+                 ],
+                 base_IV=b'base-IV',
+                 x=b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                 y=b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                 crv=EC2Curve.Value.P_256,
+             )),
+         extensions=AuthenticationExtensionsClientOutputs(appid=True))),
+    (_authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
+        b'y' * 4,
+        _attested_credential_data(
+            b'z' * 16,
+            10,
+            b'a' * 10,
+            cbor2.dumps({
+                -3:
+                b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                -2:
+                b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                -1:
+                EC2Curve.Value.P_256.value,
+                1:
+                COSEKeyType.Value.EC2.value,
+                2:
+                b'kid',
+                3:
+                COSEAlgorithmIdentifier.Value.ES256.value,
+                4: [
+                    COSEKeyOperation.Value.SIGN.value,
+                    COSEKeyOperation.Value.VERIFY.value
+                ],
+                5:
+                b'base-IV',
+            }),
+        ),
+    ),
+     AuthenticatorData(
+         rp_id_hash=b'x' * 32,
+         flags=(AuthenticatorDataFlag.UP.value
+                | AuthenticatorDataFlag.AT.value),
+         sign_count=int.from_bytes(b'y' * 4, 'big'),
+         attested_credential_data=AttestedCredentialData(
+             aaguid=b'z' * 16,
+             credential_id_length=10,
+             credential_id=b'a' * 10,
+             credential_public_key=EC2CredentialPublicKey(
+                 kty=COSEKeyType.Value.EC2,
+                 kid=b'kid',
+                 alg=COSEAlgorithmIdentifier.Value.ES256,
+                 key_ops=[
+                     COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY
+                 ],
+                 base_IV=b'base-IV',
+                 x=b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                 y=b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                 crv=EC2Curve.Value.P_256,
+             )),
+     )),
+    (_authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
+        b'y' * 4,
+        extensions=cbor2.dumps({
+            'appid': True,
+        })),
+     AuthenticatorData(
+         rp_id_hash=b'x' * 32,
+         flags=(AuthenticatorDataFlag.UP.value
+                | AuthenticatorDataFlag.ED.value),
+         sign_count=int.from_bytes(b'y' * 4, 'big'),
+         extensions=AuthenticationExtensionsClientOutputs(appid=True))),
+])
 def test_parse_authenticator_data_success(data, expected):
-  parse_authenticator_data(data) == expected
+  assert_objects_equal(parse_authenticator_data(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [
+    b''
+    b'x' * 32,
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
+        b'y' * 4,
+    ),
+    _authenticator_data(b'x' * 32, (AuthenticatorDataFlag.UP.value),
+                        b'y' * 4,
+                        extensions=cbor2.dumps({
+                            'appid': True,
+                        })),
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value),
+        b'y' * 4,
+        _attested_credential_data(
+            b'z' * 16,
+            10,
+            b'a' * 10,
+            cbor2.dumps({
+                -3:
+                b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                -2:
+                b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                -1:
+                EC2Curve.Value.P_256.value,
+                1:
+                COSEKeyType.Value.EC2.value,
+                2:
+                b'kid',
+                3:
+                COSEAlgorithmIdentifier.Value.ES256.value,
+                4: [
+                    COSEKeyOperation.Value.SIGN.value,
+                    COSEKeyOperation.Value.VERIFY.value
+                ],
+                5:
+                b'base-IV',
+            }),
+        ),
+    ),
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
+        b'y' * 4,
+    ),
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
+        b'y' * 4,
+        _attested_credential_data(
+            b'z' * 16,
+            10,
+            b'a' * 10,
+            b'invalid',
+        ),
+    ),
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
+        b'y' * 4,
+        _attested_credential_data(
+            b'z' * 16,
+            10,
+            b'a' * 10,
+            cbor2.dumps([1, 2, 3]),
+        ),
+    ),
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
+        b'y' * 4,
+        extensions=b'invalid'),
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
+        b'y' * 4,
+        extensions=cbor2.dumps([1, 2, 3])),
+])
 def test_parse_authenticator_data_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises((ValidationError, DecodingError)):
     parse_authenticator_data(data)
 
 
-@pytest.mark.parametrize('data, expected', [])
+@pytest.mark.parametrize('data, expected', [(cbor2.dumps({
+    'authData':
+    _authenticator_data(
+        b'x' * 32,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+         | AuthenticatorDataFlag.ED.value), b'y' * 4,
+        _attested_credential_data(
+            b'z' * 16,
+            10,
+            b'a' * 10,
+            cbor2.dumps({
+                -3:
+                b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                -2:
+                b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                -1:
+                EC2Curve.Value.P_256.value,
+                1:
+                COSEKeyType.Value.EC2.value,
+                2:
+                b'kid',
+                3:
+                COSEAlgorithmIdentifier.Value.ES256.value,
+                4: [
+                    COSEKeyOperation.Value.SIGN.value,
+                    COSEKeyOperation.Value.VERIFY.value
+                ],
+                5:
+                b'base-IV',
+            }),
+        ), cbor2.dumps({
+            'appid': True,
+        })),
+    'fmt':
+    AttestationStatementFormatIdentifier.FIDO_U2F.value,
+    'attStmt': {
+        'sig': b'signature',
+        'x5c': [b'x']
+    }
+}), (AttestationObject(auth_data=AuthenticatorData(
+    rp_id_hash=b'x' * 32,
+    flags=(AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+           | AuthenticatorDataFlag.ED.value),
+    sign_count=int.from_bytes(b'y' * 4, 'big'),
+    attested_credential_data=AttestedCredentialData(
+        aaguid=b'z' * 16,
+        credential_id_length=10,
+        credential_id=b'a' * 10,
+        credential_public_key=EC2CredentialPublicKey(
+            kty=COSEKeyType.Value.EC2,
+            kid=b'kid',
+            alg=COSEAlgorithmIdentifier.Value.ES256,
+            key_ops=[
+                COSEKeyOperation.Value.SIGN, COSEKeyOperation.Value.VERIFY
+            ],
+            base_IV=b'base-IV',
+            x=b'x' * P_256_COORDINATE_BYTE_LENGTH,
+            y=b'y' * P_256_COORDINATE_BYTE_LENGTH,
+            crv=EC2Curve.Value.P_256,
+        )),
+    extensions=AuthenticationExtensionsClientOutputs(appid=True)),
+                       fmt=AttestationStatementFormatIdentifier.FIDO_U2F,
+                       att_stmt=FIDOU2FAttestationStatement(sig=b'signature',
+                                                            x5c=[b'x'])),
+     {
+         'authData':
+         _authenticator_data(
+             b'x' * 32,
+             (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+              | AuthenticatorDataFlag.ED.value), b'y' * 4,
+             _attested_credential_data(
+                 b'z' * 16,
+                 10,
+                 b'a' * 10,
+                 cbor2.dumps({
+                     -3:
+                     b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                     -2:
+                     b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                     -1:
+                     EC2Curve.Value.P_256.value,
+                     1:
+                     COSEKeyType.Value.EC2.value,
+                     2:
+                     b'kid',
+                     3:
+                     COSEAlgorithmIdentifier.Value.ES256.value,
+                     4: [
+                         COSEKeyOperation.Value.SIGN.value,
+                         COSEKeyOperation.Value.VERIFY.value
+                     ],
+                     5:
+                     b'base-IV',
+                 }),
+             ), cbor2.dumps({
+                 'appid': True,
+             })),
+         'fmt':
+         AttestationStatementFormatIdentifier.FIDO_U2F.value,
+         'attStmt': {
+             'sig': b'signature',
+             'x5c': [b'x']
+         }
+     }))])
 def test_parse_attestation_success(data, expected):
-  parse_attestation(data) == expected
+  assert_objects_equal(parse_attestation(data), expected)
 
 
-@pytest.mark.parametrize('data', [])
+@pytest.mark.parametrize('data', [
+    b'invalid',
+    cbor2.dumps([1, 2, 3]),
+    cbor2.dumps({}),
+    cbor2.dumps({
+        'authData': 'auth-data',
+        'fmt': AttestationStatementFormatIdentifier.FIDO_U2F.value,
+        'attStmt': {
+            'sig': b'signature',
+            'x5c': [b'x']
+        }
+    }),
+    cbor2.dumps({
+        'authData':
+        _authenticator_data(
+            b'x' * 32,
+            (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+             | AuthenticatorDataFlag.ED.value), b'y' * 4,
+            _attested_credential_data(
+                b'z' * 16,
+                10,
+                b'a' * 10,
+                cbor2.dumps({
+                    -3:
+                    b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                    -2:
+                    b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                    -1:
+                    EC2Curve.Value.P_256.value,
+                    1:
+                    COSEKeyType.Value.EC2.value,
+                    2:
+                    b'kid',
+                    3:
+                    COSEAlgorithmIdentifier.Value.ES256.value,
+                    4: [
+                        COSEKeyOperation.Value.SIGN.value,
+                        COSEKeyOperation.Value.VERIFY.value
+                    ],
+                    5:
+                    b'base-IV',
+                }),
+            ), cbor2.dumps({
+                'appid': True,
+            })),
+        'fmt':
+        b'packed',
+        'attStmt': {
+            'sig': b'signature',
+            'x5c': [b'x']
+        }
+    }),
+    cbor2.dumps({
+        'authData':
+        _authenticator_data(
+            b'x' * 32,
+            (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+             | AuthenticatorDataFlag.ED.value), b'y' * 4,
+            _attested_credential_data(
+                b'z' * 16,
+                10,
+                b'a' * 10,
+                cbor2.dumps({
+                    -3:
+                    b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                    -2:
+                    b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                    -1:
+                    EC2Curve.Value.P_256.value,
+                    1:
+                    COSEKeyType.Value.EC2.value,
+                    2:
+                    b'kid',
+                    3:
+                    COSEAlgorithmIdentifier.Value.ES256.value,
+                    4: [
+                        COSEKeyOperation.Value.SIGN.value,
+                        COSEKeyOperation.Value.VERIFY.value
+                    ],
+                    5:
+                    b'base-IV',
+                }),
+            ), cbor2.dumps({
+                'appid': True,
+            })),
+        'fmt':
+        AttestationStatementFormatIdentifier.FIDO_U2F.value,
+        'attStmt':
+        b'att-stmt'
+    }),
+    cbor2.dumps({
+        'authData':
+        _authenticator_data(
+            b'x' * 32,
+            (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+             | AuthenticatorDataFlag.ED.value), b'y' * 4,
+            _attested_credential_data(
+                b'z' * 16,
+                10,
+                b'a' * 10,
+                cbor2.dumps({
+                    -3:
+                    b'y' * P_256_COORDINATE_BYTE_LENGTH,
+                    -2:
+                    b'x' * P_256_COORDINATE_BYTE_LENGTH,
+                    -1:
+                    EC2Curve.Value.P_256.value,
+                    1:
+                    COSEKeyType.Value.EC2.value,
+                    2:
+                    b'kid',
+                    3:
+                    COSEAlgorithmIdentifier.Value.ES256.value,
+                    4: [
+                        COSEKeyOperation.Value.SIGN.value,
+                        COSEKeyOperation.Value.VERIFY.value
+                    ],
+                    5:
+                    b'base-IV',
+                }),
+            ), cbor2.dumps({
+                'appid': True,
+            })),
+        'fmt':
+        -1,
+        'attStmt': {
+            'sig': b'signature',
+            'x5c': [b'x']
+        }
+    }),
+])
 def test_parse_attestation_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises((ValidationError, DecodingError)):
     parse_attestation(data)

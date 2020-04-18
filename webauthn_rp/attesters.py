@@ -70,7 +70,7 @@ def attest_fido_u2f(
 
   if not isinstance(att_cert_x509_pk.curve, SECP256R1):
     raise ValidationError(
-        'FIDO U2F verification failed: must use an Elliptic Curve Public Key')
+        'FIDO U2F verification failed: must use curve SECP256R1')
 
   assert att_obj.auth_data is not None
   assert att_obj.auth_data.attested_credential_data is not None

@@ -4,7 +4,7 @@ from enum import Enum
 from functools import singledispatch
 from typing import Any, Optional, Union
 
-import cbor
+import cbor2
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.ec import (
     SECP256R1, SECP384R1, SECP521R1, EllipticCurvePublicNumbers)
@@ -109,7 +109,7 @@ def cose_key_from_ec2(credential_public_key: EC2CredentialPublicKey) -> bytes:
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x
   d[-3] = credential_public_key.y
-  return cbor.dumps(d)
+  return cbor2.dumps(d)
 
 
 @cose_key.register(OKPCredentialPublicKey)
@@ -117,4 +117,4 @@ def cose_key_from_okp(credential_public_key: OKPCredentialPublicKey) -> bytes:
   d = build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x
-  return cbor.dumps(d)
+  return cbor2.dumps(d)

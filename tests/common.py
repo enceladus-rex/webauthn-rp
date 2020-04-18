@@ -212,6 +212,11 @@ def assert_objects_equal(a, b):
     assert len(a) == len(b)
     for x, y in zip(a, b):
       assert_objects_equal(x, y)
+  elif isinstance(a, dict):
+    assert set(a.keys()) == set(b.keys())
+
+    for k in a:
+      assert_objects_equal(a[k], b[k])
   elif isinstance(a, set):
     assert a == b
   elif a is None:

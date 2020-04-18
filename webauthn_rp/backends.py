@@ -2,7 +2,6 @@ import hashlib
 import json
 from typing import Any, Optional, Sequence, Set, cast
 
-import cbor
 import cryptography
 from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
 from cryptography.hazmat.primitives.hashes import SHA256
