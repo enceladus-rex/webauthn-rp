@@ -2,6 +2,7 @@ from base64 import b64encode
 from pprint import pprint
 from typing import Optional
 
+import pytest
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.ec import (
     SECP256R1, SECP384R1, SECP521R1, EllipticCurvePrivateKey,
@@ -11,9 +12,11 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from webauthn_rp.constants import *
-from webauthn_rp.converters import (cose_key_from_ec2, cose_key_from_okp,
+from webauthn_rp.converters import (build_base_cose_dictionary,
+                                    cose_key_from_ec2, cose_key_from_okp,
                                     cryptography_ec2_public_key,
                                     cryptography_okp_public_key, jsonify)
+from webauthn_rp.errors import ValidationError
 from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.types import *
 
@@ -21,6 +24,23 @@ from .common import (assert_objects_equal, base64s,
                      generate_ec2_credential_public_key,
                      generate_ec2_private_key, generate_ec2_public_key,
                      generate_okp_credential_public_key, generate_private_key)
+
+
+@pytest.mark.parametrize('data, expected', [
+    (None, None),
+])
+def test_jsonify_success(data, expected):
+  jsonify(data) == expected
+
+
+@pytest.mark.parametrize('data', [
+    {
+        1: 'data',
+    },
+])
+def test_jsonify_errors(data):
+  with pytest.raises(ValidationError):
+    jsonify(data)
 
 
 def test_jsonify_credential_creation_options():
@@ -224,6 +244,24 @@ def test_jsonify_credential_request_options():
   }
 
   assert cro_json == expected_cro_json
+
+
+@pytest.mark.parametrize('data, expected',
+                         [(CredentialPublicKey(
+                             kty=COSEKeyType.Value.EC2,
+                             kid=b'kid',
+                             alg=COSEAlgorithmIdentifier.Value.ES256,
+                             key_ops=[COSEKeyOperation.Value.VERIFY],
+                             base_IV=b'base-IV',
+                         ), {
+                             1: COSEKeyType.Value.EC2.value,
+                             2: b'kid',
+                             3: COSEAlgorithmIdentifier.Value.ES256.value,
+                             4: [COSEKeyOperation.Value.VERIFY.value],
+                             5: b'base-IV'
+                         })])
+def test_build_base_cose_dictionary_success(data, expected):
+  build_base_cose_dictionary(data) == expected
 
 
 def test_cryptography_ec2_public_key():

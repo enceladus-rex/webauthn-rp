@@ -17,7 +17,7 @@ from webauthn_rp.types import (CredentialPublicKey, EC2CredentialPublicKey,
                                OKPPublicKey, PublicKey, PublicKeyCredential)
 from webauthn_rp.utils import snake_to_camel_case
 
-JSONValue = Union[dict, list, bool, int, float, str]
+JSONValue = Union[dict, list, bool, int, float, str, None]
 
 
 @singledispatch
@@ -41,6 +41,8 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
     return data
   elif type(data) in (list, tuple):
     return [jsonify(x, convert_case) for x in data]
+  elif data is None:
+    return None
   else:
     raise UnimplementedError('JSON conversion for given data is not supported')
 

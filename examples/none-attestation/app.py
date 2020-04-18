@@ -71,13 +71,13 @@ class RegistrarImpl(CredentialsRegistrar):
       att_type: AttestationType,
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None) -> bool:
+      trusted_path: Optional[TrustedPath] = None) -> Any:
     assert att.auth_data is not None
     assert att.auth_data.attested_credential_data is not None
     cpk = att.auth_data.attested_credential_data.credential_public_key
 
     user_model = User.by_user_handle(user.id)
-    if user_model is None: return False
+    if user_model is None: return 'No user found'
 
     credential_model = Credential()
     credential_model.id = credential.raw_id
@@ -87,16 +87,14 @@ class RegistrarImpl(CredentialsRegistrar):
 
     db.session.add(credential_model)
     db.session.commit()
-    return True
 
   def register_credential_request(self, credential: PublicKeyCredential,
                                   authenticator_data: AuthenticatorData,
                                   user: PublicKeyCredentialUserEntity,
-                                  rp: PublicKeyCredentialRpEntity) -> bool:
+                                  rp: PublicKeyCredentialRpEntity) -> Any:
     credential_model = Credential.query.filter_by(id=credential.raw_id).first()
     credential_model.signature_count = authenticator_data.sign_count
     db.session.commit()
-    return True
 
   def get_credential_data(self,
                           credential_id: bytes) -> Optional[CredentialData]:

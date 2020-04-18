@@ -4,9 +4,11 @@ from typing import Optional, Union
 import pytest
 
 from webauthn_rp.errors import ValidationError
-from webauthn_rp.types import (COSEAlgorithmIdentifier, EC2CredentialPublicKey,
-                               EC2Curve, OKPCredentialPublicKey, OKPCurve)
-from webauthn_rp.validators import validate
+from webauthn_rp.types import (COSEAlgorithmIdentifier, COSEKeyOperation,
+                               COSEKeyType, CredentialPublicKey,
+                               EC2CredentialPublicKey, EC2Curve,
+                               OKPCredentialPublicKey, OKPCurve)
+from webauthn_rp.validators import validate, validate_key_ops
 
 from .common import (generate_ec2_credential_public_key,
                      generate_okp_credential_public_key)
@@ -68,3 +70,44 @@ def replace_curve(
 def test_validate_error(credential_public_key):
   with pytest.raises(ValidationError):
     validate(credential_public_key)
+
+
+@pytest.mark.parametrize(
+    'validator_key_ops, credential_public_key',
+    [(['SIGN', 'VERIFY'],
+      CredentialPublicKey(
+          kty=COSEKeyType.Value.EC2,
+          kid=b'kid',
+          alg=COSEAlgorithmIdentifier.Value.ES256,
+          base_IV=b'base-IV',
+          key_ops=[COSEKeyOperation.Value.VERIFY, COSEKeyOperation.Value.SIGN
+                   ])),
+     ([],
+      CredentialPublicKey(
+          kty=COSEKeyType.Value.EC2,
+          kid=b'kid',
+          alg=COSEAlgorithmIdentifier.Value.ES256,
+          base_IV=b'base-IV',
+      ))])
+def test_validate_key_ops_success(validator_key_ops, credential_public_key):
+  validate_key_ops(validator_key_ops, credential_public_key)
+
+
+@pytest.mark.parametrize(
+    'validator_key_ops, credential_public_key',
+    [(['SIGN', 'VERIFY'],
+      CredentialPublicKey(kty=COSEKeyType.Value.EC2,
+                          kid=b'kid',
+                          alg=COSEAlgorithmIdentifier.Value.ES256,
+                          base_IV=b'base-IV',
+                          key_ops=[COSEKeyOperation.Value.SIGN])),
+     (['SIGN', 'VERIFY'],
+      CredentialPublicKey(
+          kty=COSEKeyType.Value.EC2,
+          kid=b'kid',
+          alg=COSEAlgorithmIdentifier.Value.ES256,
+          base_IV=b'base-IV',
+      ))])
+def test_validate_key_ops_error(validator_key_ops, credential_public_key):
+  with pytest.raises(ValidationError):
+    validate_key_ops(validator_key_ops, credential_public_key)

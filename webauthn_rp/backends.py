@@ -25,12 +25,20 @@ from webauthn_rp.verifiers import verify
 
 
 class CredentialsBackend:
-  def __init__(self, registrar: CredentialsRegistrar):
+  def __init__(self, registrar: CredentialsRegistrar) -> None:
     self.registrar = registrar
 
-  def handle_creation_options(self, *, options: CredentialCreationOptions):
-    if not self.registrar.register_creation_options(options):
-      raise RegistrationError('Failed to register creation options')
+  def handle_creation_options(self, *,
+                              options: CredentialCreationOptions) -> None:
+    try:
+      response = self.registrar.register_creation_options(options)
+    except Exception as e:
+      raise RegistrationError(
+          'Failed to register creation options ({!r})'.format(e))
+
+    if response is not None:
+      raise RegistrationError(
+          'Failed to register creation options ({})'.format(response))
 
   def handle_credential_creation(
       self,
@@ -41,7 +49,7 @@ class CredentialsBackend:
       expected_challenge: bytes,
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
-      expected_extensions: Optional[Set[ExtensionIdentifier]] = None):
+      expected_extensions: Optional[Set[ExtensionIdentifier]] = None) -> None:
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
     if collected_client_data is None:
@@ -114,19 +122,34 @@ class CredentialsBackend:
     crypto_pk = cryptography_public_key(
         attestation.auth_data.attested_credential_data.credential_public_key)
 
-    if not self.registrar.register_credential_creation(
-        credential=credential,
-        att=attestation,
-        att_type=att_type,
-        user=user,
-        rp=rp,
-        trusted_path=trusted_path,
-    ):
-      raise RegistrationError('Failed to register credential creation')
+    try:
+      response = self.registrar.register_credential_creation(
+          credential=credential,
+          att=attestation,
+          att_type=att_type,
+          user=user,
+          rp=rp,
+          trusted_path=trusted_path,
+      )
+    except Exception as e:
+      raise RegistrationError(
+          'Failed to register credential creation ({!r})'.format(e))
 
-  def handle_request_options(self, *, options: CredentialRequestOptions):
-    if not self.registrar.register_request_options(options):
-      raise RegistrationError('Failed to register request options')
+    if response is not None:
+      raise RegistrationError(
+          'Failed to register credential creation ({})'.format(response))
+
+  def handle_request_options(self, *,
+                             options: CredentialRequestOptions) -> None:
+    try:
+      response = self.registrar.register_request_options(options)
+    except Exception as e:
+      raise RegistrationError(
+          'Failed to register request options ({!r})'.format(e))
+
+    if response is not None:
+      raise RegistrationError(
+          'Failed to register request options ({})'.format(response))
 
   def handle_credential_request(
       self,
@@ -140,7 +163,7 @@ class CredentialsBackend:
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
-      ignore_clone_error: bool = False):
+      ignore_clone_error: bool = False) -> None:
     response = cast(AuthenticatorAssertionResponse, credential.response)
     if allow_credentials is not None:
       allowed = False
@@ -267,10 +290,17 @@ class CredentialsBackend:
         if not ignore_clone_error:
           raise SignatureCountError('Detected a possible authenticator clone')
 
-    if not self.registrar.register_credential_request(
-        credential=credential,
-        authenticator_data=auth_data,
-        user=user,
-        rp=rp,
-    ):
-      raise RegistrationError('Failed to register credential request')
+    try:
+      response = self.registrar.register_credential_request(
+          credential=credential,
+          authenticator_data=auth_data,
+          user=user,
+          rp=rp,
+      )
+    except Exception as e:
+      raise RegistrationError(
+          'Failed to register credential request ({!r})'.format(e))
+
+    if response is not None:
+      raise RegistrationError(
+          'Failed to register credential request ({})'.format(response))
