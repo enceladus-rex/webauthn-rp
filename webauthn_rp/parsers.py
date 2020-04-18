@@ -274,7 +274,7 @@ def parse_extensions(
       raise ValidationError('appid extension client output should be a bool')
 
   if tx_auth_simple is not None:
-    if type(tx_auth_simple) is not bool:
+    if type(tx_auth_simple) is not str:
       raise ValidationError(
           'tx_auth_simple extension client output should be a str')
 
@@ -304,7 +304,7 @@ def parse_extensions(
     if type(loc) is not dict:
       raise ValidationError('loc extension client output should be dict')
 
-    if any(type(x) is not float for x in loc.values()):
+    if any(type(x) not in (int, float) for x in loc.values()):
       raise ValidationError('Coordinate value in loc extension must be float')
 
     supported_cvalues = {
@@ -335,7 +335,7 @@ def parse_extensions(
             'uvm[{0}] extension client output should be list'.format(i))
 
       for j, v in enumerate(uvm_entry):
-        if type(v) is not str:
+        if type(v) is not int:
           raise ValidationError(
               'uvm[{0}][{1}] extension client output should be str'.format(
                   i, j))

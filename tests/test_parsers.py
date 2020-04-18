@@ -1,21 +1,17 @@
 import base64
-from itertools import chain
+from itertools import chain, combinations
 
 import pytest
 
 from webauthn_rp.constants import *
 from webauthn_rp.errors import ValidationError
-from webauthn_rp.parsers import (
-    bytes_from_base64, check_unsupported_keys, parse_credential_public_key_alg,
-    parse_credential_public_key_key_ops, parse_credential_public_key_kty,
-    parse_credential_public_key_kwargs, parse_dictionary_field,
-    parse_ec2_public_key, parse_ec2_public_key_crv, parse_okp_public_key,
-    parse_okp_public_key_crv, parse_public_key_credential)
+from webauthn_rp.parsers import *
 from webauthn_rp.types import (
+    AuthenticationExtensionsClientOutputs, AuthenticationExtensionsSupported,
     AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
-    COSEAlgorithmIdentifier, COSEKeyOperation, COSEKeyType,
+    Coordinates, COSEAlgorithmIdentifier, COSEKeyOperation, COSEKeyType,
     CredentialPublicKey, EC2CredentialPublicKey, EC2Curve,
-    OKPCredentialPublicKey, OKPCurve, PublicKeyCredential)
+    OKPCredentialPublicKey, OKPCurve, PublicKeyCredential, UvmEntries)
 
 from .common import assert_objects_equal
 
@@ -930,3 +926,292 @@ def test_parse_ec2_public_key_success(data, expected):
 def test_parse_ec2_public_key_error(data):
   with pytest.raises(ValidationError):
     parse_ec2_public_key(data)
+
+
+@pytest.mark.parametrize(
+    'data, expected',
+    [
+        (dict(), AuthenticationExtensionsClientOutputs()),
+    ] + [
+        (
+            {
+                x[0]: x[-2]  # type: ignore
+                for x in c
+            },
+            AuthenticationExtensionsClientOutputs(**{
+                x[1]: x[-1]  # type: ignore
+                for x in c
+            })) for c in combinations((
+                ('appid', 'appid', True, True),
+                ('txAuthSimple', 'tx_auth_simple', 'auth', 'auth'),
+                ('txAuthGeneric', 'tx_auth_generic', b'auth', b'auth'),
+                ('authnSel', 'authn_sel', True, True),
+                ('exts', 'exts', ['appid', 'uvi'], ['appid', 'uvi']),
+                ('uvi', 'uvi', b'uvi', b'uvi'),
+                ('loc', 'loc', {
+                    'latitude': 1,
+                    'longitude': 2,
+                    'altitude': 3,
+                    'accuracy': 4.,
+                    'altitudeAccuracy': 5.,
+                    'heading': 6.,
+                    'speed': 7.,
+                },
+                 Coordinates(latitude=1,
+                             longitude=2,
+                             altitude=3,
+                             accuracy=4.,
+                             altitude_accuracy=5.,
+                             heading=6.,
+                             speed=7.)),
+                ('uvm', 'uvm', [[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]]),
+                ('biometricPerfBounds', 'biometric_perf_bounds', True, True),
+            ), 3)
+    ])
+def test_parse_extensions_success(data, expected):
+  assert_objects_equal(parse_extensions(data), expected)
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        dict(invalid=1),
+    ] + [
+        {
+            x[0]: x[1]  # type: ignore
+        } for x in (
+            ('appid', 'invalid'),
+            ('appid', b'invalid'),
+            ('txAuthSimple', b'auth'),
+            ('txAuthSimple', 1),
+            ('txAuthGeneric', 'auth'),
+            ('txAuthGeneric', 1.),
+            ('authnSel', 'invalid'),
+            ('authnSel', 1),
+            ('exts', ['appid', b'uvi']),
+            ('exts', [1, 'uvi']),
+            ('exts', 'invalid'),
+            ('uvi', 'uvi'),
+            ('uvi', 1),
+            ('loc', {
+                'latitude': 'invalid',
+                'longitude': 2,
+                'altitude': 3,
+                'accuracy': 4.,
+                'altitudeAccuracy': 5.,
+                'heading': 6.,
+                'speed': 7.,
+            }),
+            ('loc', {
+                'latitude': 1,
+                'longitude': 2,
+                'altitude': 3,
+                'accuracy': b'invalid',
+                'altitudeAccuracy': 5.,
+                'heading': 6.,
+                'speed': 7.,
+            }),
+            ('uvm', [['invalid', 2, 3], [4, 5, 6]]),
+            ('uvm', [[1, 2., 3], [4, 5, 6]]),
+            ('uvm', 'invalid'),
+            ('biometricPerfBounds', 'invalid'),
+            ('biometricPerfBounds', 1),
+        )
+    ])
+def test_parse_extensions_error(data):
+  with pytest.raises(ValidationError):
+    parse_extensions(data)
+
+
+@pytest.mark.parametrize('data, expected', [
+    ({
+        'alg': x.value
+    }, x)
+    for x in chain(COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value)
+])
+def test_parse_attestation_statement_alg_success(data, expected):
+  parse_attestation_statement_alg(data) == expected
+
+
+@pytest.mark.parametrize('data', [
+    {
+        'alg': 'invalid'
+    },
+    {
+        'alg': -1
+    },
+    {},
+])
+def test_parse_attestation_statement_alg_error(data):
+  with pytest.raises(ValidationError):
+    parse_attestation_statement_alg(data)
+
+
+@pytest.mark.parametrize('data, expected', [
+    ({
+        'x5c': [b'x', b'y'],
+    }, [b'x', b'y']),
+    ({
+        'x5c': (b'x', b'y'),
+    }, (b'x', b'y')),
+])
+def test_parse_attestation_statement_x5c_success(data, expected):
+  parse_attestation_statement_x5c(data) == expected
+
+
+@pytest.mark.parametrize('data', [
+    {
+        'x5c': 'invalid'
+    },
+    {
+        'x5c': -1
+    },
+    {
+        'x5c': [1]
+    },
+    {
+        'x5c': ['x']
+    },
+    {
+        'x5c': (1, )
+    },
+    {
+        'x5c': ('x', )
+    },
+    {},
+])
+def test_parse_attestation_statement_x5c_error(data):
+  with pytest.raises(ValidationError):
+    parse_attestation_statement_x5c(data)
+
+
+@pytest.mark.parametrize('data, expected', [
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+    },
+     PackedAttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                sig=b'signature')),
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'x5c': [b'x', b'y']
+    },
+     PackedX509AttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                    sig=b'signature',
+                                    x5c=[b'x', b'y'])),
+    ({
+        'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+        'sig': b'signature',
+        'ecdaaKeyId': b'key-id'
+    },
+     PackedECDAAAttestationStatement(alg=COSEAlgorithmIdentifier.Value.ES256,
+                                     sig=b'signature',
+                                     ecdaa_key_id=b'key-id')),
+])
+def test_parse_packed_attestation_statement_success(data, expected):
+  parse_packed_attestation_statement(data) == expected
+
+
+@pytest.mark.parametrize('data', [{}, {
+    'alg': -1,
+    'sig': b'signature',
+}, {
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': 'signature',
+}, {
+    'invalid': 'data',
+    'alg': COSEAlgorithmIdentifier.Value.ES256.value,
+    'sig': b'signature',
+}])
+def test_parse_packed_attestation_statement_error(data):
+  with pytest.raises(ValidationError):
+    parse_packed_attestation_statement(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_tpm_attestation_statement_success(data, expected):
+  parse_tpm_attestation_statement(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_tpm_attestation_statement_error(data):
+  with pytest.raises(ValidationError):
+    parse_tpm_attestation_statement(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_android_key_attestation_statement_success(data, expected):
+  parse_android_key_attestation_statement(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_android_key_attestation_statement_error(data):
+  with pytest.raises(ValidationError):
+    parse_android_key_attestation_statement(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_android_safetynet_attestation_statement_success(data, expected):
+  parse_android_safetynet_attestation_statement(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_android_safetynet_attestation_statement_error(data):
+  with pytest.raises(ValidationError):
+    parse_android_safetynet_attestation_statement(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_fido_u2f_attestation_statement_success(data, expected):
+  parse_fido_u2f_attestation_statement(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_fido_u2f_attestation_statement_error(data):
+  with pytest.raises(ValidationError):
+    parse_fido_u2f_attestation_statement(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_client_data_success(data, expected):
+  parse_client_data(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_client_data_error(data):
+  with pytest.raises(ValidationError):
+    parse_client_data(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_cose_key_success(data, expected):
+  parse_cose_key(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_cose_key_error(data):
+  with pytest.raises(ValidationError):
+    parse_cose_key(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_authenticator_data_success(data, expected):
+  parse_authenticator_data(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_authenticator_data_error(data):
+  with pytest.raises(ValidationError):
+    parse_authenticator_data(data)
+
+
+@pytest.mark.parametrize('data, expected', [])
+def test_parse_attestation_success(data, expected):
+  parse_attestation(data) == expected
+
+
+@pytest.mark.parametrize('data', [])
+def test_parse_attestation_error(data):
+  with pytest.raises(ValidationError):
+    parse_attestation(data)
