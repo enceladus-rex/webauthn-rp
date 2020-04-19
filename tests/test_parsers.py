@@ -10,7 +10,8 @@ from webauthn_rp.errors import (DecodingError, TokenBindingError,
 from webauthn_rp.parsers import *
 from webauthn_rp.types import *
 
-from .common import assert_objects_equal
+from .common import (assert_objects_equal, attested_credential_data,
+                     authenticator_data, json_bytes)
 
 
 @pytest.mark.parametrize(
@@ -1371,19 +1372,15 @@ def test_parse_none_attestation_statement_error(data):
     parse_none_attestation_statement(data)
 
 
-def _json_bytes(x: dict) -> bytes:
-  return json.dumps(x).encode('utf-8')
-
-
 @pytest.mark.parametrize('data, expected', [
-    (_json_bytes({
+    (json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
     }),
      CollectedClientData(
          type='type', challenge='challenge', origin='http://example.com')),
-    (_json_bytes({
+    (json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
@@ -1396,7 +1393,7 @@ def _json_bytes(x: dict) -> bytes:
          challenge='challenge',
          origin='http://example.com',
          token_binding=TokenBinding(status=TokenBindingStatus.SUPPORTED))),
-    (_json_bytes({
+    (json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
@@ -1417,34 +1414,34 @@ def test_parse_client_data_success(data, expected):
 
 
 @pytest.mark.parametrize('data', [
-    _json_bytes({
+    json_bytes({
         'type': -1,
         'challenge': 'challenge',
         'origin': 'http://example.com'
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': -1,
         'origin': 'http://example.com'
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': -1,
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
         'tokenBinding': 'x'
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
         'tokenBinding': {}
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
@@ -1452,7 +1449,7 @@ def test_parse_client_data_success(data, expected):
             'status': -1
         }
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
@@ -1460,7 +1457,7 @@ def test_parse_client_data_success(data, expected):
             'status': '----'
         }
     }),
-    _json_bytes({
+    json_bytes({
         'type': 'type',
         'challenge': 'challenge',
         'origin': 'http://example.com',
@@ -1592,33 +1589,8 @@ def test_parse_cose_key_error(data):
     parse_cose_key(data)
 
 
-def _authenticator_data(rp_id_hash: bytes,
-                        flags: int,
-                        sign_count: bytes,
-                        attested_credential_data: Optional[bytes] = None,
-                        extensions: Optional[bytes] = None) -> bytes:
-  return b''.join([
-      rp_id_hash,
-      bytes([flags]),
-      sign_count,
-      attested_credential_data or b'',
-      extensions or b'',
-  ])
-
-
-def _attested_credential_data(aaguid: bytes, credential_id_length: int,
-                              credential_id: bytes,
-                              credential_public_key: bytes):
-  return b''.join([
-      aaguid,
-      credential_id_length.to_bytes(2, 'big'),
-      credential_id,
-      credential_public_key,
-  ])
-
-
 @pytest.mark.parametrize('data, expected', [
-    (_authenticator_data(
+    (authenticator_data(
         b'x' * 32,
         AuthenticatorDataFlag.UP.value,
         b'y' * 4,
@@ -1628,11 +1600,11 @@ def _attested_credential_data(aaguid: bytes, credential_id_length: int,
          flags=AuthenticatorDataFlag.UP.value,
          sign_count=int.from_bytes(b'y' * 4, 'big'),
      )),
-    (_authenticator_data(
+    (authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
          | AuthenticatorDataFlag.ED.value), b'y' * 4,
-        _attested_credential_data(
+        attested_credential_data(
             b'z' * 16,
             10,
             b'a' * 10,
@@ -1681,11 +1653,11 @@ def _attested_credential_data(aaguid: bytes, credential_id_length: int,
                  crv=EC2Curve.Value.P_256,
              )),
          extensions=AuthenticationExtensionsClientOutputs(appid=True))),
-    (_authenticator_data(
+    (authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
         b'y' * 4,
-        _attested_credential_data(
+        attested_credential_data(
             b'z' * 16,
             10,
             b'a' * 10,
@@ -1733,7 +1705,7 @@ def _attested_credential_data(aaguid: bytes, credential_id_length: int,
                  crv=EC2Curve.Value.P_256,
              )),
      )),
-    (_authenticator_data(
+    (authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
         b'y' * 4,
@@ -1754,21 +1726,21 @@ def test_parse_authenticator_data_success(data, expected):
 @pytest.mark.parametrize('data', [
     b''
     b'x' * 32,
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
         b'y' * 4,
     ),
-    _authenticator_data(b'x' * 32, (AuthenticatorDataFlag.UP.value),
-                        b'y' * 4,
-                        extensions=cbor2.dumps({
-                            'appid': True,
-                        })),
-    _authenticator_data(
+    authenticator_data(b'x' * 32, (AuthenticatorDataFlag.UP.value),
+                       b'y' * 4,
+                       extensions=cbor2.dumps({
+                           'appid': True,
+                       })),
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value),
         b'y' * 4,
-        _attested_credential_data(
+        attested_credential_data(
             b'z' * 16,
             10,
             b'a' * 10,
@@ -1794,39 +1766,39 @@ def test_parse_authenticator_data_success(data, expected):
             }),
         ),
     ),
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
         b'y' * 4,
     ),
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
         b'y' * 4,
-        _attested_credential_data(
+        attested_credential_data(
             b'z' * 16,
             10,
             b'a' * 10,
             b'invalid',
         ),
     ),
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value),
         b'y' * 4,
-        _attested_credential_data(
+        attested_credential_data(
             b'z' * 16,
             10,
             b'a' * 10,
             cbor2.dumps([1, 2, 3]),
         ),
     ),
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
         b'y' * 4,
         extensions=b'invalid'),
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.ED.value),
         b'y' * 4,
@@ -1839,11 +1811,11 @@ def test_parse_authenticator_data_error(data):
 
 @pytest.mark.parametrize('data, expected', [(cbor2.dumps({
     'authData':
-    _authenticator_data(
+    authenticator_data(
         b'x' * 32,
         (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
          | AuthenticatorDataFlag.ED.value), b'y' * 4,
-        _attested_credential_data(
+        attested_credential_data(
             b'z' * 16,
             10,
             b'a' * 10,
@@ -1903,11 +1875,11 @@ def test_parse_authenticator_data_error(data):
                                                             x5c=[b'x'])),
      {
          'authData':
-         _authenticator_data(
+         authenticator_data(
              b'x' * 32,
              (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
               | AuthenticatorDataFlag.ED.value), b'y' * 4,
-             _attested_credential_data(
+             attested_credential_data(
                  b'z' * 16,
                  10,
                  b'a' * 10,
@@ -1959,11 +1931,11 @@ def test_parse_attestation_success(data, expected):
     }),
     cbor2.dumps({
         'authData':
-        _authenticator_data(
+        authenticator_data(
             b'x' * 32,
             (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
              | AuthenticatorDataFlag.ED.value), b'y' * 4,
-            _attested_credential_data(
+            attested_credential_data(
                 b'z' * 16,
                 10,
                 b'a' * 10,
@@ -1999,11 +1971,11 @@ def test_parse_attestation_success(data, expected):
     }),
     cbor2.dumps({
         'authData':
-        _authenticator_data(
+        authenticator_data(
             b'x' * 32,
             (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
              | AuthenticatorDataFlag.ED.value), b'y' * 4,
-            _attested_credential_data(
+            attested_credential_data(
                 b'z' * 16,
                 10,
                 b'a' * 10,
@@ -2037,11 +2009,11 @@ def test_parse_attestation_success(data, expected):
     }),
     cbor2.dumps({
         'authData':
-        _authenticator_data(
+        authenticator_data(
             b'x' * 32,
             (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
              | AuthenticatorDataFlag.ED.value), b'y' * 4,
-            _attested_credential_data(
+            attested_credential_data(
                 b'z' * 16,
                 10,
                 b'a' * 10,

@@ -56,17 +56,6 @@ def url_base64_decode(s: str) -> bytes:
   return base64.b64decode(s + '===', b'-_')
 
 
-def extract_origin(url: str) -> str:
-  parsed_url = urlparse(url)
-  if parsed_url.netloc is None:
-    raise ValidationError('Origin must contain hostname[:port]')
-
-  if parsed_url.scheme is None:
-    raise ValidationError('Origin must contain scheme')
-
-  return parsed_url.scheme + '://' + parsed_url.netloc
-
-
 def curve_coordinate_byte_length(
     crv: Union['types.EC2Curve.Name', 'types.EC2Curve.Value',
                'types.OKPCurve.Name', 'types.OKPCurve.Value']

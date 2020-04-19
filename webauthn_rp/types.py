@@ -79,11 +79,16 @@ class PublicKeyCredentialRpEntity(PublicKeyCredentialEntity):
       Authenticators MAY ignore an icon member’s value if its length is
       greater than 128 bytes. The URL’s scheme MAY be "data" to avoid fetches
       of the URL, at the cost of needing more storage.
-    id (str): A unique identifier for the Relying Party entity.
+    id (str): A unique identifier for the Relying Party entity. By default, the
+      RP ID for a WebAuthn operation is set to the caller’s origin's effective
+      domain. This default MAY be overridden by the caller, as long as the 
+      caller-specified RP ID value is a registrable domain suffix of or is 
+      equal to the caller’s origin's effective domain.
 
   References:
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialrpentity
     * https://w3.org/TR/webauthn/#dictdef-publickeycredentialentity
+    * https://www.w3.org/TR/webauthn/#rp-id
   """
   def __init__(self, *, name: str, icon: Optional[str] = None, id: str):
     super().__init__(name=name, icon=icon)

@@ -1,6 +1,7 @@
 import hashlib
 import json
 from typing import Any, Optional, Sequence, Set, cast
+from urllib.parse import urlparse
 
 import cryptography
 from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
@@ -9,9 +10,10 @@ from cryptography.hazmat.primitives.hashes import SHA256
 from webauthn_rp.attesters import attest
 from webauthn_rp.converters import cryptography_public_key, jsonify
 from webauthn_rp.errors import (AuthenticationError, DecodingError,
-                                IntegrityError, NotFoundError, ParseError,
-                                RegistrationError, SignatureCountError,
-                                ValidationError, VerificationError)
+                                IntegrityError, NotFoundError, OriginError,
+                                ParseError, RegistrationError,
+                                SignatureCountError, ValidationError,
+                                VerificationError)
 from webauthn_rp.parsers import (parse_attestation, parse_authenticator_data,
                                  parse_client_data)
 from webauthn_rp.registrars import CredentialsRegistrar
@@ -20,13 +22,22 @@ from webauthn_rp.types import (
     AuthenticatorDataFlag, CredentialCreationOptions, CredentialRequestOptions,
     ExtensionIdentifier, PublicKeyCredential, PublicKeyCredentialDescriptor,
     PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity, TokenBinding)
-from webauthn_rp.utils import extract_origin, url_base64_decode
+from webauthn_rp.utils import url_base64_decode
 from webauthn_rp.verifiers import verify
 
 
 class CredentialsBackend:
   def __init__(self, registrar: CredentialsRegistrar) -> None:
     self.registrar = registrar
+
+  def _verify_origin_format(self, origin: str) -> None:
+    url = urlparse(origin)
+    if url.path or url.params or url.query or url.fragment:
+      raise OriginError('Invalid origin, cannot have path, params, query, '
+                        'or fragment present')
+
+    if not url.netloc:
+      raise OriginError('Invalid origin, must provide a host/domain')
 
   def handle_creation_options(self, *,
                               options: CredentialCreationOptions) -> None:
@@ -47,6 +58,7 @@ class CredentialsBackend:
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
       expected_challenge: bytes,
+      expected_origin: str,
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None) -> None:
@@ -67,11 +79,11 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    rp_origin = extract_origin(collected_client_data.origin)
-    if rp_origin != rp.id:
+    self._verify_origin_format(expected_origin)
+    if expected_origin != collected_client_data.origin:
       raise IntegrityError(
           'Given ({0}) and expected ({1}) RP origin don\'t match'.format(
-              rp_origin, rp.id))
+              collected_client_data.origin, expected_origin))
 
     if token_binding is not None:
       if collected_client_data.token_binding is None:
@@ -156,6 +168,7 @@ class CredentialsBackend:
       *,
       credential: PublicKeyCredential,
       expected_challenge: bytes,
+      expected_origin: str,
       rp: Optional[PublicKeyCredentialRpEntity] = None,
       user: Optional[PublicKeyCredentialUserEntity] = None,
       allow_credentials: Optional[
@@ -234,11 +247,11 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    rp_origin = extract_origin(collected_client_data.origin)
-    if rp_origin != rp.id:
+    self._verify_origin_format(expected_origin)
+    if expected_origin != collected_client_data.origin:
       raise IntegrityError(
           'Given ({0}) and expected ({1}) RP origin don\'t match'.format(
-              rp_origin, rp.id))
+              collected_client_data.origin, expected_origin))
 
     if token_binding is not None:
       if collected_client_data.token_binding is None:

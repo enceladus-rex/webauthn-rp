@@ -14,6 +14,10 @@ class IntegrityError(WebAuthnRPError):
   pass
 
 
+class OriginError(WebAuthnRPError):
+  pass
+
+
 class VerificationError(WebAuthnRPError):
   pass
 

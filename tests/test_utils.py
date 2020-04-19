@@ -3,9 +3,8 @@ import pytest
 from webauthn_rp.types import COSEAlgorithmIdentifier, EC2Curve, OKPCurve
 from webauthn_rp.utils import (camel_to_snake_case,
                                curve_coordinate_byte_length,
-                               ec2_hash_algorithm, extract_origin,
-                               snake_to_camel_case, url_base64_decode,
-                               url_base64_encode)
+                               ec2_hash_algorithm, snake_to_camel_case,
+                               url_base64_decode, url_base64_encode)
 
 
 def test_snake_to_camel_case():
@@ -44,19 +43,6 @@ def test_url_base64_decode():
   assert url_base64_decode('_A=') == b'\xFC'
   assert url_base64_decode('-A') == b'\xF8'
   assert url_base64_decode('_A') == b'\xFC'
-
-
-def test_extract_origin():
-  assert extract_origin('http://example.com/path') == 'http://example.com'
-  assert extract_origin('https://example.com/path') == 'https://example.com'
-  assert extract_origin('http://example.com:80/path') == (
-      'http://example.com:80')
-  assert extract_origin('https://example.com:443/path') == (
-      'https://example.com:443')
-  assert extract_origin('http://example.com:81/path') == (
-      'http://example.com:81')
-  assert extract_origin('https://example.com:444/path') == (
-      'https://example.com:444')
 
 
 @pytest.mark.parametrize('crv',

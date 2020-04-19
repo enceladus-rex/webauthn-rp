@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import json
 import random
 from base64 import b64encode
 from enum import Enum
@@ -201,6 +202,35 @@ def generate_okp_credential_public_key(
       alg=alg or COSEAlgorithmIdentifier.Value.ES256,
       x=public_number,
   )
+
+
+def json_bytes(x: dict) -> bytes:
+  return json.dumps(x).encode('utf-8')
+
+
+def authenticator_data(rp_id_hash: bytes,
+                       flags: int,
+                       sign_count: bytes,
+                       attested_credential_data: Optional[bytes] = None,
+                       extensions: Optional[bytes] = None) -> bytes:
+  return b''.join([
+      rp_id_hash,
+      bytes([flags]),
+      sign_count,
+      attested_credential_data or b'',
+      extensions or b'',
+  ])
+
+
+def attested_credential_data(aaguid: bytes, credential_id_length: int,
+                             credential_id: bytes,
+                             credential_public_key: bytes):
+  return b''.join([
+      aaguid,
+      credential_id_length.to_bytes(2, 'big'),
+      credential_id,
+      credential_public_key,
+  ])
 
 
 def assert_objects_equal(a, b):

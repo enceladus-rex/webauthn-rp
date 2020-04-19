@@ -24,6 +24,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/webauthn.db'
 db = SQLAlchemy(app)
 
 example_rp = PublicKeyCredentialRpEntity(name='localhost', id='localhost')
+example_origin = 'localhost'
 example_timeout = 60000
 example_credential_parameters = [
     PublicKeyCredentialParameters(type=PublicKeyCredentialType.PUBLIC_KEY,
@@ -127,7 +128,7 @@ def registration_request():
 
     user_handle = user_model.user_handle
   else:
-    user_handle = secrets.token_bytes(32)
+    user_handle = secrets.token_bytes(64)
 
     user_model = User()
     user_model.username = username
@@ -198,7 +199,8 @@ def registration_response():
         credential=credential,
         user=user_entity,
         rp=example_rp,
-        expected_challenge=challenge_model.request)
+        expected_challenge=challenge_model.request,
+        expected_origin=example_origin)
   except WebAuthnRPError as e:
     return ('Could not handle credential creation', 400)
 
@@ -286,7 +288,8 @@ def authentication_response():
         credential=credential,
         user=user_entity,
         rp=example_rp,
-        expected_challenge=challenge_model.request)
+        expected_challenge=challenge_model.request,
+        expected_origin=example_origin)
   except WebAuthnRPError as e:
     return ('Could not handle credential creation', 400)
 
