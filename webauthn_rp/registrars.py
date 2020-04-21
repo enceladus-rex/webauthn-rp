@@ -12,7 +12,7 @@ from webauthn_rp.types import (
 class CredentialData(NamedTuple):
   credential_public_key: CredentialPublicKey
   signature_count: int
-  user_entity: Optional[PublicKeyCredentialUserEntity] = None
+  user_entity: PublicKeyCredentialUserEntity
   rp_entity: Optional[PublicKeyCredentialRpEntity] = None
 
 
@@ -43,7 +43,3 @@ class CredentialsRegistrar:
   def get_credential_data(self,
                           credential_id: bytes) -> Optional[CredentialData]:
     raise UnimplementedError('Must implement get_credential_data')
-
-  def check_user_owns_credential(self, user_handle: bytes,
-                                 credential_id: bytes) -> Optional[bool]:
-    raise UnimplementedError('Must implement check_user_owns_credential')

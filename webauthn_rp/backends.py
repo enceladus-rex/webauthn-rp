@@ -64,8 +64,6 @@ class CredentialsBackend:
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None) -> None:
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
-    if collected_client_data is None:
-      raise ParseError('Could not parse the client data dictionary')
 
     if collected_client_data.type != 'webauthn.create':
       raise ValidationError('Invalid client data type {}'.format(
@@ -97,7 +95,7 @@ class CredentialsBackend:
 
       if token_binding.id != collected_client_data.token_binding.id:
         raise IntegrityError(('Given ({0}) and expected ({1}) Token Binding '
-                              'ids dont\'t match').format(
+                              'IDs dont\'t match').format(
                                   collected_client_data.token_binding.id,
                                   token_binding.id))
     elif collected_client_data.token_binding is not None:
@@ -188,53 +186,43 @@ class CredentialsBackend:
       if not allowed:
         raise ValidationError('Provided credential is not allowed')
 
-    credential_data = self.registrar.get_credential_data(credential.raw_id)
+    try:
+      credential_data = self.registrar.get_credential_data(credential.raw_id)
+    except Exception as e:
+      raise RegistrationError(
+          'Error enountered while getting credential data ({!r})'.format(e))
 
     if credential_data is None:
       raise NotFoundError('Could not get credential data')
 
     registered_user = credential_data.user_entity
-    if registered_user is None:
-      if user is None:
-        raise NotFoundError('Could not find a user with the credential')
-    elif user is not None:
+    if user is not None:
       if registered_user.id != user.id:
         raise ValidationError(
-            'Registered user and provided user ids do not match')
+            'Registered user and provided user IDs do not match')
     else:
+      if response.user_handle is None:
+        raise ValidationError('User handle is required in response')
+
       user = registered_user
+
+    if response.user_handle is not None:
+      if response.user_handle != user.id:
+        raise ValidationError('User handle doesn\'t match user ID')
 
     registered_rp = credential_data.rp_entity
     if registered_rp is None:
       if rp is None:
         raise NotFoundError(
-            ('Could not find a registered rp with the credential '
+            ('Could not find a registered RP with the credential '
              'and one was not provided for verification'))
     elif rp is not None:
       if registered_rp.id != rp.id:
-        raise ValidationError('Registered rp and provided rp ids do not match')
+        raise ValidationError('Registered RP and provided RP IDs do not match')
     else:
       rp = registered_rp
 
-    if user is not None:
-      if response.user_handle is not None:
-        if response.user_handle != user.id:
-          raise ValidationError('User handle doesn\'t match user id')
-    else:
-      if response.user_handle is None:
-        raise ValidationError(('User cannot be verified, must provide one or '
-                               'there must be a user handle'))
-
-      valid_credential = self.registrar.check_user_owns_credential(
-          response.user_handle, credential.raw_id)
-
-      if not valid_credential:
-        raise ValidationError('User does not own credential')
-
     collected_client_data = parse_client_data(response.client_data_JSON)
-    if collected_client_data is None:
-      raise ParseError('Could not parse the client data dictionary')
-
     if collected_client_data.type != 'webauthn.get':
       raise ValidationError('Invalid client data type {}'.format(
           collected_client_data.type))
@@ -265,7 +253,7 @@ class CredentialsBackend:
 
       if token_binding.id != collected_client_data.token_binding.id:
         raise IntegrityError(('Given ({0}) and expected ({1}) Token Binding '
-                              'ids dont\'t match').format(
+                              'IDs dont\'t match').format(
                                   collected_client_data.token_binding.id,
                                   token_binding.id))
     elif collected_client_data.token_binding is not None:
@@ -275,7 +263,6 @@ class CredentialsBackend:
     rp_id_hash = hashlib.sha256(rp.id.encode('utf-8')).digest()
 
     auth_data = parse_authenticator_data(response.authenticator_data)
-
     if auth_data.rp_id_hash != rp_id_hash:
       raise IntegrityError('RP ID hash does not match')
 
@@ -287,10 +274,10 @@ class CredentialsBackend:
         raise ValidationError('User verification flag must be set')
 
     if expected_extensions is not None:
-      for e in expected_extensions:
-        if not hasattr(auth_data.extensions,
-                       e.key) or getattr(auth_data.extensions, e.key) is None:
-          raise ValidationError('Missing extension {}'.format(e.value))
+      for ee in expected_extensions:
+        if not hasattr(auth_data.extensions, ee.key) or getattr(
+            auth_data.extensions, ee.key) is None:
+          raise ValidationError('Missing extension {}'.format(ee.value))
 
     verification_data = response.authenticator_data + client_data_JSON_hash
     verify(credential_data.credential_public_key, response.signature,

@@ -484,8 +484,7 @@ class AttestationStatementParser(Enum):
   NONE = parse_none_attestation_statement
 
 
-def parse_client_data(
-    client_data_JSON: bytes) -> Optional[CollectedClientData]:
+def parse_client_data(client_data_JSON: bytes) -> CollectedClientData:
   try:
     client_data_text = client_data_JSON.decode('utf-8')
     client_data = json.loads(client_data_text)

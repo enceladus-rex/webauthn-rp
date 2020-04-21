@@ -27,6 +27,7 @@ from webauthn_rp.types import (AndroidKeyAttestationStatement,
                                EC2CredentialPublicKey,
                                FIDOU2FAttestationStatement,
                                NoneAttestationStatement, TrustedPath)
+from webauthn_rp.utils import ec2_hash_algorithm
 
 
 @singledispatch
@@ -133,18 +134,8 @@ def attest_android_key(
     )
 
   assert att_stmt.alg is not None
-  alg_name = att_stmt.alg.name
 
-  alg_to_hash = {
-      'ES256': SHA256,
-      'ES384': SHA384,
-      'ES512': SHA512,
-  }
-
-  hash_algorithm = None
-  if alg_name in alg_to_hash: hash_algorithm = ECDSA(alg_to_hash[alg_name]())
-  elif alg_name != 'EDDSA':
-    raise ValidationError('Unsupported hashing algorithm {}'.format(alg_name))
+  hash_algorithm = ECDSA(ec2_hash_algorithm(att_stmt.alg))
 
   assert att_obj.auth_data is not None
   assert att_obj.auth_data.attested_credential_data is not None

@@ -29,6 +29,3 @@ def test_credentials_registrar():
 
   with pytest.raises(UnimplementedError):
     registrar.get_credential_data(b'', )
-
-  with pytest.raises(UnimplementedError):
-    registrar.check_user_owns_credential(b'', b'')

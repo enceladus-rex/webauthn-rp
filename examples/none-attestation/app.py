@@ -100,15 +100,16 @@ class RegistrarImpl(CredentialsRegistrar):
   def get_credential_data(self,
                           credential_id: bytes) -> Optional[CredentialData]:
     credential_model = Credential.query.filter_by(id=credential_id).first()
+    if credential_model is None:
+      return None
+
     return CredentialData(
         parse_cose_key(credential_model.credential_public_key),
         credential_model.signature_count,
-    )
-
-  def check_user_owns_credential(self, user_handle: bytes,
-                                 credential_id: bytes) -> Optional[bool]:
-    credential_model = Credential.query.filter_by(id=credential_id).first()
-    return credential_model.user.user_handle == user_handle
+        PublicKeyCredentialUserEntity(
+            name=credential_model.user.username,
+            id=credential_model.user.user_handle,
+            display_name=credential_model.user.username))
 
 
 credentials_backend = CredentialsBackend(RegistrarImpl())
@@ -170,10 +171,13 @@ def registration_request():
 
 @app.route('/registration/response/', methods=['POST'])
 def registration_response():
-  challengeID = request.form['challengeID']
-  credential = parse_public_key_credential(
-      json.loads(request.form['credential']))
-  username = request.form['username']
+  try:
+    challengeID = request.form['challengeID']
+    credential = parse_public_key_credential(
+        json.loads(request.form['credential']))
+    username = request.form['username']
+  except Exception:
+    return ('Could not parse input data', 400)
 
   if type(credential.response) is not AuthenticatorAttestationResponse:
     return ('Invalid response type', 400)
@@ -259,10 +263,13 @@ def authentication_request():
 
 @app.route('/authentication/response/', methods=['POST'])
 def authentication_response():
-  challengeID = request.form['challengeID']
-  credential = parse_public_key_credential(
-      json.loads(request.form['credential']))
-  username = request.form['username']
+  try:
+    challengeID = request.form['challengeID']
+    credential = parse_public_key_credential(
+        json.loads(request.form['credential']))
+    username = request.form['username']
+  except Exception:
+    return ('Could not parse input data', 400)
 
   if type(credential.response) is not AuthenticatorAssertionResponse:
     return HttpResponse('Invalid response type', status=400)
