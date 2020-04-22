@@ -5,7 +5,7 @@ import random
 from base64 import b64encode
 from enum import Enum
 from pprint import pprint
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import cryptography
 import cryptography.x509

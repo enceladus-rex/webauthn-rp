@@ -70,19 +70,26 @@ def cryptography_ec2_public_key(
   assert curve is not None
 
   ecpn = EllipticCurvePublicNumbers(x, y, curve)
-  return ecpn.public_key(default_backend())
+
+  try:
+    return ecpn.public_key(default_backend())
+  except ValueError:
+    raise ValidationError('Invalid EC2 public key')
 
 
 @cryptography_public_key.register(OKPCredentialPublicKey)
 def cryptography_okp_public_key(
     credential_public_key: OKPCredentialPublicKey) -> OKPPublicKey:
-  if credential_public_key.crv.name == 'ED25519':
-    return Ed25519PublicKey.from_public_bytes(credential_public_key.x)
-  elif credential_public_key.crv.name == 'ED448':
-    return Ed448PublicKey.from_public_bytes(credential_public_key.x)
-  else:
-    raise UnimplementedError('Unsupported cryptography OKP curve {}'.format(
-        credential_public_key.crv.name))
+  try:
+    if credential_public_key.crv.name == 'ED25519':
+      return Ed25519PublicKey.from_public_bytes(credential_public_key.x)
+    elif credential_public_key.crv.name == 'ED448':
+      return Ed448PublicKey.from_public_bytes(credential_public_key.x)
+    else:
+      raise UnimplementedError('Unsupported cryptography OKP curve {}'.format(
+          credential_public_key.crv.name))
+  except ValueError:
+    raise ValidationError('Invalid OKP public key')
 
 
 def build_base_cose_dictionary(

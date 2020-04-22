@@ -9,9 +9,11 @@ import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.ec import (
-    ECDSA, SECP256R1, EllipticCurve, EllipticCurvePublicNumbers,
+    ECDSA, SECP256R1, SECP384R1, EllipticCurve, EllipticCurvePublicNumbers,
     generate_private_key)
+from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.extensions import Extension, UnrecognizedExtension
 from cryptography.x509.oid import ObjectIdentifier
@@ -36,7 +38,8 @@ from .common import (TEST_AAGUID, TEST_CREDENTIAL_ID,
                      TEST_CREDENTIAL_ID_LENGTH, TEST_RP_ID, TEST_RP_ID_HASH,
                      generate_elliptic_curve_x509_certificate,
                      generate_elliptic_curve_x509_certificate_android,
-                     generate_signature, generate_x509_certificate)
+                     generate_signature, generate_x509_certificate,
+                     single_byte_errors)
 
 
 def test_attest_fido_u2f():
@@ -103,6 +106,32 @@ def test_attest_fido_u2f():
   with pytest.raises(VerificationError):
     attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
 
+  invalid_pk = rsa.generate_private_key(931, 4096, default_backend())
+  invalid_pubk = invalid_pk.public_key()
+  invalid_certificate = generate_x509_certificate(invalid_pubk, invalid_pk,
+                                                  hashes.SHA256())
+
+  invalid_signature = invalid_pk.sign(verification_data, PKCS1v15(),
+                                      hashes.SHA256())
+  invalid_der_certificate = invalid_certificate.public_bytes(Encoding.DER)
+  invalid_att_stmt = FIDOU2FAttestationStatement(sig=invalid_signature,
+                                                 x5c=[invalid_der_certificate])
+
+  att_obj.att_stmt = invalid_att_stmt
+  with pytest.raises(ValidationError):
+    attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
+
+  invalid_certificate, invalid_pk, invalid_pubk = generate_elliptic_curve_x509_certificate(
+      SECP384R1())
+  invalid_signature = generate_signature(invalid_pk, verification_data)
+  invalid_der_certificate = invalid_certificate.public_bytes(Encoding.DER)
+  invalid_att_stmt = FIDOU2FAttestationStatement(sig=invalid_signature,
+                                                 x5c=[invalid_der_certificate])
+
+  att_obj.att_stmt = invalid_att_stmt
+  with pytest.raises(ValidationError):
+    attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
+
 
 def test_attest_android_key():
   client_data_hash = b'client-data-hash'
@@ -166,6 +195,70 @@ def test_attest_android_key():
   att_obj.att_stmt = unverified_att_stmt
   with pytest.raises(VerificationError):
     attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
+
+  invalid_pk = rsa.generate_private_key(931, 4096, default_backend())
+  invalid_pubk = invalid_pk.public_key()
+  invalid_certificate = generate_x509_certificate(invalid_pubk, invalid_pk,
+                                                  hashes.SHA256())
+
+  invalid_signature = invalid_pk.sign(verification_data, PKCS1v15(),
+                                      hashes.SHA256())
+  invalid_der_certificate = invalid_certificate.public_bytes(Encoding.DER)
+
+  invalid_att_stmt = AndroidKeyAttestationStatement(
+      alg=COSEAlgorithmIdentifier.Name.ES256,
+      sig=invalid_signature,
+      x5c=[invalid_der_certificate])
+  att_obj.att_stmt = invalid_att_stmt
+  with pytest.raises(ValidationError):
+    attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
+
+  att_obj.att_stmt = valid_att_stmt
+
+  while True:
+    random_pk = generate_private_key(SECP256R1(), default_backend())
+    random_public_numbers = random_pk.private_numbers().public_numbers
+    rx = random_public_numbers.x.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+    ry = random_public_numbers.y.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+
+    if rx != x or ry != y:
+      break
+
+  att_obj.auth_data.attested_credential_data.credential_public_key = (
+      EC2CredentialPublicKey(
+          x=rx,
+          y=ry,
+          kty=COSEKeyType.Name.EC2,
+          crv=EC2Curve.Name.P_256,
+      ))
+
+  with pytest.raises(ValidationError):
+    attest(valid_att_stmt, att_obj, auth_data, client_data_hash)
+
+  invalid_certificate, invalid_pk, invalid_pubk = generate_elliptic_curve_x509_certificate(
+      SECP256R1())
+  invalid_public_numbers = invalid_pk.private_numbers().public_numbers
+
+  x = invalid_public_numbers.x.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+  y = invalid_public_numbers.y.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+
+  att_obj.auth_data.attested_credential_data.credential_public_key = (
+      EC2CredentialPublicKey(
+          x=x,
+          y=y,
+          kty=COSEKeyType.Name.EC2,
+          crv=EC2Curve.Name.P_256,
+      ))
+
+  invalid_signature = generate_signature(invalid_pk, verification_data)
+  invalid_der_certificate = invalid_certificate.public_bytes(Encoding.DER)
+  invalid_att_stmt = AndroidKeyAttestationStatement(
+      alg=COSEAlgorithmIdentifier.Name.ES256,
+      sig=invalid_signature,
+      x5c=[invalid_der_certificate])
+
+  with pytest.raises(ValidationError):
+    attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
 
 def test_attest_none(monkeypatch):

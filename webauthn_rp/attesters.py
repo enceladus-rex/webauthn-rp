@@ -133,10 +133,6 @@ def attest_android_key(
         'Android key verification failed: must use an Elliptic Curve Public Key'
     )
 
-  assert att_stmt.alg is not None
-
-  hash_algorithm = ECDSA(ec2_hash_algorithm(att_stmt.alg))
-
   assert att_obj.auth_data is not None
   assert att_obj.auth_data.attested_credential_data is not None
 
@@ -147,8 +143,10 @@ def attest_android_key(
   assert att_stmt.sig is not None
 
   try:
-    if hash_algorithm is not None:
-      assert isinstance(cred_cert_pk, EllipticCurvePublicKey)
+    if isinstance(cred_cert_pk, EllipticCurvePublicKey):
+      assert att_stmt.alg is not None
+
+      hash_algorithm = ECDSA(ec2_hash_algorithm(att_stmt.alg))
       cred_cert_pk.verify(att_stmt.sig, verification_data, hash_algorithm)
     else:
       assert isinstance(cred_cert_pk, (Ed25519PublicKey, Ed448PublicKey))
