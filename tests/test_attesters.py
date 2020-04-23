@@ -13,8 +13,10 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDSA, SECP256R1, SECP384R1, EllipticCurve, EllipticCurvePublicNumbers,
     generate_private_key)
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PrivateKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
-from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.x509.extensions import Extension, UnrecognizedExtension
 from cryptography.x509.oid import ObjectIdentifier
 from pyasn1.codec.der.decoder import decode
@@ -23,7 +25,8 @@ from pyasn1.codec.der.encoder import encode
 import webauthn_rp.types
 from webauthn_rp.asn1 import AuthorizationList, KeyDescription
 from webauthn_rp.attesters import attest
-from webauthn_rp.constants import (KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN,
+from webauthn_rp.constants import (ED25519_COORDINATE_BYTE_LENGTH,
+                                   KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN,
                                    P_256_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.errors import ValidationError, VerificationError
 from webauthn_rp.types import (
@@ -31,13 +34,15 @@ from webauthn_rp.types import (
     AttestationStatementFormatIdentifier, AttestationType,
     AttestedCredentialData, AuthenticatorData, COSEAlgorithmIdentifier,
     COSEKeyType, EC2CredentialPublicKey, EC2Curve, EC2PrivateKey, EC2PublicKey,
-    FIDOU2FAttestationStatement, NoneAttestationStatement, PrivateKey,
-    PublicKey)
+    FIDOU2FAttestationStatement, NoneAttestationStatement,
+    OKPCredentialPublicKey, OKPCurve, PrivateKey, PublicKey)
 
 from .common import (TEST_AAGUID, TEST_CREDENTIAL_ID,
                      TEST_CREDENTIAL_ID_LENGTH, TEST_RP_ID, TEST_RP_ID_HASH,
+                     generate_android_extensions,
                      generate_elliptic_curve_x509_certificate,
                      generate_elliptic_curve_x509_certificate_android,
+                     generate_elliptic_curve_x509_certificate_android_raw,
                      generate_signature, generate_x509_certificate,
                      single_byte_errors)
 
@@ -259,6 +264,81 @@ def test_attest_android_key():
 
   with pytest.raises(ValidationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
+
+  invalid_certificate, invalid_pk, invalid_pubk = generate_elliptic_curve_x509_certificate_android_raw(
+      SECP256R1(), b'invalid')
+  invalid_public_numbers = invalid_pk.private_numbers().public_numbers
+
+  x = invalid_public_numbers.x.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+  y = invalid_public_numbers.y.to_bytes(P_256_COORDINATE_BYTE_LENGTH, 'big')
+
+  att_obj.auth_data.attested_credential_data.credential_public_key = (
+      EC2CredentialPublicKey(
+          x=x,
+          y=y,
+          kty=COSEKeyType.Name.EC2,
+          crv=EC2Curve.Name.P_256,
+      ))
+
+  invalid_signature = generate_signature(invalid_pk, verification_data)
+  invalid_der_certificate = invalid_certificate.public_bytes(Encoding.DER)
+  invalid_att_stmt = AndroidKeyAttestationStatement(
+      alg=COSEAlgorithmIdentifier.Name.ES256,
+      sig=invalid_signature,
+      x5c=[invalid_der_certificate])
+
+  with pytest.raises(ValidationError):
+    attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
+
+  okp_pk = Ed25519PrivateKey.generate()
+  okp_pubk = okp_pk.public_key()
+
+  okp_certificate = generate_x509_certificate(
+      okp_pubk, okp_pk, None, generate_android_extensions(client_data_hash))
+
+  x = okp_pubk.public_bytes(Encoding.Raw, PublicFormat.Raw)
+
+  att_obj.auth_data.attested_credential_data.credential_public_key = (
+      OKPCredentialPublicKey(
+          x=x,
+          kty=COSEKeyType.Name.OKP,
+          crv=OKPCurve.Name.ED25519,
+      ))
+
+  okp_signature = okp_pk.sign(verification_data)
+  okp_der_certificate = okp_certificate.public_bytes(Encoding.DER)
+  okp_att_stmt = AndroidKeyAttestationStatement(
+      alg=COSEAlgorithmIdentifier.Name.ES256,
+      sig=okp_signature,
+      x5c=[okp_der_certificate])
+
+  assert attest(okp_att_stmt, att_obj, auth_data,
+                client_data_hash) == (AttestationType.BASIC, [okp_certificate])
+
+  okp_pk = Ed448PrivateKey.generate()
+  okp_pubk = okp_pk.public_key()
+
+  okp_certificate = generate_x509_certificate(
+      okp_pubk, okp_pk, None, generate_android_extensions(client_data_hash))
+
+  x = okp_pubk.public_bytes(Encoding.Raw, PublicFormat.Raw)
+
+  att_obj.auth_data.attested_credential_data.credential_public_key = (
+      OKPCredentialPublicKey(
+          x=x,
+          kty=COSEKeyType.Name.OKP,
+          crv=OKPCurve.Name.ED448,
+      ))
+
+  okp_signature = okp_pk.sign(verification_data)
+  okp_der_certificate = okp_certificate.public_bytes(Encoding.DER)
+  okp_att_stmt = AndroidKeyAttestationStatement(
+      alg=COSEAlgorithmIdentifier.Name.ES256,
+      sig=okp_signature,
+      x5c=[okp_der_certificate])
+
+  assert attest(okp_att_stmt, att_obj, auth_data,
+                client_data_hash) == (AttestationType.BASIC, [okp_certificate])
 
 
 def test_attest_none(monkeypatch):

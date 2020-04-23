@@ -143,14 +143,14 @@ def attest_android_key(
   assert att_stmt.sig is not None
 
   try:
-    if isinstance(cred_cert_pk, EllipticCurvePublicKey):
+    if isinstance(cred_cert_pk, (Ed25519PublicKey, Ed448PublicKey)):
+      cred_cert_pk.verify(att_stmt.sig, verification_data)
+    else:
+      assert isinstance(cred_cert_pk, EllipticCurvePublicKey)
       assert att_stmt.alg is not None
 
       hash_algorithm = ECDSA(ec2_hash_algorithm(att_stmt.alg))
       cred_cert_pk.verify(att_stmt.sig, verification_data, hash_algorithm)
-    else:
-      assert isinstance(cred_cert_pk, (Ed25519PublicKey, Ed448PublicKey))
-      cred_cert_pk.verify(att_stmt.sig, verification_data)
   except cryptography.exceptions.InvalidSignature:
     raise VerificationError(
         'Android Key verification failed: invalid signature')

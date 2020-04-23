@@ -64,7 +64,7 @@ def single_byte_errors(data: bytes) -> List[bytes]:
 def generate_x509_certificate(
     public_key: PublicKey,
     private_key: PrivateKey,
-    algorithm: hashes.HashAlgorithm,
+    algorithm: Optional[hashes.HashAlgorithm],
     extensions: Optional[List[Extension]] = None) -> x509.Certificate:
   if extensions is None:
     extensions = []
@@ -105,10 +105,55 @@ def generate_elliptic_curve_x509_certificate(
                                    hashes.SHA256()), private_key, public_key
 
 
+def generate_android_extensions(data: bytes) -> List[Extension]:
+  android_key_oid = ObjectIdentifier('1.3.6.1.4.1.11129.2.1.17')
+  android_key_description = KeyDescription()
+  android_key_description['attestationVersion'] = 0
+  android_key_description['attestationSecurityLevel'] = 0
+  android_key_description['keymasterVersion'] = 0
+  android_key_description['keymasterSecurityLevel'] = 0
+  android_key_description['attestationChallenge'] = data
+  android_key_description['uniqueId'] = b'unique'
+
+  software_enforced = AuthorizationList()
+  software_enforced['origin'] = KM_ORIGIN_GENERATED
+  software_enforced['purpose'].append(KM_PURPOSE_SIGN)
+  android_key_description['softwareEnforced'] = software_enforced
+
+  tee_enforced = AuthorizationList()
+  tee_enforced['origin'] = KM_ORIGIN_GENERATED
+  tee_enforced['purpose'].append(KM_PURPOSE_SIGN)
+  android_key_description['teeEnforced'] = tee_enforced
+
+  der_key = encode(android_key_description)
+  extensions = [
+      Extension(android_key_oid, False,
+                UnrecognizedExtension(android_key_oid, der_key))
+  ]
+
+  return extensions
+
+
+def generate_elliptic_curve_x509_certificate_android_raw(
+    curve: EllipticCurve,
+    data: bytes) -> Tuple[x509.Certificate, EC2PrivateKey, EC2PublicKey]:
+  android_key_oid = ObjectIdentifier('1.3.6.1.4.1.11129.2.1.17')
+
+  extensions = [
+      Extension(android_key_oid, False,
+                UnrecognizedExtension(android_key_oid, data))
+  ]
+
+  private_key = generate_private_key(curve, default_backend())
+  public_key = private_key.public_key()
+  return generate_x509_certificate(
+      public_key, private_key, hashes.SHA256(),
+      extensions=extensions), private_key, public_key
+
+
 def generate_elliptic_curve_x509_certificate_android(
     curve: EllipticCurve, attestation_challenge: bytes
 ) -> Tuple[x509.Certificate, EC2PrivateKey, EC2PublicKey]:
-  android_key_oid = ObjectIdentifier('1.3.6.1.4.1.11129.2.1.17')
   android_key_description = KeyDescription()
   android_key_description['attestationVersion'] = 0
   android_key_description['attestationSecurityLevel'] = 0
@@ -128,17 +173,7 @@ def generate_elliptic_curve_x509_certificate_android(
   android_key_description['teeEnforced'] = tee_enforced
 
   der_key = encode(android_key_description)
-
-  extensions = [
-      Extension(android_key_oid, False,
-                UnrecognizedExtension(android_key_oid, der_key))
-  ]
-
-  private_key = generate_private_key(curve, default_backend())
-  public_key = private_key.public_key()
-  return generate_x509_certificate(
-      public_key, private_key, hashes.SHA256(),
-      extensions=extensions), private_key, public_key
+  return generate_elliptic_curve_x509_certificate_android_raw(curve, der_key)
 
 
 def generate_signature(private_key: EC2PrivateKey, data: bytes) -> bytes:
