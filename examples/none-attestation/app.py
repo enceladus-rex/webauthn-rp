@@ -24,7 +24,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/webauthn.db'
 db = SQLAlchemy(app)
 
 example_rp = PublicKeyCredentialRpEntity(name='localhost', id='localhost')
-example_origin = 'localhost'
+example_origin = 'http://localhost:5000'
 example_timeout = 60000
 example_credential_parameters = [
     PublicKeyCredentialParameters(type=PublicKeyCredentialType.PUBLIC_KEY,

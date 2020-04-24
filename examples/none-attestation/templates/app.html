@@ -86,8 +86,10 @@ function assertionJSON(cred) {
     signature: base64encode(cred.response.signature),
   }
 
-  if ('userHandle' in cred.response && cred.response.userHandle.byteLength > 0) {
-    credJSON.response.userHandle = base64encode(cred.response.userHandle);
+  if ('userHandle' in cred.response && cred.response.userHandle != null) {
+    if (cred.response.userHandle.byteLength > 0) {
+      credJSON.response.userHandle = base64encode(cred.response.userHandle);
+    }
   }
 
   return credJSON;

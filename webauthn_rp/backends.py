@@ -31,13 +31,16 @@ class CredentialsBackend:
     self.registrar = registrar
 
   def _verify_origin_format(self, origin: str) -> None:
+    if '://' not in origin:
+      raise OriginError('Invalid origin, missing scheme')
+
     url = urlparse(origin)
     if url.path or url.params or url.query or url.fragment:
       raise OriginError('Invalid origin, cannot have path, params, query, '
                         'or fragment present')
 
     if not url.netloc:
-      raise OriginError('Invalid origin, must provide a host/domain')
+      raise OriginError('Invalid origin, must provide a hostname')
 
   def handle_creation_options(self, *,
                               options: CredentialCreationOptions) -> None:
