@@ -16,7 +16,7 @@ Now that everything has been setup, we can register a credential for an examle u
   :alt: Credential Creation
   :align: center
 
-3. After using a security key that has a none-attestation, send back the attestation object
+3. After using a security key that uses one of the supported attestation types, send back the attestation object
 and finish registering.
 
 .. figure:: ../_static/register-success.png

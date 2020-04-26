@@ -10,7 +10,7 @@ To authenticate the same user, `test`, that was registered previously we can do 
   :alt: Credential Request
   :align: center
 
-2. After using a security key that has a none-attestation, send back the assertion object
+2. After using a security key that uses one of the supported attestation types, send back the assertion object
 and finish authenticating.
 
 .. figure:: ../_static/authenticate-success.png

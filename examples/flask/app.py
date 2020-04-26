@@ -46,7 +46,7 @@ class User(db.Model):
                                backref=db.backref('user', lazy=True))
 
   @staticmethod
-  def by_user_handle(user_handle: bytes) -> 'User':
+  def by_user_handle(user_handle: bytes) -> Optional['User']:
     return User.query.filter_by(user_handle=user_handle).first()
 
 

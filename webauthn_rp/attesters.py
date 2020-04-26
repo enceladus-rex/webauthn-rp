@@ -62,8 +62,14 @@ def attest_fido_u2f(
         'FIDO U2F verification failed: must have a single X.509 certificate')
 
   att_cert = att_stmt.x5c[0]
-  att_cert_x509 = cryptography.x509.load_der_x509_certificate(
-      att_cert, default_backend())
+
+  try:
+    att_cert_x509 = cryptography.x509.load_der_x509_certificate(
+        att_cert, default_backend())
+  except ValueError:
+    raise ValidationError(
+        'FIDO U2F verification failed: unable to load X509 certificate')
+
   att_cert_x509_pk = att_cert_x509.public_key()
   if not isinstance(att_cert_x509_pk, EllipticCurvePublicKey):
     raise ValidationError(
@@ -161,7 +167,8 @@ def attest_android_key(
       Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
   if cpk_public_bytes != cred_cert_public_bytes:
     raise ValidationError(
-        ('Certificate public key in attestation statement must match the '
+        ('Android key verification failed: certificate public key in '
+         'attestation statement must match the '
          'provided credential public key'))
 
   try:
@@ -170,36 +177,42 @@ def attest_android_key(
     assert isinstance(extension.value, UnrecognizedExtension)
   except cryptography.x509.ExtensionNotFound:
     raise ValidationError(
-        'Could not find android key attestation certificate extension data')
+        'Android key verification failed: could not find android key '
+        'attestation certificate extension data')
 
   try:
     key_description, _ = decode(extension.value.value, KeyDescription())
   except PyAsn1Error:
     raise ValidationError(
-        'Unable to decode DER-encoded Android Key Description')
+        'Android key verification failed: unable to decode DER-encoded '
+        'Android Key Description')
 
   attestation_challenge = key_description['attestationChallenge'].asOctets()
   if attestation_challenge != client_data_hash:
     raise ValidationError(
-        'Client data hash does not match value of attestation extension data')
+        'Android key verification failed: client data hash does not match '
+        'value of attestation extension data')
 
   all_apps_se = key_description['softwareEnforced']['allApplications']
   all_apps_tee = key_description['teeEnforced']['allApplications']
   if all_apps_se.hasValue() or all_apps_tee.hasValue():
-    raise ValidationError('The allApplications field must not be present '
-                          'in the android key description')
+    raise ValidationError(
+        'Android key verification failed: the allApplications field must not be '
+        'present in the android key description')
 
   # TODO: Consider selecting the appropriate AuthorizationList.
   tee_origin = key_description['teeEnforced']['origin']
   tee_purpose = key_description['teeEnforced']['purpose']
   if not tee_origin.hasValue() or int(tee_origin) != KM_ORIGIN_GENERATED:
-    raise ValidationError('The teeEnforced origin field must equal '
-                          'KM_ORIGIN_GENERATED={}'.format(KM_ORIGIN_GENERATED))
+    raise ValidationError(
+        ('Android key verification failed: the teeEnforced origin field must '
+         'equal KM_ORIGIN_GENERATED={}').format(KM_ORIGIN_GENERATED))
 
   # TODO: Determine if other purposes are also allowed in this set.
   if not tee_purpose.hasValue() or tee_purpose.count(KM_PURPOSE_SIGN) == 0:
-    raise ValidationError('The teeEnforced purpose field must contain '
-                          'KM_PURPOSE_SIGN={}'.format(KM_PURPOSE_SIGN))
+    raise ValidationError(
+        ('Android key verification failed: the teeEnforced purpose field must '
+         'contain KM_PURPOSE_SIGN={}').format(KM_PURPOSE_SIGN))
 
   return AttestationType.BASIC, [credential_certificate]
 

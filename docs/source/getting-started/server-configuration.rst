@@ -99,18 +99,18 @@ so now we can move on to building the database models.
 
 The user model is quite simple and just contains:
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: User
 
 Similarly the credential model is:
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: Credential
 
 You'll also need to store the challenge information that was used during
 registration and authentication so that you are able to verify it.
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: Challenge
 
 That's the bare minimum you'll need in order to get started. Next, we'll revisit
@@ -125,7 +125,7 @@ mentioned.
 
 Putting it all together yields:
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: RegistrarImpl
 
 Next, we'll go about creating and handling the registration and authentication routes.
@@ -138,7 +138,7 @@ to request some options from the Relying Party that specify a number of things, 
 kinds of authenticators are acceptable and which challenge should be used. In this particular
 example, the user will be registering for the first time and so also provides a desired username.
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: registration_request
 
 To reidentify the challenge, note that we're also sending a unique ID with the JSON response.
@@ -150,7 +150,7 @@ If the client successfully is able to use the creation options from the registra
 to generate an attestation on the user's behalf, then this endpoint will verify the attestation
 and finish the user's registration if valid.
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: registration_response
 
 Along with using the credentials backend to verify the challenge and the rest of the attestation,
@@ -162,7 +162,7 @@ Authentication Request
 The authentication flow is very much like the registration flow, just that credential
 request options are returned instead of credential creation options.
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: authentication_request
 
 Authentication Response
@@ -171,5 +171,5 @@ Authentication Response
 Finally, the authentication flow also mirrors the registration flow, just that an assertion
 is expected rather than an attestation object. 
 
-.. literalinclude:: ../../../examples/none-attestation/app.py
+.. literalinclude:: ../../../examples/flask/app.py
    :pyobject: authentication_response
