@@ -6,6 +6,7 @@ import struct
 from enum import Enum
 from functools import singledispatch
 from typing import Any, List, Optional, Sequence, Set, Tuple, Union, cast
+from urllib.parse import urlparse
 
 import cbor2
 
@@ -14,7 +15,7 @@ from webauthn_rp.constants import (ED448_COORDINATE_BYTE_LENGTH,
                                    P_256_COORDINATE_BYTE_LENGTH,
                                    P_384_COORDINATE_BYTE_LENGTH,
                                    P_521_COORDINATE_BYTE_LENGTH)
-from webauthn_rp.errors import (DecodingError, TokenBindingError,
+from webauthn_rp.errors import (DecodingError, OriginError, TokenBindingError,
                                 ValidationError)
 from webauthn_rp.types import (
     AndroidKeyAttestationStatement, AndroidSafetyNetAttestationStatement,
@@ -25,13 +26,48 @@ from webauthn_rp.types import (
     CollectedClientData, Coordinates, COSEAlgorithmIdentifier,
     COSEKeyOperation, COSEKeyType, CredentialPublicKey, EC2CredentialPublicKey,
     EC2Curve, FIDOU2FAttestationStatement, NoneAttestationStatement,
-    OKPCredentialPublicKey, OKPCurve, PackedAttestationStatement,
+    OKPCredentialPublicKey, OKPCurve, Origin, PackedAttestationStatement,
     PackedECDAAAttestationStatement, PackedX509AttestationStatement,
     PublicKeyCredential, TokenBinding, TokenBindingStatus,
     TPMAttestationStatement, TPMECDAAAttestationStatement,
     TPMX509AttestationStatement)
 from webauthn_rp.utils import curve_coordinate_byte_length
 from webauthn_rp.validators import validate
+
+SCHEME_DEFAULT_PORT_MAPPING = {
+    'http': 80,
+    'https': 443,
+}
+
+
+def parse_origin(opaque_origin: str) -> Origin:
+  if '://' not in opaque_origin:
+    raise OriginError('Invalid origin, missing scheme')
+
+  url = urlparse(opaque_origin)
+  if url.path or url.params or url.query or url.fragment:
+    raise OriginError('Invalid origin, cannot have path, params, query, '
+                      'or fragment present')
+
+  if not url.netloc:
+    raise OriginError('Invalid origin, must provide a hostname')
+
+  if url.scheme not in {'http', 'https'}:
+    raise OriginError('Invalid origin, unsupported scheme {}'.format(
+        url.scheme))
+
+  scheme = url.scheme
+  hostname = url.netloc
+  if url.port is None:
+    port = SCHEME_DEFAULT_PORT_MAPPING[scheme]
+  else:
+    port = url.port
+
+  return Origin(
+      scheme=scheme,
+      hostname=hostname,
+      port=port,
+  )
 
 
 def parse_dictionary_field(field_key: Any,

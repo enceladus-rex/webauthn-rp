@@ -1,6 +1,6 @@
 import hashlib
 import json
-from typing import Any, Optional, Sequence, Set, cast
+from typing import Any, Collection, Optional, Sequence, Set, Union, cast
 from urllib.parse import urlparse
 
 import cryptography
@@ -15,13 +15,14 @@ from webauthn_rp.errors import (AuthenticationError, DecodingError,
                                 SignatureCountError, ValidationError,
                                 VerificationError)
 from webauthn_rp.parsers import (parse_attestation, parse_authenticator_data,
-                                 parse_client_data)
+                                 parse_client_data, parse_origin)
 from webauthn_rp.registrars import CredentialsRegistrar
 from webauthn_rp.types import (
     AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
     AuthenticatorDataFlag, CredentialCreationOptions, CredentialRequestOptions,
-    ExtensionIdentifier, PublicKeyCredential, PublicKeyCredentialDescriptor,
-    PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity, TokenBinding)
+    ExtensionIdentifier, Origin, PublicKeyCredential,
+    PublicKeyCredentialDescriptor, PublicKeyCredentialRpEntity,
+    PublicKeyCredentialUserEntity, TokenBinding)
 from webauthn_rp.utils import url_base64_decode
 from webauthn_rp.verifiers import verify
 
@@ -30,17 +31,19 @@ class CredentialsBackend:
   def __init__(self, registrar: CredentialsRegistrar) -> None:
     self.registrar = registrar
 
-  def _verify_origin_format(self, origin: str) -> None:
-    if '://' not in origin:
-      raise OriginError('Invalid origin, missing scheme')
+  def _extract_allowed_origins(
+      self, expected_origin: Union[str, Collection[str]]) -> Set[Origin]:
+    allowed_origins: Set[Origin] = set()
+    if isinstance(expected_origin, str):
+      allowed_origins.add(parse_origin(expected_origin))
+    else:
+      if len(expected_origin) == 0:
+        raise OriginError('Must provide at least one expected origin')
 
-    url = urlparse(origin)
-    if url.path or url.params or url.query or url.fragment:
-      raise OriginError('Invalid origin, cannot have path, params, query, '
-                        'or fragment present')
+      for opaque_origin in expected_origin:
+        allowed_origins.add(parse_origin(opaque_origin))
 
-    if not url.netloc:
-      raise OriginError('Invalid origin, must provide a hostname')
+    return allowed_origins
 
   def handle_creation_options(self, *,
                               options: CredentialCreationOptions) -> None:
@@ -61,10 +64,12 @@ class CredentialsBackend:
       user: PublicKeyCredentialUserEntity,
       rp: PublicKeyCredentialRpEntity,
       expected_challenge: bytes,
-      expected_origin: str,
+      expected_origin: Union[str, Collection[str]],
       token_binding: Optional[TokenBinding] = None,
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None) -> None:
+    allowed_origins = self._extract_allowed_origins(expected_origin)
+
     response = cast(AuthenticatorAttestationResponse, credential.response)
     collected_client_data = parse_client_data(response.client_data_JSON)
 
@@ -80,8 +85,8 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    self._verify_origin_format(expected_origin)
-    if expected_origin != collected_client_data.origin:
+    client_origin = parse_origin(collected_client_data.origin)
+    if client_origin not in allowed_origins:
       raise IntegrityError(
           'Given ({0}) and expected ({1}) RP origin don\'t match'.format(
               collected_client_data.origin, expected_origin))
@@ -169,7 +174,7 @@ class CredentialsBackend:
       *,
       credential: PublicKeyCredential,
       expected_challenge: bytes,
-      expected_origin: str,
+      expected_origin: Union[str, Collection[str]],
       rp: Optional[PublicKeyCredentialRpEntity] = None,
       user: Optional[PublicKeyCredentialUserEntity] = None,
       allow_credentials: Optional[
@@ -178,6 +183,8 @@ class CredentialsBackend:
       require_user_verification: bool = False,
       expected_extensions: Optional[Set[ExtensionIdentifier]] = None,
       ignore_clone_error: bool = False) -> None:
+    allowed_origins = self._extract_allowed_origins(expected_origin)
+
     response = cast(AuthenticatorAssertionResponse, credential.response)
     if allow_credentials is not None:
       allowed = False
@@ -238,8 +245,8 @@ class CredentialsBackend:
     except ValueError:
       raise DecodingError('Failed to decode the base64 encoded challenge')
 
-    self._verify_origin_format(expected_origin)
-    if expected_origin != collected_client_data.origin:
+    client_origin = parse_origin(collected_client_data.origin)
+    if client_origin not in allowed_origins:
       raise IntegrityError(
           'Given ({0}) and expected ({1}) RP origin don\'t match'.format(
               collected_client_data.origin, expected_origin))

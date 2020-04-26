@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Any, ClassVar, Optional, Sequence, Type, TypeVar, Union
+from typing import (Any, ClassVar, NamedTuple, Optional, Sequence, Type,
+                    TypeVar, Union)
 
 from cryptography.hazmat.primitives.asymmetric.ec import (
     EllipticCurvePrivateKey, EllipticCurvePublicKey)
@@ -21,6 +22,17 @@ OKPPrivateKey = Union[Ed25519PrivateKey, Ed448PrivateKey]
 PublicKey = Union[EC2PublicKey, OKPPublicKey]
 PrivateKey = Union[EC2PrivateKey, OKPPrivateKey]
 TrustedPath = Optional[Sequence[Certificate]]
+
+
+class Origin(NamedTuple):
+  """An origin as defined by the standard.
+
+  References:
+    * https://www.w3.org/TR/html53/browsers.html#concept-cross-origin
+  """
+  scheme: str
+  hostname: str
+  port: int
 
 
 class PublicKeyCredentialEntity:
