@@ -56,3 +56,7 @@ class RegistrationError(WebAuthnRPError):
 
 class AttestationError(WebAuthnRPError):
   pass
+
+
+class InternalError(WebAuthnRPError):
+  pass

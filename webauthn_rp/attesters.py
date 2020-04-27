@@ -34,7 +34,7 @@ from webauthn_rp.utils import ec2_hash_algorithm
 def attest(att_stmt: AttestationStatement, att_obj: AttestationObject,
            auth_data: bytes,
            client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
-  raise UnimplementedError('{} verification unimplemented'.format(
+  raise UnimplementedError('{} attestation unimplemented'.format(
       type(att_stmt)))
 
 
@@ -59,7 +59,7 @@ def attest_fido_u2f(
   """
   if len(att_stmt.x5c) != 1:
     raise ValidationError(
-        'FIDO U2F verification failed: must have a single X.509 certificate')
+        'FIDO U2F attestation failed: must have a single X.509 certificate')
 
   att_cert = att_stmt.x5c[0]
 
@@ -68,16 +68,16 @@ def attest_fido_u2f(
         att_cert, default_backend())
   except ValueError:
     raise ValidationError(
-        'FIDO U2F verification failed: unable to load X509 certificate')
+        'FIDO U2F attestation failed: unable to load X509 certificate')
 
   att_cert_x509_pk = att_cert_x509.public_key()
   if not isinstance(att_cert_x509_pk, EllipticCurvePublicKey):
     raise ValidationError(
-        'FIDO U2F verification failed: must use an Elliptic Curve Public Key')
+        'FIDO U2F attestation failed: must use an Elliptic Curve Public Key')
 
   if not isinstance(att_cert_x509_pk.curve, SECP256R1):
     raise ValidationError(
-        'FIDO U2F verification failed: must use curve SECP256R1')
+        'FIDO U2F attestation failed: must use curve SECP256R1')
 
   assert att_obj.auth_data is not None
   assert att_obj.auth_data.attested_credential_data is not None
@@ -100,7 +100,7 @@ def attest_fido_u2f(
   try:
     att_cert_x509_pk.verify(att_stmt.sig, verification_data, ECDSA(SHA256()))
   except cryptography.exceptions.InvalidSignature:
-    raise VerificationError('FIDO U2F verification failed: invalid signature')
+    raise VerificationError('FIDO U2F attestation failed: invalid signature')
 
   return AttestationType.BASIC, [att_cert_x509]
 
@@ -136,7 +136,7 @@ def attest_android_key(
       cred_cert_pk,
       (EllipticCurvePublicKey, Ed25519PublicKey, Ed448PublicKey)):
     raise ValidationError(
-        'Android key verification failed: must use an Elliptic Curve Public Key'
+        'Android key attestation failed: must use an Elliptic Curve Public Key'
     )
 
   assert att_obj.auth_data is not None
@@ -159,7 +159,7 @@ def attest_android_key(
       cred_cert_pk.verify(att_stmt.sig, verification_data, hash_algorithm)
   except cryptography.exceptions.InvalidSignature:
     raise VerificationError(
-        'Android Key verification failed: invalid signature')
+        'Android Key attestation failed: invalid signature')
 
   cpk_public_bytes = cpk.public_bytes(Encoding.DER,
                                       PublicFormat.SubjectPublicKeyInfo)
@@ -167,7 +167,7 @@ def attest_android_key(
       Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
   if cpk_public_bytes != cred_cert_public_bytes:
     raise ValidationError(
-        ('Android key verification failed: certificate public key in '
+        ('Android key attestation failed: certificate public key in '
          'attestation statement must match the '
          'provided credential public key'))
 
@@ -177,27 +177,27 @@ def attest_android_key(
     assert isinstance(extension.value, UnrecognizedExtension)
   except cryptography.x509.ExtensionNotFound:
     raise ValidationError(
-        'Android key verification failed: could not find android key '
+        'Android key attestation failed: could not find android key '
         'attestation certificate extension data')
 
   try:
     key_description, _ = decode(extension.value.value, KeyDescription())
   except PyAsn1Error:
     raise ValidationError(
-        'Android key verification failed: unable to decode DER-encoded '
+        'Android key attestation failed: unable to decode DER-encoded '
         'Android Key Description')
 
   attestation_challenge = key_description['attestationChallenge'].asOctets()
   if attestation_challenge != client_data_hash:
     raise ValidationError(
-        'Android key verification failed: client data hash does not match '
+        'Android key attestation failed: client data hash does not match '
         'value of attestation extension data')
 
   all_apps_se = key_description['softwareEnforced']['allApplications']
   all_apps_tee = key_description['teeEnforced']['allApplications']
   if all_apps_se.hasValue() or all_apps_tee.hasValue():
     raise ValidationError(
-        'Android key verification failed: the allApplications field must not be '
+        'Android key attestation failed: the allApplications field must not be '
         'present in the android key description')
 
   # TODO: Consider selecting the appropriate AuthorizationList.
@@ -205,13 +205,13 @@ def attest_android_key(
   tee_purpose = key_description['teeEnforced']['purpose']
   if not tee_origin.hasValue() or int(tee_origin) != KM_ORIGIN_GENERATED:
     raise ValidationError(
-        ('Android key verification failed: the teeEnforced origin field must '
+        ('Android key attestation failed: the teeEnforced origin field must '
          'equal KM_ORIGIN_GENERATED={}').format(KM_ORIGIN_GENERATED))
 
   # TODO: Determine if other purposes are also allowed in this set.
   if not tee_purpose.hasValue() or tee_purpose.count(KM_PURPOSE_SIGN) == 0:
     raise ValidationError(
-        ('Android key verification failed: the teeEnforced purpose field must '
+        ('Android key attestation failed: the teeEnforced purpose field must '
          'contain KM_PURPOSE_SIGN={}').format(KM_PURPOSE_SIGN))
 
   return AttestationType.BASIC, [credential_certificate]
