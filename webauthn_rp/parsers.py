@@ -15,8 +15,8 @@ from webauthn_rp.constants import (ED448_COORDINATE_BYTE_LENGTH,
                                    P_256_COORDINATE_BYTE_LENGTH,
                                    P_384_COORDINATE_BYTE_LENGTH,
                                    P_521_COORDINATE_BYTE_LENGTH)
-from webauthn_rp.errors import (DecodingError, OriginError, TokenBindingError,
-                                ValidationError)
+from webauthn_rp.errors import (DecodingError, OriginError, ParserError,
+                                TokenBindingError, ValidationError)
 from webauthn_rp.types import (
     AndroidKeyAttestationStatement, AndroidSafetyNetAttestationStatement,
     AttestationObject, AttestationStatement,
@@ -79,11 +79,10 @@ def parse_dictionary_field(field_key: Any,
   field = dictionary.get(field_key)
   if field is None:
     if not required: return
-    raise ValidationError(
-        '{} is required in dictionary keys'.format(field_key))
+    raise ParserError('{} is required in dictionary keys'.format(field_key))
 
   if type(field) not in valid_types_seq:
-    raise ValidationError('{} type must be one of {} not {}'.format(
+    raise ParserError('{} type must be one of {} not {}'.format(
         field_key, str(valid_types_seq), str(type(field))))
 
   return field
@@ -92,7 +91,7 @@ def parse_dictionary_field(field_key: Any,
 def check_unsupported_keys(supported: Set[str], data: dict):
   unsupported_keys = set(data.keys()).difference(supported)
   if unsupported_keys:
-    raise ValidationError(
+    raise ParserError(
         ('Found unsupported keys in data {}').format(str(unsupported_keys)))
 
 
@@ -100,7 +99,7 @@ def bytes_from_base64(s: str) -> bytes:
   try:
     return base64.b64decode(s)
   except Exception:
-    raise ValidationError('Invalid base64 string')
+    raise DecodingError('Invalid base64 string')
 
 
 def parse_public_key_credential(data: dict) -> PublicKeyCredential:
@@ -160,8 +159,7 @@ def parse_credential_public_key_kty(
     kty = cast(Union[COSEKeyType.Name, COSEKeyType.Value],
                COSEKeyType(kty_raw))  # type: ignore
   except (KeyError, ValueError):
-    raise ValidationError(
-        'Invalid credential public key type {}'.format(kty_raw))
+    raise ParserError('Invalid credential public key type {}'.format(kty_raw))
   return kty
 
 
@@ -175,7 +173,7 @@ def parse_credential_public_key_alg(
                      COSEAlgorithmIdentifier.Value],
                COSEAlgorithmIdentifier(alg_raw))  # type: ignore
   except (KeyError, ValueError):
-    raise ValidationError(
+    raise ParserError(
         'Invalid credential public key alg type {}'.format(alg_raw))
   return alg
 
@@ -189,20 +187,20 @@ def parse_credential_public_key_key_ops(
   if key_ops_raw is None: return None
 
   if len(key_ops_raw) < 1:
-    raise ValidationError(
+    raise ParserError(
         'Credential public key key_ops(4) must have at least 1 element')
 
   key_ops: List[Union[COSEKeyOperation.Name, COSEKeyOperation.Value]] = []
   for i, ko in enumerate(key_ops_raw):
     if type(ko) not in (str, int):
-      raise ValidationError(
+      raise ParserError(
           ('Credential public key key_ops(3) index {} should either be a'
            ' text string or an integer').format(i))
 
     try:
       key_ops.append(COSEKeyOperation(ko))  # type: ignore
     except (KeyError, ValueError):
-      raise ValidationError('Invalid credential public key key op {}'.format(
+      raise ParserError('Invalid credential public key key op {}'.format(
           credential_public_key[4]))
 
   return key_ops
@@ -229,7 +227,7 @@ def parse_ec2_public_key_crv(
   try:
     return EC2Curve(crv_raw)  # type: ignore
   except (KeyError, ValueError):
-    raise ValidationError('Invalid EC2 curve {}'.format(crv_raw))
+    raise ParserError('Invalid EC2 curve {}'.format(crv_raw))
 
 
 def parse_okp_public_key_crv(
@@ -238,7 +236,7 @@ def parse_okp_public_key_crv(
   try:
     return OKPCurve(crv_raw)  # type: ignore
   except (KeyError, ValueError):
-    raise ValidationError('Invalid OKP curve {}'.format(crv_raw))
+    raise ParserError('Invalid OKP curve {}'.format(crv_raw))
 
 
 def parse_okp_public_key(credential_public_key: dict) -> CredentialPublicKey:
@@ -246,7 +244,7 @@ def parse_okp_public_key(credential_public_key: dict) -> CredentialPublicKey:
   crv = parse_okp_public_key_crv(credential_public_key)
   crv_len = curve_coordinate_byte_length(crv)
   if len(x) != crv_len:
-    raise ValidationError(
+    raise ParserError(
         'Packed credential public key x and y must be {} bytes'.format(
             crv_len))
 
@@ -264,7 +262,7 @@ def parse_ec2_public_key(
   crv = parse_ec2_public_key_crv(credential_public_key)
   crv_len = curve_coordinate_byte_length(crv)
   if len(x) != crv_len or len(y) != crv_len:
-    raise ValidationError(
+    raise ParserError(
         'Packed credential public key x and y must be {} bytes'.format(
             crv_len))
 
@@ -292,7 +290,7 @@ def parse_extensions(
       extensions.keys()).difference(supported_extensions)
 
   if unsupported_extensions:
-    raise ValidationError('Found unsupported extensions {}'.format(
+    raise ParserError('Found unsupported extensions {}'.format(
         str(unsupported_extensions)))
 
   appid = extensions.get('appid')
@@ -307,41 +305,41 @@ def parse_extensions(
 
   if appid is not None:
     if type(appid) is not bool:
-      raise ValidationError('appid extension client output should be a bool')
+      raise ParserError('appid extension client output should be a bool')
 
   if tx_auth_simple is not None:
     if type(tx_auth_simple) is not str:
-      raise ValidationError(
+      raise ParserError(
           'tx_auth_simple extension client output should be a str')
 
   if tx_auth_generic is not None:
     if type(tx_auth_generic) is not bytes:
-      raise ValidationError(
+      raise ParserError(
           'tx_auth_generic extension client output should be bytes')
 
   if authn_sel is not None:
     if type(authn_sel) is not bool:
-      raise ValidationError('authn_sel extension client output should be bool')
+      raise ParserError('authn_sel extension client output should be bool')
 
   if exts is not None:
     if type(exts) not in (list, tuple):
-      raise ValidationError('exts extension client output should be list')
+      raise ParserError('exts extension client output should be list')
 
     for i, e in enumerate(exts):
       if type(e) is not str:
-        raise ValidationError(
+        raise ParserError(
             'exts[{0}] extension client output should be str'.format(i))
 
   if uvi is not None:
     if type(uvi) is not bytes:
-      raise ValidationError('uvi extension client output should be bytes')
+      raise ParserError('uvi extension client output should be bytes')
 
   if loc is not None:
     if type(loc) is not dict:
-      raise ValidationError('loc extension client output should be dict')
+      raise ParserError('loc extension client output should be dict')
 
     if any(type(x) not in (int, float) for x in loc.values()):
-      raise ValidationError('Coordinate value in loc extension must be float')
+      raise ParserError('Coordinate value in loc extension must be float')
 
     supported_cvalues = {
         'latitude', 'longitude', 'altitude', 'accuracy', 'altitudeAccuracy',
@@ -350,7 +348,7 @@ def parse_extensions(
 
     unsupported_cvalues = set(loc.keys()).difference(supported_cvalues)
     if unsupported_cvalues:
-      raise ValidationError('Found unsupported loc key values {}'.format(
+      raise ParserError('Found unsupported loc key values {}'.format(
           str(unsupported_cvalues)))
 
     loc = Coordinates(latitude=loc.get('latitude'),
@@ -363,22 +361,22 @@ def parse_extensions(
 
   if uvm is not None:
     if type(uvm) is not list:
-      raise ValidationError('uvm extension client output should be list')
+      raise ParserError('uvm extension client output should be list')
 
     for i, uvm_entry in enumerate(uvm):
       if type(uvm_entry) is not list:
-        raise ValidationError(
+        raise ParserError(
             'uvm[{0}] extension client output should be list'.format(i))
 
       for j, v in enumerate(uvm_entry):
         if type(v) is not int:
-          raise ValidationError(
+          raise ParserError(
               'uvm[{0}][{1}] extension client output should be str'.format(
                   i, j))
 
   if biometric_perf_bounds is not None:
     if type(biometric_perf_bounds) is not bool:
-      raise ValidationError(
+      raise ParserError(
           'biometric_perf_bounds extension client output should be bool')
 
   return AuthenticationExtensionsClientOutputs(
@@ -402,7 +400,7 @@ def parse_attestation_statement_alg(
   try:
     alg = COSEAlgorithmIdentifier(alg)  # type: ignore
   except (KeyError, ValueError):
-    raise ValidationError('Invalid algorithm identifier {}'.format(alg))
+    raise ParserError('Invalid algorithm identifier {}'.format(alg))
   return alg
 
 
@@ -411,7 +409,7 @@ def parse_attestation_statement_x5c(att_stmt: dict) -> Sequence[bytes]:
 
   for i, e in enumerate(x5c):
     if type(e) is not bytes:
-      raise ValidationError('x5c[{}] must be a byte string'.format(i))
+      raise ParserError('x5c[{}] must be a byte string'.format(i))
   return x5c
 
 
@@ -528,36 +526,36 @@ def parse_client_data(client_data_JSON: bytes) -> CollectedClientData:
     raise DecodingError('Could not decode the client data JSON')
 
   if type(client_data) is not dict:
-    raise ValidationError('Client data JSON must be a dictionary')
+    raise ParserError('Client data JSON must be a dictionary')
 
   type_ = client_data.get('type')
   challenge = client_data.get('challenge')
   origin = client_data.get('origin')
 
   if not all(isinstance(x, str) for x in (type_, challenge, origin)):
-    raise ValidationError('Invalid client data parsed')
+    raise ParserError('Invalid client data parsed')
 
   token_binding_data = client_data.get('tokenBinding')
   token_binding = None
   if token_binding_data is not None:
     if type(token_binding_data) is not dict:
-      raise ValidationError('Token Binding data must be a dictionary')
+      raise ParserError('Token Binding data must be a dictionary')
 
     token_binding_status = token_binding_data.get('status')
     token_binding_id = token_binding_data.get('id')
 
     if token_binding_status is None:
-      raise ValidationError('Token Binding status must be present')
+      raise ParserError('Token Binding status must be present')
 
     try:
       token_binding_status_enum = TokenBindingStatus(token_binding_status)
     except ValueError:
-      raise ValidationError(
+      raise ParserError(
           'Invalid Token Binding status {}'.format(token_binding_status))
 
     if token_binding_status_enum == TokenBindingStatus.PRESENT and (
         token_binding_id is None):
-      raise TokenBindingError(
+      raise ParserError(
           'Token Binding must contain an id if status is {}'.format(
               TokenBindingStatus.PRESENT))
 
@@ -576,20 +574,20 @@ def parse_cose_key(
     try:
       credential_public_key = cbor2.loads(credential_public_key)
     except cbor2.CBORDecodeError:
-      raise ValidationError('Could not decode credential public key CBOR')
+      raise DecodingError('Could not decode credential public key CBOR')
 
     if type(credential_public_key) is not dict:
-      raise ValidationError('Credential public key CBOR must be a dictionary')
+      raise ParserError('Credential public key CBOR must be a dictionary')
   try:
     cose_key_type = COSEKeyType(credential_public_key[1])  # type: ignore
   except (KeyError, ValueError):
-    raise ValidationError('Invalid or missing COSE key type encountered')
+    raise ParserError('Invalid or missing COSE key type encountered')
 
   try:
     cpk_parser = getattr(CredentialPublicKeyParser,
                          cose_key_type.name)  # type: ignore
   except AttributeError:
-    raise ValidationError('Parser not supported for key type {}'.format(
+    raise ParserError('Parser not supported for key type {}'.format(
         cose_key_type.name))  # type: ignore
 
   return cpk_parser(credential_public_key)
@@ -607,7 +605,7 @@ def parse_authenticator_data(
     fmt: Optional[AttestationStatementFormatIdentifier] = None
 ) -> AuthenticatorData:
   if len(auth_data) < 37:
-    raise ValidationError('Attestation auth data must be at least 35 bytes')
+    raise ParserError('Attestation auth data must be at least 35 bytes')
 
   rp_id_hash = auth_data[:32]
   flags = auth_data[32]
@@ -638,7 +636,7 @@ def parse_authenticator_data(
         raise DecodingError('Could not decode the credential public key CBOR')
 
       if type(credential_public_key) is not dict:
-        raise ValidationError('Credential public key must be a dictionary')
+        raise ParserError('Credential public key must be a dictionary')
 
       cpk = parse_cose_key(credential_public_key)
       validate(cpk)
@@ -650,8 +648,7 @@ def parse_authenticator_data(
           credential_public_key=cpk,
       )
     except EOFError:
-      raise ValidationError(
-          'Could not read the included attested credential data')
+      raise ParserError('Could not read the included attested credential data')
 
   if extension_data_included:
     try:
@@ -661,15 +658,14 @@ def parse_authenticator_data(
         raise DecodingError('Could not decode the extensions CBOR')
 
       if type(extensions) is not dict:
-        raise ValidationError('Extension data CBOR must be a dictionary')
+        raise ParserError('Extension data CBOR must be a dictionary')
 
       aeci = parse_extensions(extensions)
     except EOFError:
-      raise ValidationError('Could not read the included extension data')
+      raise ParserError('Could not read the included extension data')
 
   if remaining_bytes_io.read1(1) != b'':
-    raise ValidationError(
-        'The authenticator data has unexpected leftover bytes')
+    raise ParserError('The authenticator data has unexpected leftover bytes')
 
   return AuthenticatorData(
       rp_id_hash=rp_id_hash,
@@ -688,7 +684,7 @@ def parse_attestation(
     raise DecodingError('Could not decode the attestation object CBOR')
 
   if type(attestation_object_data) is not dict:
-    raise ValidationError('Attestation object CBOR must be a dictionary')
+    raise ParserError('Attestation object CBOR must be a dictionary')
 
   try:
     auth_data = attestation_object_data['authData']
@@ -696,29 +692,28 @@ def parse_attestation(
     att_stmt = attestation_object_data['attStmt']
 
     if type(fmt) is not str:
-      raise ValidationError('fmt must be a text string')
+      raise ParserError('fmt must be a text string')
 
     try:
       asfi = AttestationStatementFormatIdentifier(fmt)
     except ValueError:
-      raise ValidationError('Invalid attestation statement format identifier')
+      raise ParserError('Invalid attestation statement format identifier')
 
     if type(auth_data) is not bytes:
-      raise ValidationError('Attestation auth data should be bytes')
+      raise ParserError('Attestation auth data should be bytes')
 
     authenticator_data = parse_authenticator_data(auth_data, asfi)
   except KeyError as e:
-    raise ValidationError('Missing key in attestation ({})'.format(str(e)))
+    raise ParserError('Missing key in attestation ({})'.format(str(e)))
 
   if type(att_stmt) is not dict:
-    raise ValidationError('attStmt must be a dictionary')
+    raise ParserError('attStmt must be a dictionary')
 
   try:
     as_parser = getattr(AttestationStatementParser, asfi.name)
     attestation_statement = as_parser(att_stmt)
   except AttributeError:
-    raise ValidationError('Unsupported attestation statement {}'.format(
-        asfi.name))
+    raise ParserError('Unsupported attestation statement {}'.format(asfi.name))
 
   return AttestationObject(
       auth_data=authenticator_data,

@@ -28,7 +28,7 @@ from webauthn_rp.attesters import attest
 from webauthn_rp.constants import (ED25519_COORDINATE_BYTE_LENGTH,
                                    KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN,
                                    P_256_COORDINATE_BYTE_LENGTH)
-from webauthn_rp.errors import ValidationError, VerificationError
+from webauthn_rp.errors import AttestationError, VerificationError
 from webauthn_rp.types import (
     AndroidKeyAttestationStatement, AttestationObject,
     AttestationStatementFormatIdentifier, AttestationType,
@@ -94,7 +94,7 @@ def test_attest_fido_u2f():
       fmt=AttestationStatementFormatIdentifier.FIDO_U2F,
       att_stmt=invalid_att_stmt)
 
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
   der_certificate = certificate.public_bytes(Encoding.DER)
@@ -108,7 +108,7 @@ def test_attest_fido_u2f():
   unverified_att_stmt = FIDOU2FAttestationStatement(sig=b'bad-signature',
                                                     x5c=[der_certificate])
   att_obj.att_stmt = unverified_att_stmt
-  with pytest.raises(VerificationError):
+  with pytest.raises(AttestationError):
     attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
 
   invalid_pk = rsa.generate_private_key(931, 4096, default_backend())
@@ -123,7 +123,7 @@ def test_attest_fido_u2f():
                                                  x5c=[invalid_der_certificate])
 
   att_obj.att_stmt = invalid_att_stmt
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
   invalid_certificate, invalid_pk, invalid_pubk = generate_elliptic_curve_x509_certificate(
@@ -134,7 +134,7 @@ def test_attest_fido_u2f():
                                                  x5c=[invalid_der_certificate])
 
   att_obj.att_stmt = invalid_att_stmt
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
 
@@ -180,7 +180,7 @@ def test_attest_android_key():
       fmt=AttestationStatementFormatIdentifier.FIDO_U2F,
       att_stmt=invalid_att_stmt)
 
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
   der_certificate = certificate.public_bytes(Encoding.DER)
@@ -198,7 +198,7 @@ def test_attest_android_key():
       sig=b'bad-signature',
       x5c=[der_certificate])
   att_obj.att_stmt = unverified_att_stmt
-  with pytest.raises(VerificationError):
+  with pytest.raises(AttestationError):
     attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
 
   invalid_pk = rsa.generate_private_key(931, 4096, default_backend())
@@ -215,7 +215,7 @@ def test_attest_android_key():
       sig=invalid_signature,
       x5c=[invalid_der_certificate])
   att_obj.att_stmt = invalid_att_stmt
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
   att_obj.att_stmt = valid_att_stmt
@@ -237,7 +237,7 @@ def test_attest_android_key():
           crv=EC2Curve.Name.P_256,
       ))
 
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(valid_att_stmt, att_obj, auth_data, client_data_hash)
 
   invalid_certificate, invalid_pk, invalid_pubk = generate_elliptic_curve_x509_certificate(
@@ -262,7 +262,7 @@ def test_attest_android_key():
       sig=invalid_signature,
       x5c=[invalid_der_certificate])
 
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
   invalid_certificate, invalid_pk, invalid_pubk = generate_elliptic_curve_x509_certificate_android_raw(
@@ -287,7 +287,7 @@ def test_attest_android_key():
       sig=invalid_signature,
       x5c=[invalid_der_certificate])
 
-  with pytest.raises(ValidationError):
+  with pytest.raises(AttestationError):
     attest(invalid_att_stmt, att_obj, auth_data, client_data_hash)
 
   okp_pk = Ed25519PrivateKey.generate()

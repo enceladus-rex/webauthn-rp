@@ -11,7 +11,8 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
 from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from webauthn_rp.errors import UnimplementedError, ValidationError
+from webauthn_rp.errors import (JSONConversionError, PublicKeyConversionError,
+                                UnimplementedError, ValidationError)
 from webauthn_rp.types import (CredentialPublicKey, EC2CredentialPublicKey,
                                EC2PublicKey, OKPCredentialPublicKey,
                                OKPPublicKey, PublicKey, PublicKeyCredential)
@@ -30,7 +31,8 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
   elif type(data) is dict:
     for k in data:
       if type(k) is not str:
-        raise ValidationError('The type of dict keys must be a string in JSON')
+        raise JSONConversionError(
+            'The type of dict keys must be a string in JSON')
 
     return {(snake_to_camel_case(k) if convert_case else k):
             jsonify(v, convert_case)
@@ -74,7 +76,7 @@ def cryptography_ec2_public_key(
   try:
     return ecpn.public_key(default_backend())
   except ValueError:
-    raise ValidationError('Invalid EC2 public key')
+    raise PublicKeyConversionError('Invalid EC2 public key')
 
 
 @cryptography_public_key.register(OKPCredentialPublicKey)
@@ -89,7 +91,7 @@ def cryptography_okp_public_key(
       raise UnimplementedError('Unsupported cryptography OKP curve {}'.format(
           credential_public_key.crv.name))
   except ValueError:
-    raise ValidationError('Invalid OKP public key')
+    raise PublicKeyConversionError('Invalid OKP public key')
 
 
 def build_base_cose_dictionary(

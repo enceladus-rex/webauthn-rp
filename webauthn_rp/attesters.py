@@ -58,7 +58,7 @@ def attest_fido_u2f(
     * https://www.w3.org/TR/webauthn/#fido-u2f-attestation
   """
   if len(att_stmt.x5c) != 1:
-    raise ValidationError(
+    raise AttestationError(
         'FIDO U2F attestation failed: must have a single X.509 certificate')
 
   att_cert = att_stmt.x5c[0]
@@ -67,16 +67,16 @@ def attest_fido_u2f(
     att_cert_x509 = cryptography.x509.load_der_x509_certificate(
         att_cert, default_backend())
   except ValueError:
-    raise ValidationError(
+    raise AttestationError(
         'FIDO U2F attestation failed: unable to load X509 certificate')
 
   att_cert_x509_pk = att_cert_x509.public_key()
   if not isinstance(att_cert_x509_pk, EllipticCurvePublicKey):
-    raise ValidationError(
+    raise AttestationError(
         'FIDO U2F attestation failed: must use an Elliptic Curve Public Key')
 
   if not isinstance(att_cert_x509_pk.curve, SECP256R1):
-    raise ValidationError(
+    raise AttestationError(
         'FIDO U2F attestation failed: must use curve SECP256R1')
 
   assert att_obj.auth_data is not None
@@ -100,7 +100,7 @@ def attest_fido_u2f(
   try:
     att_cert_x509_pk.verify(att_stmt.sig, verification_data, ECDSA(SHA256()))
   except cryptography.exceptions.InvalidSignature:
-    raise VerificationError('FIDO U2F attestation failed: invalid signature')
+    raise AttestationError('FIDO U2F attestation failed: invalid signature')
 
   return AttestationType.BASIC, [att_cert_x509]
 
@@ -127,7 +127,7 @@ def attest_android_key(
     * https://developer.android.com/training/articles/security-key-attestation
   """
   if len(att_stmt.x5c) == 0:
-    raise ValidationError('Must have at least 1 X509 certificate')
+    raise AttestationError('Must have at least 1 X509 certificate')
 
   credential_certificate = cryptography.x509.load_der_x509_certificate(
       att_stmt.x5c[0], default_backend())
@@ -135,7 +135,7 @@ def attest_android_key(
   if not isinstance(
       cred_cert_pk,
       (EllipticCurvePublicKey, Ed25519PublicKey, Ed448PublicKey)):
-    raise ValidationError(
+    raise AttestationError(
         'Android key attestation failed: must use an Elliptic Curve Public Key'
     )
 
@@ -158,15 +158,14 @@ def attest_android_key(
       hash_algorithm = ECDSA(ec2_hash_algorithm(att_stmt.alg))
       cred_cert_pk.verify(att_stmt.sig, verification_data, hash_algorithm)
   except cryptography.exceptions.InvalidSignature:
-    raise VerificationError(
-        'Android Key attestation failed: invalid signature')
+    raise AttestationError('Android Key attestation failed: invalid signature')
 
   cpk_public_bytes = cpk.public_bytes(Encoding.DER,
                                       PublicFormat.SubjectPublicKeyInfo)
   cred_cert_public_bytes = cred_cert_pk.public_bytes(
       Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
   if cpk_public_bytes != cred_cert_public_bytes:
-    raise ValidationError(
+    raise AttestationError(
         ('Android key attestation failed: certificate public key in '
          'attestation statement must match the '
          'provided credential public key'))
@@ -176,27 +175,27 @@ def attest_android_key(
         ObjectIdentifier('1.3.6.1.4.1.11129.2.1.17'))
     assert isinstance(extension.value, UnrecognizedExtension)
   except cryptography.x509.ExtensionNotFound:
-    raise ValidationError(
+    raise AttestationError(
         'Android key attestation failed: could not find android key '
         'attestation certificate extension data')
 
   try:
     key_description, _ = decode(extension.value.value, KeyDescription())
   except PyAsn1Error:
-    raise ValidationError(
+    raise AttestationError(
         'Android key attestation failed: unable to decode DER-encoded '
         'Android Key Description')
 
   attestation_challenge = key_description['attestationChallenge'].asOctets()
   if attestation_challenge != client_data_hash:
-    raise ValidationError(
+    raise AttestationError(
         'Android key attestation failed: client data hash does not match '
         'value of attestation extension data')
 
   all_apps_se = key_description['softwareEnforced']['allApplications']
   all_apps_tee = key_description['teeEnforced']['allApplications']
   if all_apps_se.hasValue() or all_apps_tee.hasValue():
-    raise ValidationError(
+    raise AttestationError(
         'Android key attestation failed: the allApplications field must not be '
         'present in the android key description')
 
@@ -204,13 +203,13 @@ def attest_android_key(
   tee_origin = key_description['teeEnforced']['origin']
   tee_purpose = key_description['teeEnforced']['purpose']
   if not tee_origin.hasValue() or int(tee_origin) != KM_ORIGIN_GENERATED:
-    raise ValidationError(
+    raise AttestationError(
         ('Android key attestation failed: the teeEnforced origin field must '
          'equal KM_ORIGIN_GENERATED={}').format(KM_ORIGIN_GENERATED))
 
   # TODO: Determine if other purposes are also allowed in this set.
   if not tee_purpose.hasValue() or tee_purpose.count(KM_PURPOSE_SIGN) == 0:
-    raise ValidationError(
+    raise AttestationError(
         ('Android key attestation failed: the teeEnforced purpose field must '
          'contain KM_PURPOSE_SIGN={}').format(KM_PURPOSE_SIGN))
 

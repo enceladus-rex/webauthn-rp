@@ -2,15 +2,87 @@ class WebAuthnRPError(Exception):
   pass
 
 
-class DecodingError(WebAuthnRPError):
+class BackendError(WebAuthnRPError):
   pass
 
 
-class ParseError(WebAuthnRPError):
+class ClientDataTypeError(BackendError):
   pass
 
 
-class IntegrityError(WebAuthnRPError):
+class ChallengeError(BackendError):
+  pass
+
+
+class TokenBindingError(BackendError):
+  pass
+
+
+class RPIDHashError(BackendError):
+  pass
+
+
+class UserPresenceError(BackendError):
+  pass
+
+
+class UserVerificationError(BackendError):
+  pass
+
+
+class ExtensionError(BackendError):
+  pass
+
+
+class CredentialNotAllowedError(BackendError):
+  pass
+
+
+class UserIDError(BackendError):
+  pass
+
+
+class UserHandleError(BackendError):
+  pass
+
+
+class RPNotFoundError(BackendError):
+  pass
+
+
+class RPIDError(BackendError):
+  pass
+
+
+class RegistrationError(BackendError):
+  pass
+
+
+class CredentialDataError(BackendError):
+  pass
+
+
+class SignatureCountError(BackendError):
+  pass
+
+
+class ConverterError(WebAuthnRPError):
+  pass
+
+
+class JSONConversionError(ConverterError):
+  pass
+
+
+class PublicKeyConversionError(ConverterError):
+  pass
+
+
+class ParserError(WebAuthnRPError):
+  pass
+
+
+class DecodingError(ParserError):
   pass
 
 
@@ -26,10 +98,6 @@ class AuthenticationError(WebAuthnRPError):
   pass
 
 
-class TokenBindingError(WebAuthnRPError):
-  pass
-
-
 class UnimplementedError(WebAuthnRPError):
   pass
 
@@ -39,18 +107,6 @@ class ValidationError(WebAuthnRPError):
 
 
 class BuilderError(WebAuthnRPError):
-  pass
-
-
-class NotFoundError(WebAuthnRPError):
-  pass
-
-
-class SignatureCountError(WebAuthnRPError):
-  pass
-
-
-class RegistrationError(WebAuthnRPError):
   pass
 
 

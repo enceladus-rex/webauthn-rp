@@ -16,7 +16,7 @@ from webauthn_rp.converters import (build_base_cose_dictionary,
                                     cose_key_from_ec2, cose_key_from_okp,
                                     cryptography_ec2_public_key,
                                     cryptography_okp_public_key, jsonify)
-from webauthn_rp.errors import ValidationError
+from webauthn_rp.errors import JSONConversionError, PublicKeyConversionError
 from webauthn_rp.parsers import parse_cose_key
 from webauthn_rp.types import *
 
@@ -39,7 +39,7 @@ def test_jsonify_success(data, expected):
     },
 ])
 def test_jsonify_errors(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(JSONConversionError):
     jsonify(data)
 
 

@@ -5,8 +5,7 @@ import cbor2
 import pytest
 
 from webauthn_rp.constants import *
-from webauthn_rp.errors import (DecodingError, TokenBindingError,
-                                ValidationError)
+from webauthn_rp.errors import DecodingError, ParserError, TokenBindingError
 from webauthn_rp.parsers import *
 from webauthn_rp.types import *
 
@@ -50,7 +49,7 @@ def test_parse_dictionary_field_success(field_key, valid_types, dictionary,
 ])
 def test_parse_dictionary_field_error(field_key, valid_types, dictionary,
                                       required):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_dictionary_field(field_key, valid_types, dictionary, required)
 
 
@@ -67,7 +66,7 @@ def test_check_unsupported_keys(supported, data, valid):
   if valid:
     check_unsupported_keys(supported, data)
   else:
-    with pytest.raises(ValidationError):
+    with pytest.raises(ParserError):
       check_unsupported_keys(supported, data)
 
 
@@ -84,7 +83,7 @@ def test_bytes_from_base64_success(data, expected):
     b'!@#$%^&*()-+',
 ])
 def test_bytes_from_base64_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     bytes_from_base64(data)
 
 
@@ -206,7 +205,7 @@ def test_parse_public_key_credential_success(data, expected):
                        userHandle=4)),
 ])
 def test_parse_public_key_credential_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_public_key_credential(data)
 
 
@@ -229,7 +228,7 @@ def test_parse_credential_public_key_kty_success(data, expected):
     },
 ])
 def test_parse_credential_public_key_kty_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_credential_public_key_kty(data)
 
 
@@ -253,7 +252,7 @@ def test_parse_credential_public_key_alg_success(data, expected):
     },
 ])
 def test_parse_credential_public_key_alg_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_credential_public_key_alg(data)
 
 
@@ -285,7 +284,7 @@ def test_parse_credential_public_key_key_ops_success(data, expected):
     4: []
 }])
 def test_parse_credential_public_key_key_ops_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_credential_public_key_key_ops(data)
 
 
@@ -376,7 +375,7 @@ def test_parse_credential_public_key_kwargs_success(data, expected):
     },
 ])
 def test_parse_credential_public_key_kwargs_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_credential_public_key_kwargs(data)
 
 
@@ -406,7 +405,7 @@ def test_parse_ec2_public_key_crv_success(data, expected):
     },
 ])
 def test_parse_ec2_public_key_crv_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_ec2_public_key_crv(data)
 
 
@@ -436,7 +435,7 @@ def test_parse_okp_public_key_crv_success(data, expected):
     },
 ])
 def test_parse_okp_public_key_crv_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_okp_public_key_crv(data)
 
 
@@ -641,7 +640,7 @@ def test_parse_okp_public_key_success(data, expected):
     }
 ])
 def test_parse_okp_public_key_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_okp_public_key(data)
 
 
@@ -922,7 +921,7 @@ def test_parse_ec2_public_key_success(data, expected):
     }
 ])
 def test_parse_ec2_public_key_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_ec2_public_key(data)
 
 
@@ -1017,7 +1016,7 @@ def test_parse_extensions_success(data, expected):
         )
     ])
 def test_parse_extensions_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_extensions(data)
 
 
@@ -1041,7 +1040,7 @@ def test_parse_attestation_statement_alg_success(data, expected):
     {},
 ])
 def test_parse_attestation_statement_alg_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_attestation_statement_alg(data)
 
 
@@ -1079,7 +1078,7 @@ def test_parse_attestation_statement_x5c_success(data, expected):
     {},
 ])
 def test_parse_attestation_statement_x5c_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_attestation_statement_x5c(data)
 
 
@@ -1123,7 +1122,7 @@ def test_parse_packed_attestation_statement_success(data, expected):
     'sig': b'signature',
 }])
 def test_parse_packed_attestation_statement_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_packed_attestation_statement(data)
 
 
@@ -1228,7 +1227,7 @@ def test_parse_tpm_attestation_statement_success(data, expected):
     'ecdaaKeyId': b'key-id'
 }])
 def test_parse_tpm_attestation_statement_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_tpm_attestation_statement(data)
 
 
@@ -1279,7 +1278,7 @@ def test_parse_android_key_attestation_statement_success(data, expected):
     },
 ])
 def test_parse_android_key_attestation_statement_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_android_key_attestation_statement(data)
 
 
@@ -1309,7 +1308,7 @@ def test_parse_android_safetynet_attestation_statement_success(data, expected):
     },
 ])
 def test_parse_android_safetynet_attestation_statement_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_android_safetynet_attestation_statement(data)
 
 
@@ -1343,7 +1342,7 @@ def test_parse_fido_u2f_attestation_statement_success(data, expected):
     },
 ])
 def test_parse_fido_u2f_attestation_statement_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_fido_u2f_attestation_statement(data)
 
 
@@ -1368,7 +1367,7 @@ def test_parse_none_attestation_statement_success(data, expected):
     'invalid': '1',
 }])
 def test_parse_none_attestation_statement_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_none_attestation_statement(data)
 
 
@@ -1467,7 +1466,7 @@ def test_parse_client_data_success(data, expected):
     }),
 ])
 def test_parse_client_data_error(data):
-  with pytest.raises((ValidationError, TokenBindingError)):
+  with pytest.raises((ParserError, TokenBindingError)):
     parse_client_data(data)
 
 
@@ -1585,7 +1584,7 @@ def test_parse_cose_key_success(data, expected):
     },
 ])
 def test_parse_cose_key_error(data):
-  with pytest.raises(ValidationError):
+  with pytest.raises(ParserError):
     parse_cose_key(data)
 
 
@@ -1805,7 +1804,7 @@ def test_parse_authenticator_data_success(data, expected):
         extensions=cbor2.dumps([1, 2, 3])),
 ])
 def test_parse_authenticator_data_error(data):
-  with pytest.raises((ValidationError, DecodingError)):
+  with pytest.raises((ParserError, DecodingError)):
     parse_authenticator_data(data)
 
 
@@ -2049,5 +2048,5 @@ def test_parse_attestation_success(data, expected):
     }),
 ])
 def test_parse_attestation_error(data):
-  with pytest.raises((ValidationError, DecodingError)):
+  with pytest.raises((ParserError, DecodingError)):
     parse_attestation(data)
