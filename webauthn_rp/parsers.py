@@ -70,10 +70,10 @@ def parse_origin(opaque_origin: str) -> Origin:
   )
 
 
-def parse_dictionary_field(field_key: Any,
-                           valid_types: Union[Type, Sequence[Type]],
-                           dictionary: Dict,
-                           required: bool = True) -> Any:
+def _parse_dictionary_field(field_key: Any,
+                            valid_types: Union[Type, Sequence[Type]],
+                            dictionary: Dict,
+                            required: bool = True) -> Any:
   valid_types_seq: Sequence[Type] = [valid_types] if (  # type: ignore
       type(valid_types) is type) else valid_types
   field = dictionary.get(field_key)
@@ -88,14 +88,14 @@ def parse_dictionary_field(field_key: Any,
   return field
 
 
-def check_unsupported_keys(supported: Set[str], data: Dict):
+def _check_unsupported_keys(supported: Set[str], data: Dict):
   unsupported_keys = set(data.keys()).difference(supported)
   if unsupported_keys:
     raise ParserError(
         ('Found unsupported keys in data {}').format(str(unsupported_keys)))
 
 
-def bytes_from_base64(s: str) -> bytes:
+def _bytes_from_base64(s: str) -> bytes:
   try:
     return base64.b64decode(s)
   except Exception:
@@ -103,21 +103,21 @@ def bytes_from_base64(s: str) -> bytes:
 
 
 def parse_public_key_credential(data: Dict) -> PublicKeyCredential:
-  check_unsupported_keys({'id', 'rawId', 'response', 'type'}, data)
-  id_ = parse_dictionary_field('id', str, data)
-  type_ = parse_dictionary_field('type', str, data)
-  raw_id = bytes_from_base64(parse_dictionary_field('rawId', str, data))
+  _check_unsupported_keys({'id', 'rawId', 'response', 'type'}, data)
+  id_ = _parse_dictionary_field('id', str, data)
+  type_ = _parse_dictionary_field('type', str, data)
+  raw_id = _bytes_from_base64(_parse_dictionary_field('rawId', str, data))
 
-  response = parse_dictionary_field('response', dict, data)
-  client_data_JSON = bytes_from_base64(
-      parse_dictionary_field('clientDataJSON', str, response))
+  response = _parse_dictionary_field('response', dict, data)
+  client_data_JSON = _bytes_from_base64(
+      _parse_dictionary_field('clientDataJSON', str, response))
 
   if 'attestationObject' in response:
     # Parse AuthenticatorAttestationResponse
-    check_unsupported_keys({'clientDataJSON', 'attestationObject'}, response)
+    _check_unsupported_keys({'clientDataJSON', 'attestationObject'}, response)
 
-    attestation_object = bytes_from_base64(
-        parse_dictionary_field('attestationObject', str, response))
+    attestation_object = _bytes_from_base64(
+        _parse_dictionary_field('attestationObject', str, response))
 
     return PublicKeyCredential(id=id_,
                                type=type_,
@@ -127,19 +127,19 @@ def parse_public_key_credential(data: Dict) -> PublicKeyCredential:
                                    attestation_object=attestation_object))
   else:
     # Parse AuthenticatorAssertionResponse
-    check_unsupported_keys(
+    _check_unsupported_keys(
         {'clientDataJSON', 'authenticatorData', 'signature', 'userHandle'},
         response)
 
-    authenticator_data = bytes_from_base64(
-        parse_dictionary_field('authenticatorData', str, response))
-    signature = bytes_from_base64(
-        parse_dictionary_field('signature', str, response))
-    user_handle_b64s = parse_dictionary_field('userHandle', str, response,
-                                              False)
+    authenticator_data = _bytes_from_base64(
+        _parse_dictionary_field('authenticatorData', str, response))
+    signature = _bytes_from_base64(
+        _parse_dictionary_field('signature', str, response))
+    user_handle_b64s = _parse_dictionary_field('userHandle', str, response,
+                                               False)
     user_handle = None
     if user_handle_b64s is not None:
-      user_handle = bytes_from_base64(user_handle_b64s)
+      user_handle = _bytes_from_base64(user_handle_b64s)
 
     return PublicKeyCredential(id=id_,
                                type=type_,
@@ -151,9 +151,9 @@ def parse_public_key_credential(data: Dict) -> PublicKeyCredential:
                                    user_handle=user_handle))
 
 
-def parse_credential_public_key_kty(
+def _parse_credential_public_key_kty(
     credential_public_key: Dict) -> Union[COSEKeyType.Name, COSEKeyType.Value]:
-  kty_raw = parse_dictionary_field(1, (int, str), credential_public_key)
+  kty_raw = _parse_dictionary_field(1, (int, str), credential_public_key)
 
   try:
     kty = cast(Union[COSEKeyType.Name, COSEKeyType.Value],
@@ -163,10 +163,10 @@ def parse_credential_public_key_kty(
   return kty
 
 
-def parse_credential_public_key_alg(
+def _parse_credential_public_key_alg(
     credential_public_key: Dict
 ) -> Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]:
-  alg_raw = parse_dictionary_field(3, (int, str), credential_public_key)
+  alg_raw = _parse_dictionary_field(3, (int, str), credential_public_key)
 
   try:
     alg = cast(Union[COSEAlgorithmIdentifier.Name,
@@ -178,11 +178,11 @@ def parse_credential_public_key_alg(
   return alg
 
 
-def parse_credential_public_key_key_ops(
+def _parse_credential_public_key_key_ops(
     credential_public_key: Dict
 ) -> Optional[Sequence[Union[COSEKeyOperation.Name, COSEKeyOperation.Value]]]:
-  key_ops_raw = parse_dictionary_field(4, (list, tuple), credential_public_key,
-                                       False)
+  key_ops_raw = _parse_dictionary_field(4, (list, tuple),
+                                        credential_public_key, False)
 
   if key_ops_raw is None: return None
 
@@ -206,12 +206,12 @@ def parse_credential_public_key_key_ops(
   return key_ops
 
 
-def parse_credential_public_key_kwargs(credential_public_key: Dict) -> dict:
-  kty = parse_credential_public_key_kty(credential_public_key)
-  kid = parse_dictionary_field(2, bytes, credential_public_key, False)
-  alg = parse_credential_public_key_alg(credential_public_key)
-  key_ops = parse_credential_public_key_key_ops(credential_public_key)
-  base_IV = parse_dictionary_field(5, bytes, credential_public_key, False)
+def _parse_credential_public_key_kwargs(credential_public_key: Dict) -> dict:
+  kty = _parse_credential_public_key_kty(credential_public_key)
+  kid = _parse_dictionary_field(2, bytes, credential_public_key, False)
+  alg = _parse_credential_public_key_alg(credential_public_key)
+  key_ops = _parse_credential_public_key_key_ops(credential_public_key)
+  base_IV = _parse_dictionary_field(5, bytes, credential_public_key, False)
   return {
       'kty': kty,
       'kid': kid,
@@ -221,27 +221,28 @@ def parse_credential_public_key_kwargs(credential_public_key: Dict) -> dict:
   }
 
 
-def parse_ec2_public_key_crv(
+def _parse_ec2_public_key_crv(
     credential_public_key: Dict) -> Union[EC2Curve.Name, EC2Curve.Value]:
-  crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
+  crv_raw = _parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
     return EC2Curve(crv_raw)  # type: ignore
   except (KeyError, ValueError):
     raise ParserError('Invalid EC2 curve {}'.format(crv_raw))
 
 
-def parse_okp_public_key_crv(
+def _parse_okp_public_key_crv(
     credential_public_key: Dict) -> Union[OKPCurve.Name, OKPCurve.Value]:
-  crv_raw = parse_dictionary_field(-1, (int, str), credential_public_key)
+  crv_raw = _parse_dictionary_field(-1, (int, str), credential_public_key)
   try:
     return OKPCurve(crv_raw)  # type: ignore
   except (KeyError, ValueError):
     raise ParserError('Invalid OKP curve {}'.format(crv_raw))
 
 
-def parse_okp_public_key(credential_public_key: Dict) -> CredentialPublicKey:
-  x = parse_dictionary_field(-2, bytes, credential_public_key)
-  crv = parse_okp_public_key_crv(credential_public_key)
+def parse_okp_public_key(
+    credential_public_key: Dict) -> OKPCredentialPublicKey:
+  x = _parse_dictionary_field(-2, bytes, credential_public_key)
+  crv = _parse_okp_public_key_crv(credential_public_key)
   crv_len = curve_coordinate_byte_length(crv)
   if len(x) != crv_len:
     raise ParserError(
@@ -251,15 +252,15 @@ def parse_okp_public_key(credential_public_key: Dict) -> CredentialPublicKey:
   return OKPCredentialPublicKey(
       crv=crv,
       x=x,
-      **parse_credential_public_key_kwargs(credential_public_key),
+      **_parse_credential_public_key_kwargs(credential_public_key),
   )
 
 
 def parse_ec2_public_key(
     credential_public_key: Dict) -> EC2CredentialPublicKey:
-  x = parse_dictionary_field(-2, bytes, credential_public_key)
-  y = parse_dictionary_field(-3, bytes, credential_public_key)
-  crv = parse_ec2_public_key_crv(credential_public_key)
+  x = _parse_dictionary_field(-2, bytes, credential_public_key)
+  y = _parse_dictionary_field(-3, bytes, credential_public_key)
+  crv = _parse_ec2_public_key_crv(credential_public_key)
   crv_len = curve_coordinate_byte_length(crv)
   if len(x) != crv_len or len(y) != crv_len:
     raise ParserError(
@@ -270,7 +271,7 @@ def parse_ec2_public_key(
       x=x,
       y=y,
       crv=crv,
-      **parse_credential_public_key_kwargs(credential_public_key),
+      **_parse_credential_public_key_kwargs(credential_public_key),
   )
 
 
@@ -392,10 +393,10 @@ def parse_extensions(
   )
 
 
-def parse_attestation_statement_alg(
+def _parse_attestation_statement_alg(
     att_stmt: Dict
 ) -> Union[COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value]:
-  alg = parse_dictionary_field('alg', (int, str), att_stmt)
+  alg = _parse_dictionary_field('alg', (int, str), att_stmt)
 
   try:
     alg = COSEAlgorithmIdentifier(alg)  # type: ignore
@@ -404,8 +405,8 @@ def parse_attestation_statement_alg(
   return alg
 
 
-def parse_attestation_statement_x5c(att_stmt: Dict) -> Sequence[bytes]:
-  x5c = parse_dictionary_field('x5c', (list, tuple), att_stmt)
+def _parse_attestation_statement_x5c(att_stmt: Dict) -> Sequence[bytes]:
+  x5c = _parse_dictionary_field('x5c', (list, tuple), att_stmt)
 
   for i, e in enumerate(x5c):
     if type(e) is not bytes:
@@ -416,39 +417,39 @@ def parse_attestation_statement_x5c(att_stmt: Dict) -> Sequence[bytes]:
 def parse_packed_attestation_statement(
     att_stmt: Dict) -> PackedAttestationStatement:
   supported_keys = {'alg', 'sig'}
-  alg = parse_attestation_statement_alg(att_stmt)
-  sig = parse_dictionary_field('sig', bytes, att_stmt)
+  alg = _parse_attestation_statement_alg(att_stmt)
+  sig = _parse_dictionary_field('sig', bytes, att_stmt)
 
   if 'x5c' in att_stmt:
     supported_keys.add('x5c')
-    check_unsupported_keys(supported_keys, att_stmt)
-    x5c = parse_attestation_statement_x5c(att_stmt)
+    _check_unsupported_keys(supported_keys, att_stmt)
+    x5c = _parse_attestation_statement_x5c(att_stmt)
     return PackedX509AttestationStatement(alg=alg, sig=sig, x5c=x5c)
 
   if 'ecdaaKeyId' in att_stmt:
     supported_keys.add('ecdaaKeyId')
-    check_unsupported_keys(supported_keys, att_stmt)
-    ecdaa_key_id = parse_dictionary_field('ecdaaKeyId', bytes, att_stmt)
+    _check_unsupported_keys(supported_keys, att_stmt)
+    ecdaa_key_id = _parse_dictionary_field('ecdaaKeyId', bytes, att_stmt)
     return PackedECDAAAttestationStatement(alg=alg,
                                            sig=sig,
                                            ecdaa_key_id=ecdaa_key_id)
 
-  check_unsupported_keys(supported_keys, att_stmt)
+  _check_unsupported_keys(supported_keys, att_stmt)
   return PackedAttestationStatement(alg=alg, sig=sig)
 
 
 def parse_tpm_attestation_statement(att_stmt: Dict) -> TPMAttestationStatement:
   supported_keys = {'alg', 'sig', 'ver', 'certInfo', 'pubArea'}
-  alg = parse_attestation_statement_alg(att_stmt)
-  sig = parse_dictionary_field('sig', bytes, att_stmt)
-  ver = parse_dictionary_field('ver', str, att_stmt)
-  cert_info = parse_dictionary_field('certInfo', bytes, att_stmt)
-  pub_area = parse_dictionary_field('pubArea', bytes, att_stmt)
+  alg = _parse_attestation_statement_alg(att_stmt)
+  sig = _parse_dictionary_field('sig', bytes, att_stmt)
+  ver = _parse_dictionary_field('ver', str, att_stmt)
+  cert_info = _parse_dictionary_field('certInfo', bytes, att_stmt)
+  pub_area = _parse_dictionary_field('pubArea', bytes, att_stmt)
 
   if 'x5c' in att_stmt:
     supported_keys.add('x5c')
-    check_unsupported_keys(supported_keys, att_stmt)
-    x5c = parse_attestation_statement_x5c(att_stmt)
+    _check_unsupported_keys(supported_keys, att_stmt)
+    x5c = _parse_attestation_statement_x5c(att_stmt)
     return TPMX509AttestationStatement(alg=alg,
                                        sig=sig,
                                        ver=ver,
@@ -458,8 +459,8 @@ def parse_tpm_attestation_statement(att_stmt: Dict) -> TPMAttestationStatement:
 
   if 'ecdaaKeyId' in att_stmt:
     supported_keys.add('ecdaaKeyId')
-    check_unsupported_keys(supported_keys, att_stmt)
-    ecdaa_key_id = parse_dictionary_field('ecdaaKeyId', bytes, att_stmt)
+    _check_unsupported_keys(supported_keys, att_stmt)
+    ecdaa_key_id = _parse_dictionary_field('ecdaaKeyId', bytes, att_stmt)
     return TPMECDAAAttestationStatement(alg=alg,
                                         sig=sig,
                                         ver=ver,
@@ -467,7 +468,7 @@ def parse_tpm_attestation_statement(att_stmt: Dict) -> TPMAttestationStatement:
                                         pub_area=pub_area,
                                         ecdaa_key_id=ecdaa_key_id)
 
-  check_unsupported_keys(supported_keys, att_stmt)
+  _check_unsupported_keys(supported_keys, att_stmt)
   return TPMAttestationStatement(alg=alg,
                                  sig=sig,
                                  ver=ver,
@@ -478,34 +479,34 @@ def parse_tpm_attestation_statement(att_stmt: Dict) -> TPMAttestationStatement:
 def parse_android_key_attestation_statement(
     att_stmt: Dict) -> AndroidKeyAttestationStatement:
   supported_keys = {'alg', 'sig', 'x5c'}
-  alg = parse_attestation_statement_alg(att_stmt)
-  sig = parse_dictionary_field('sig', bytes, att_stmt)
-  x5c = parse_attestation_statement_x5c(att_stmt)
-  check_unsupported_keys(supported_keys, att_stmt)
+  alg = _parse_attestation_statement_alg(att_stmt)
+  sig = _parse_dictionary_field('sig', bytes, att_stmt)
+  x5c = _parse_attestation_statement_x5c(att_stmt)
+  _check_unsupported_keys(supported_keys, att_stmt)
   return AndroidKeyAttestationStatement(alg=alg, sig=sig, x5c=x5c)
 
 
 def parse_android_safetynet_attestation_statement(
     att_stmt: Dict) -> AndroidSafetyNetAttestationStatement:
   supported_keys = {'ver', 'response'}
-  ver = parse_dictionary_field('ver', str, att_stmt)
-  response = parse_dictionary_field('response', bytes, att_stmt)
-  check_unsupported_keys(supported_keys, att_stmt)
+  ver = _parse_dictionary_field('ver', str, att_stmt)
+  response = _parse_dictionary_field('response', bytes, att_stmt)
+  _check_unsupported_keys(supported_keys, att_stmt)
   return AndroidSafetyNetAttestationStatement(ver=ver, response=response)
 
 
 def parse_fido_u2f_attestation_statement(
     att_stmt: Dict) -> FIDOU2FAttestationStatement:
   supported_keys = {'sig', 'x5c'}
-  sig = parse_dictionary_field('sig', bytes, att_stmt)
-  x5c = parse_attestation_statement_x5c(att_stmt)
-  check_unsupported_keys(supported_keys, att_stmt)
+  sig = _parse_dictionary_field('sig', bytes, att_stmt)
+  x5c = _parse_attestation_statement_x5c(att_stmt)
+  _check_unsupported_keys(supported_keys, att_stmt)
   return FIDOU2FAttestationStatement(sig=sig, x5c=x5c)
 
 
 def parse_none_attestation_statement(
     att_stmt: Dict) -> NoneAttestationStatement:
-  check_unsupported_keys(set(), att_stmt)
+  _check_unsupported_keys(set(), att_stmt)
   return NoneAttestationStatement()
 
 

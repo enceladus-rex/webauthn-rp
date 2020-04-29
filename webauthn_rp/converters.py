@@ -94,7 +94,7 @@ def cryptography_okp_public_key(
     raise PublicKeyConversionError('Invalid OKP public key')
 
 
-def build_base_cose_dictionary(
+def _build_base_cose_dictionary(
     credential_public_key: CredentialPublicKey) -> Dict:
   d = {}
   d[1] = credential_public_key.kty.value
@@ -116,7 +116,7 @@ def cose_key(credential_public_key: CredentialPublicKey) -> bytes:
 
 @cose_key.register(EC2CredentialPublicKey)
 def cose_key_from_ec2(credential_public_key: EC2CredentialPublicKey) -> bytes:
-  d = build_base_cose_dictionary(credential_public_key)
+  d = _build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x
   d[-3] = credential_public_key.y
@@ -125,7 +125,7 @@ def cose_key_from_ec2(credential_public_key: EC2CredentialPublicKey) -> bytes:
 
 @cose_key.register(OKPCredentialPublicKey)
 def cose_key_from_okp(credential_public_key: OKPCredentialPublicKey) -> bytes:
-  d = build_base_cose_dictionary(credential_public_key)
+  d = _build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x
   return cbor2.dumps(d)

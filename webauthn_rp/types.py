@@ -221,19 +221,15 @@ class NameValueEnumsContainer(type):
   A metaclass used to enable Enums that can take on a string and integer type
   for a name and value respectively.
   """
-  def __call__(cls: Any, value: Union[int, str]) -> Any:  # type: ignore
-    if type(value) is int:
-      return cls.Value(value)
-    elif type(value) is str:
-      return cls.Name(value)
-    else:
-      raise KeyError('Invalid key {}'.format(value))
+  Name: Enum
+  Value: Enum
 
-  def __getitem__(cls: Any, value: Union[int, str]) -> Any:  # type: ignore
+  def __call__(cls: 'NameValueEnumsContainer',
+               value: Union[int, str]) -> Enum:  # type: ignore
     if type(value) is int:
-      return cls.Value[value]
+      return cls.Value(value)  # type: ignore
     elif type(value) is str:
-      return cls.Name[value]
+      return cls.Name(value)  # type: ignore
     else:
       raise KeyError('Invalid key {}'.format(value))
 

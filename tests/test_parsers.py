@@ -7,6 +7,13 @@ import pytest
 from webauthn_rp.constants import *
 from webauthn_rp.errors import DecodingError, ParserError, TokenBindingError
 from webauthn_rp.parsers import *
+from webauthn_rp.parsers import (
+    _bytes_from_base64, _check_unsupported_keys,
+    _parse_attestation_statement_alg, _parse_attestation_statement_x5c,
+    _parse_credential_public_key_alg, _parse_credential_public_key_key_ops,
+    _parse_credential_public_key_kty, _parse_credential_public_key_kwargs,
+    _parse_dictionary_field, _parse_ec2_public_key_crv,
+    _parse_okp_public_key_crv)
 from webauthn_rp.types import *
 
 from .common import (assert_objects_equal, attested_credential_data,
@@ -27,10 +34,10 @@ from .common import (assert_objects_equal, attested_credential_data,
         ('key', [], dict(), False, None),
         ('key', [], dict(a=1), False, None),
     ])
-def test_parse_dictionary_field_success(field_key, valid_types, dictionary,
-                                        required, expected):
-  parse_dictionary_field(field_key, valid_types, dictionary,
-                         required) == expected
+def test__parse_dictionary_field_success(field_key, valid_types, dictionary,
+                                         required, expected):
+  _parse_dictionary_field(field_key, valid_types, dictionary,
+                          required) == expected
 
 
 @pytest.mark.parametrize('field_key, valid_types, dictionary, required', [
@@ -47,10 +54,10 @@ def test_parse_dictionary_field_success(field_key, valid_types, dictionary,
     ('key', [bytes, str], dict(key=1), False),
     ('key', [int, bytes], dict(key='val'), False),
 ])
-def test_parse_dictionary_field_error(field_key, valid_types, dictionary,
-                                      required):
+def test__parse_dictionary_field_error(field_key, valid_types, dictionary,
+                                       required):
   with pytest.raises(ParserError):
-    parse_dictionary_field(field_key, valid_types, dictionary, required)
+    _parse_dictionary_field(field_key, valid_types, dictionary, required)
 
 
 @pytest.mark.parametrize('supported, data, valid', [
@@ -62,29 +69,29 @@ def test_parse_dictionary_field_error(field_key, valid_types, dictionary,
     ({'a', 'b'}, dict(a=1, c=1), False),
     ({'a', 'b'}, dict(a=1, b=1, c=1), False),
 ])
-def test_check_unsupported_keys(supported, data, valid):
+def test__check_unsupported_keys(supported, data, valid):
   if valid:
-    check_unsupported_keys(supported, data)
+    _check_unsupported_keys(supported, data)
   else:
     with pytest.raises(ParserError):
-      check_unsupported_keys(supported, data)
+      _check_unsupported_keys(supported, data)
 
 
 @pytest.mark.parametrize('data, expected', [
     ('abcdef==', b'i\xb7\x1dy'),
     (base64.b64encode(b'!@#$%^&*()-+').decode('utf-8'), b'!@#$%^&*()-+'),
 ])
-def test_bytes_from_base64_success(data, expected):
-  assert bytes_from_base64(data) == expected
+def test__bytes_from_base64_success(data, expected):
+  assert _bytes_from_base64(data) == expected
 
 
 @pytest.mark.parametrize('data', [
     'abcdef=',
     b'!@#$%^&*()-+',
 ])
-def test_bytes_from_base64_error(data):
+def test__bytes_from_base64_error(data):
   with pytest.raises(ParserError):
-    bytes_from_base64(data)
+    _bytes_from_base64(data)
 
 
 def _b64s(x: bytes) -> str:
@@ -212,8 +219,8 @@ def test_parse_public_key_credential_error(data):
 @pytest.mark.parametrize('data, expected', [({
     1: x.value
 }, x) for x in list(COSEKeyType.Name) + list(COSEKeyType.Value)])
-def test_parse_credential_public_key_kty_success(data, expected):
-  assert parse_credential_public_key_kty(data) == expected
+def test__parse_credential_public_key_kty_success(data, expected):
+  assert _parse_credential_public_key_kty(data) == expected
 
 
 @pytest.mark.parametrize('data', [{
@@ -227,17 +234,17 @@ def test_parse_credential_public_key_kty_success(data, expected):
         2: ''
     },
 ])
-def test_parse_credential_public_key_kty_error(data):
+def test__parse_credential_public_key_kty_error(data):
   with pytest.raises(ParserError):
-    parse_credential_public_key_kty(data)
+    _parse_credential_public_key_kty(data)
 
 
 @pytest.mark.parametrize('data, expected', [
     ({3: x.value}, x) for x in \
     list(COSEAlgorithmIdentifier.Name) + list(COSEAlgorithmIdentifier.Value)
 ])
-def test_parse_credential_public_key_alg_success(data, expected):
-  assert parse_credential_public_key_alg(data) == expected
+def test__parse_credential_public_key_alg_success(data, expected):
+  assert _parse_credential_public_key_alg(data) == expected
 
 
 @pytest.mark.parametrize('data', [{
@@ -251,9 +258,9 @@ def test_parse_credential_public_key_alg_success(data, expected):
         2: ''
     },
 ])
-def test_parse_credential_public_key_alg_error(data):
+def test__parse_credential_public_key_alg_error(data):
   with pytest.raises(ParserError):
-    parse_credential_public_key_alg(data)
+    _parse_credential_public_key_alg(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
@@ -266,8 +273,8 @@ def test_parse_credential_public_key_alg_error(data):
     ([y.value for y in chain(COSEKeyOperation.Name, COSEKeyOperation.Value)],
      [y for y in chain(COSEKeyOperation.Name, COSEKeyOperation.Value)]),
 ]] + [({}, None)])
-def test_parse_credential_public_key_key_ops_success(data, expected):
-  assert parse_credential_public_key_key_ops(data) == expected
+def test__parse_credential_public_key_key_ops_success(data, expected):
+  assert _parse_credential_public_key_key_ops(data) == expected
 
 
 @pytest.mark.parametrize('data', [{
@@ -283,9 +290,9 @@ def test_parse_credential_public_key_key_ops_success(data, expected):
 )] + [{
     4: []
 }])
-def test_parse_credential_public_key_key_ops_error(data):
+def test__parse_credential_public_key_key_ops_error(data):
   with pytest.raises(ParserError):
-    parse_credential_public_key_key_ops(data)
+    _parse_credential_public_key_key_ops(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -322,8 +329,8 @@ def test_parse_credential_public_key_key_ops_error(data):
           key_ops=[COSEKeyOperation.Value.VERIFY, COSEKeyOperation.Value.SIGN],
           base_IV=b'base-IV')),
 ])
-def test_parse_credential_public_key_kwargs_success(data, expected):
-  assert parse_credential_public_key_kwargs(data) == expected
+def test__parse_credential_public_key_kwargs_success(data, expected):
+  assert _parse_credential_public_key_kwargs(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -374,16 +381,16 @@ def test_parse_credential_public_key_kwargs_success(data, expected):
         5: 'string'
     },
 ])
-def test_parse_credential_public_key_kwargs_error(data):
+def test__parse_credential_public_key_kwargs_error(data):
   with pytest.raises(ParserError):
-    parse_credential_public_key_kwargs(data)
+    _parse_credential_public_key_kwargs(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
     -1: x.value
 }, x) for x in chain(EC2Curve.Name, EC2Curve.Value)])
-def test_parse_ec2_public_key_crv_success(data, expected):
-  assert parse_ec2_public_key_crv(data) == expected
+def test__parse_ec2_public_key_crv_success(data, expected):
+  assert _parse_ec2_public_key_crv(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -404,16 +411,16 @@ def test_parse_ec2_public_key_crv_success(data, expected):
         2: 1
     },
 ])
-def test_parse_ec2_public_key_crv_error(data):
+def test__parse_ec2_public_key_crv_error(data):
   with pytest.raises(ParserError):
-    parse_ec2_public_key_crv(data)
+    _parse_ec2_public_key_crv(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
     -1: x.value
 }, x) for x in chain(OKPCurve.Name, OKPCurve.Value)])
-def test_parse_okp_public_key_crv_success(data, expected):
-  assert parse_okp_public_key_crv(data) == expected
+def test__parse_okp_public_key_crv_success(data, expected):
+  assert _parse_okp_public_key_crv(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -434,9 +441,9 @@ def test_parse_okp_public_key_crv_success(data, expected):
         2: 1
     },
 ])
-def test_parse_okp_public_key_crv_error(data):
+def test__parse_okp_public_key_crv_error(data):
   with pytest.raises(ParserError):
-    parse_okp_public_key_crv(data)
+    _parse_okp_public_key_crv(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1026,8 +1033,8 @@ def test_parse_extensions_error(data):
     }, x)
     for x in chain(COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value)
 ])
-def test_parse_attestation_statement_alg_success(data, expected):
-  assert_objects_equal(parse_attestation_statement_alg(data), expected)
+def test__parse_attestation_statement_alg_success(data, expected):
+  assert_objects_equal(_parse_attestation_statement_alg(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1039,9 +1046,9 @@ def test_parse_attestation_statement_alg_success(data, expected):
     },
     {},
 ])
-def test_parse_attestation_statement_alg_error(data):
+def test__parse_attestation_statement_alg_error(data):
   with pytest.raises(ParserError):
-    parse_attestation_statement_alg(data)
+    _parse_attestation_statement_alg(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1052,8 +1059,8 @@ def test_parse_attestation_statement_alg_error(data):
         'x5c': (b'x', b'y'),
     }, (b'x', b'y')),
 ])
-def test_parse_attestation_statement_x5c_success(data, expected):
-  assert_objects_equal(parse_attestation_statement_x5c(data), expected)
+def test__parse_attestation_statement_x5c_success(data, expected):
+  assert_objects_equal(_parse_attestation_statement_x5c(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1077,9 +1084,9 @@ def test_parse_attestation_statement_x5c_success(data, expected):
     },
     {},
 ])
-def test_parse_attestation_statement_x5c_error(data):
+def test__parse_attestation_statement_x5c_error(data):
   with pytest.raises(ParserError):
-    parse_attestation_statement_x5c(data)
+    _parse_attestation_statement_x5c(data)
 
 
 @pytest.mark.parametrize('data, expected', [

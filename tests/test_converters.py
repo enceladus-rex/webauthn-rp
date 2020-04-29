@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from webauthn_rp.constants import *
-from webauthn_rp.converters import (build_base_cose_dictionary,
+from webauthn_rp.converters import (_build_base_cose_dictionary,
                                     cose_key_from_ec2, cose_key_from_okp,
                                     cryptography_ec2_public_key,
                                     cryptography_okp_public_key, jsonify)
@@ -260,8 +260,8 @@ def test_jsonify_credential_request_options():
                              4: [COSEKeyOperation.Value.VERIFY.value],
                              5: b'base-IV'
                          })])
-def test_build_base_cose_dictionary_success(data, expected):
-  build_base_cose_dictionary(data) == expected
+def test__build_base_cose_dictionary_success(data, expected):
+  _build_base_cose_dictionary(data) == expected
 
 
 def test_cryptography_ec2_public_key():
