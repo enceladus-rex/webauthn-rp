@@ -1,7 +1,6 @@
 import base64
 import re
 from typing import Union
-from urllib.parse import urlparse
 
 from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512,
                                                    HashAlgorithm)

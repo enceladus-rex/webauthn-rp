@@ -1,4 +1,3 @@
-from collections import namedtuple
 from enum import Enum
 from typing import Sequence, Union
 
@@ -9,7 +8,7 @@ from webauthn_rp.types import (COSEAlgorithmIdentifier, COSEKeyType,
 
 
 def validate_kty(validator_ktys: Union[str, Sequence[str]],
-                 credential_public_key: CredentialPublicKey):
+                 credential_public_key: CredentialPublicKey) -> None:
   validator_ktys: Sequence[str] = [validator_ktys] if (  # type: ignore
       type(validator_ktys) is str) else validator_ktys
 
@@ -22,7 +21,7 @@ def validate_kty(validator_ktys: Union[str, Sequence[str]],
 
 
 def validate_key_ops(validator_key_ops: Union[str, Sequence[str]],
-                     credential_public_key: CredentialPublicKey):
+                     credential_public_key: CredentialPublicKey) -> None:
   validator_key_ops: Sequence[str] = [validator_key_ops] if (  # type: ignore
       type(validator_key_ops) is str) else validator_key_ops
   if len(validator_key_ops) == 0: return
@@ -39,7 +38,7 @@ def validate_key_ops(validator_key_ops: Union[str, Sequence[str]],
 
 def ecdsa_validator(credential_public_key: EC2CredentialPublicKey,
                     sign: bool = False,
-                    verify: bool = False):
+                    verify: bool = False) -> None:
   validate_kty('EC2', credential_public_key)
   ops = []
   if sign: ops.append('SIGN')
@@ -52,7 +51,7 @@ def ecdsa_validator(credential_public_key: EC2CredentialPublicKey,
 
 def eddsa_validator(credential_public_key: OKPCredentialPublicKey,
                     sign: bool = False,
-                    verify: bool = False):
+                    verify: bool = False) -> None:
   validate_kty('OKP', credential_public_key)
   ops = []
   if sign: ops.append('SIGN')

@@ -1,5 +1,5 @@
 from functools import singledispatch
-from typing import Optional, Sequence, Tuple, cast
+from typing import Tuple, cast
 
 import cryptography
 import cryptography.x509
@@ -8,9 +8,8 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDSA, SECP256R1, EllipticCurvePublicKey)
 from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from cryptography.hazmat.primitives.hashes import SHA256, SHA384, SHA512
+from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-from cryptography.x509 import Certificate
 from cryptography.x509.extensions import UnrecognizedExtension
 from cryptography.x509.oid import ObjectIdentifier
 from pyasn1.codec.der.decoder import decode
@@ -19,8 +18,7 @@ from pyasn1.error import PyAsn1Error
 from webauthn_rp.asn1 import KeyDescription
 from webauthn_rp.constants import KM_ORIGIN_GENERATED, KM_PURPOSE_SIGN
 from webauthn_rp.converters import cryptography_public_key
-from webauthn_rp.errors import (AttestationError, UnimplementedError,
-                                ValidationError, VerificationError)
+from webauthn_rp.errors import AttestationError, UnimplementedError
 from webauthn_rp.types import (AndroidKeyAttestationStatement,
                                AttestationObject, AttestationStatement,
                                AttestationType, CredentialPublicKey,

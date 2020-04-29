@@ -26,7 +26,8 @@ class CredentialCreationOptionsBuilder:
           AttestationConveyancePreference] = AttestationConveyancePreference.
       NONE,
       exclude_credentials: Optional[
-          Sequence[PublicKeyCredentialDescriptor]] = None):
+          Sequence[PublicKeyCredentialDescriptor]] = None
+  ) -> None:
     self._rp = rp
     self._pub_key_cred_params = pub_key_cred_params
     self._timeout = timeout
@@ -138,7 +139,8 @@ class CredentialRequestOptionsBuilder:
       allow_credentials: Optional[
           Sequence[PublicKeyCredentialDescriptor]] = None,
       user_verification: Optional[UserVerificationRequirement] = (
-          UserVerificationRequirement.PREFERRED)):
+          UserVerificationRequirement.PREFERRED)
+  ) -> None:
     self._mediation = mediation
     self._timeout = timeout
     self._rp_id = rp_id

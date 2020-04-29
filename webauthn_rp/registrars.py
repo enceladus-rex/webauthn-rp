@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple, Optional, Sequence, Union
+from typing import Any, NamedTuple, Optional
 
 from webauthn_rp.errors import UnimplementedError
 from webauthn_rp.types import (

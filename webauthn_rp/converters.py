@@ -2,7 +2,7 @@ import base64
 import json
 from enum import Enum
 from functools import singledispatch
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import cbor2
 from cryptography.hazmat.backends import default_backend
@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PublicKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from webauthn_rp.errors import (JSONConversionError, PublicKeyConversionError,
-                                UnimplementedError, ValidationError)
+                                UnimplementedError)
 from webauthn_rp.types import (CredentialPublicKey, EC2CredentialPublicKey,
                                EC2PublicKey, OKPCredentialPublicKey,
                                OKPPublicKey, PublicKey, PublicKeyCredential)
@@ -95,7 +95,7 @@ def cryptography_okp_public_key(
 
 
 def build_base_cose_dictionary(
-    credential_public_key: CredentialPublicKey) -> dict:
+    credential_public_key: CredentialPublicKey) -> Dict:
   d = {}
   d[1] = credential_public_key.kty.value
   if credential_public_key.kid is not None:
