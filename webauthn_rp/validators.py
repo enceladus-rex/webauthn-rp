@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import singledispatch
 from typing import Sequence, Union
 
 from webauthn_rp.errors import UnimplementedError, ValidationError
@@ -6,80 +7,41 @@ from webauthn_rp.types import (COSEAlgorithmIdentifier, COSEKeyType,
                                CredentialPublicKey, EC2CredentialPublicKey,
                                EC2Curve, OKPCredentialPublicKey, OKPCurve)
 
-
-def validate_kty(validator_ktys: Union[str, Sequence[str]],
-                 credential_public_key: CredentialPublicKey) -> None:
-  validator_ktys: Sequence[str] = [validator_ktys] if (  # type: ignore
-      type(validator_ktys) is str) else validator_ktys
-
-  for kty in validator_ktys:
-    if credential_public_key.kty.name == kty: return
-
-  raise ValidationError(
-      'Invalid public key alg type {}, expecting one of {}'.format(
-          credential_public_key.kty.name, validator_ktys))
+__all__ = [
+    'validate',
+    'validate_ec2_public_key',
+    'validate_okp_public_key',
+]
 
 
-def validate_key_ops(validator_key_ops: Union[str, Sequence[str]],
-                     credential_public_key: CredentialPublicKey) -> None:
-  validator_key_ops: Sequence[str] = [validator_key_ops] if (  # type: ignore
-      type(validator_key_ops) is str) else validator_key_ops
-  if len(validator_key_ops) == 0: return
-  if credential_public_key.key_ops is None:
-    raise ValidationError('Found no key ops')
-
-  ops = set(validator_key_ops)
-  for kop in credential_public_key.key_ops:
-    if kop.name in ops: ops.remove(kop.name)
-
-  if ops:
-    raise ValidationError('Missing key ops {}'.format(list(ops)))
+@singledispatch
+def validate(credential_public_key: CredentialPublicKey) -> None:
+  raise UnimplementedError('Must implement credential public key validator')
 
 
-def ecdsa_validator(credential_public_key: EC2CredentialPublicKey,
-                    sign: bool = False,
-                    verify: bool = False) -> None:
-  validate_kty('EC2', credential_public_key)
-  ops = []
-  if sign: ops.append('SIGN')
-  if verify: ops.append('VERIFY')
-  validate_key_ops(ops, credential_public_key)
+@validate.register(EC2CredentialPublicKey)
+def validate_ec2_public_key(
+    credential_public_key: EC2CredentialPublicKey) -> None:
+  assert credential_public_key.kty.name == 'EC2'
   assert credential_public_key.crv is not None
+  assert credential_public_key.alg is not None
+
   if credential_public_key.crv.name not in {'P_256', 'P_384', 'P_521'}:
-    raise ValidationError('Invalid EC2 curve for key type')
+    raise ValidationError('Invalid curve for key type')
+
+  if credential_public_key.alg.name not in {'ES256', 'ES384', 'ES512'}:
+    raise ValidationError('Invalid alg for key type')
 
 
-def eddsa_validator(credential_public_key: OKPCredentialPublicKey,
-                    sign: bool = False,
-                    verify: bool = False) -> None:
-  validate_kty('OKP', credential_public_key)
-  ops = []
-  if sign: ops.append('SIGN')
-  if verify: ops.append('VERIFY')
-  validate_key_ops(ops, credential_public_key)
+@validate.register(OKPCredentialPublicKey)
+def validate_okp_public_key(
+    credential_public_key: OKPCredentialPublicKey) -> None:
+  assert credential_public_key.kty.name == 'OKP'
   assert credential_public_key.crv is not None
+  assert credential_public_key.alg is not None
+
   if credential_public_key.crv.name not in {'ED25519', 'ED448'}:
-    raise ValidationError('Invalid OKP curve for key type')
+    raise ValidationError('Invalid curve for key type')
 
-
-class CredentialPublicKeyValidator(Enum):
-  ES256 = ecdsa_validator
-  ES384 = ecdsa_validator
-  ES512 = ecdsa_validator
-
-  EDDSA = eddsa_validator
-
-
-def validate(credential_public_key: CredentialPublicKey,
-             sign: bool = False,
-             verify: bool = False) -> None:
-  if credential_public_key.alg is None: return
-  try:
-    validator = getattr(CredentialPublicKeyValidator,
-                        credential_public_key.alg.name)
-  except AttributeError:
-    raise UnimplementedError(
-        'Unsupported credential public key alg enum name {}'.format(
-            credential_public_key.alg.name))
-
-  validator(credential_public_key, sign=sign, verify=verify)
+  if credential_public_key.alg.name not in {'EDDSA'}:
+    raise ValidationError('Invalid alg for key type')

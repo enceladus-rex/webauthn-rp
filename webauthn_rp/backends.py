@@ -27,6 +27,10 @@ from webauthn_rp.types import (
 from webauthn_rp.utils import url_base64_decode
 from webauthn_rp.verifiers import verify
 
+__all__ = [
+    'CredentialsBackend',
+]
+
 
 class CredentialsBackend:
   def __init__(self, registrar: CredentialsRegistrar) -> None:

@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from webauthn_rp.constants import *
 from webauthn_rp.converters import (_build_base_cose_dictionary,
-                                    cose_key_from_ec2, cose_key_from_okp,
+                                    cose_ec2_public_key, cose_okp_public_key,
                                     cryptography_ec2_public_key,
                                     cryptography_okp_public_key, jsonify)
 from webauthn_rp.errors import JSONConversionError, PublicKeyConversionError
@@ -324,17 +324,17 @@ def test_cryptography_okp_public_key_ed448():
   assert ed448_public_number == converted_public_number
 
 
-def test_cose_key_from_ec2():
+def test_cose_ec2_public_key():
   for crv in EC2Curve.Value:
     ec2_key = generate_ec2_credential_public_key(crv)
-    cose_key = cose_key_from_ec2(ec2_key)
+    cose_key = cose_ec2_public_key(ec2_key)
     parsed_ec2_key = parse_cose_key(cose_key)
     assert_objects_equal(ec2_key, parsed_ec2_key)
 
 
-def test_cose_key_from_okp():
+def test_cose_okp_public_key():
   for crv in OKPCurve.Value:
     okp_key = generate_okp_credential_public_key(crv)
-    cose_key = cose_key_from_okp(okp_key)
+    cose_key = cose_okp_public_key(okp_key)
     parsed_okp_key = parse_cose_key(cose_key)
     assert_objects_equal(okp_key, parsed_okp_key)

@@ -8,6 +8,11 @@ from webauthn_rp.types import (
     CredentialRequestOptions, PublicKey, PublicKeyCredential,
     PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity, TrustedPath)
 
+__all__ = [
+    'CredentialData',
+    'CredentialsRegistrar',
+]
+
 
 class CredentialData(NamedTuple):
   credential_public_key: CredentialPublicKey

@@ -34,7 +34,25 @@ from webauthn_rp.types import (
 from webauthn_rp.utils import curve_coordinate_byte_length
 from webauthn_rp.validators import validate
 
-SCHEME_DEFAULT_PORT_MAPPING = {
+__all__ = [
+    'parse_origin',
+    'parse_public_key_credential',
+    'parse_okp_public_key',
+    'parse_ec2_public_key',
+    'parse_extensions',
+    'parse_packed_attestation_statement',
+    'parse_tpm_attestation_statement',
+    'parse_android_key_attestation_statement',
+    'parse_android_safetynet_attestation_statement',
+    'parse_fido_u2f_attestation_statement',
+    'parse_none_attestation_statement',
+    'parse_client_data',
+    'parse_cose_key',
+    'parse_authenticator_data',
+    'parse_attestation',
+]
+
+_SCHEME_DEFAULT_PORT_MAPPING = {
     'http': 80,
     'https': 443,
 }
@@ -59,7 +77,7 @@ def parse_origin(opaque_origin: str) -> Origin:
   scheme = url.scheme
   hostname = url.netloc
   if url.port is None:
-    port = SCHEME_DEFAULT_PORT_MAPPING[scheme]
+    port = _SCHEME_DEFAULT_PORT_MAPPING[scheme]
   else:
     port = url.port
 
@@ -275,7 +293,7 @@ def parse_ec2_public_key(
   )
 
 
-class CredentialPublicKeyParser(Enum):
+class _CredentialPublicKeyParser(Enum):
   OKP = parse_okp_public_key
   EC2 = parse_ec2_public_key
 
@@ -510,7 +528,7 @@ def parse_none_attestation_statement(
   return NoneAttestationStatement()
 
 
-class AttestationStatementParser(Enum):
+class _AttestationStatementParser(Enum):
   PACKED = parse_packed_attestation_statement
   TPM = parse_tpm_attestation_statement
   ANDROID_KEY = parse_android_key_attestation_statement
@@ -585,7 +603,7 @@ def parse_cose_key(
     raise ParserError('Invalid or missing COSE key type encountered')
 
   try:
-    cpk_parser = getattr(CredentialPublicKeyParser,
+    cpk_parser = getattr(_CredentialPublicKeyParser,
                          cose_key_type.name)  # type: ignore
   except AttributeError:
     raise ParserError('Parser not supported for key type {}'.format(
@@ -601,10 +619,7 @@ def _read_bytes(bio: io.BytesIO, n: int) -> bytes:
   return x
 
 
-def parse_authenticator_data(
-    auth_data: bytes,
-    fmt: Optional[AttestationStatementFormatIdentifier] = None
-) -> AuthenticatorData:
+def parse_authenticator_data(auth_data: bytes) -> AuthenticatorData:
   if len(auth_data) < 37:
     raise ParserError('Attestation auth data must be at least 35 bytes')
 
@@ -703,7 +718,7 @@ def parse_attestation(
     if type(auth_data) is not bytes:
       raise ParserError('Attestation auth data should be bytes')
 
-    authenticator_data = parse_authenticator_data(auth_data, asfi)
+    authenticator_data = parse_authenticator_data(auth_data)
   except KeyError as e:
     raise ParserError('Missing key in attestation ({})'.format(str(e)))
 
@@ -711,7 +726,7 @@ def parse_attestation(
     raise ParserError('attStmt must be a dictionary')
 
   try:
-    as_parser = getattr(AttestationStatementParser, asfi.name)
+    as_parser = getattr(_AttestationStatementParser, asfi.name)
     attestation_statement = as_parser(att_stmt)
   except AttributeError:
     raise ParserError('Unsupported attestation statement {}'.format(asfi.name))

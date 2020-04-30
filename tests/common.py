@@ -15,7 +15,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ec import (
     ECDSA, SECP256R1, SECP384R1, SECP521R1, EllipticCurve,
-    EllipticCurvePrivateKey, EllipticCurvePublicNumbers, generate_private_key)
+    EllipticCurvePrivateKey, EllipticCurvePublicKey,
+    EllipticCurvePublicNumbers, generate_private_key)
 from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PrivateKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat

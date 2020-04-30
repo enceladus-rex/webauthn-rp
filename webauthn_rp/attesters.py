@@ -27,6 +27,13 @@ from webauthn_rp.types import (AndroidKeyAttestationStatement,
                                NoneAttestationStatement, TrustedPath)
 from webauthn_rp.utils import ec2_hash_algorithm
 
+__all__ = [
+    'attest',
+    'attest_fido_u2f',
+    'attest_android_key',
+    'attest_none',
+]
+
 
 @singledispatch
 def attest(att_stmt: AttestationStatement, att_obj: AttestationObject,

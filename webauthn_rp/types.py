@@ -11,6 +11,78 @@ from cryptography.x509 import Certificate
 
 from webauthn_rp.utils import camel_to_snake_case
 
+__all__ = [
+    'EC2PublicKey',
+    'OKPPublicKey',
+    'EC2PrivateKey',
+    'OKPPrivateKey',
+    'PublicKey',
+    'PrivateKey',
+    'TrustedPath',
+    'JSONValue',
+    'Origin',
+    'PublicKeyCredentialEntity',
+    'PublicKeyCredentialRpEntity',
+    'PublicKeyCredentialUserEntity',
+    'PublicKeyCredentialType',
+    'AuthenticatorTransport',
+    'COSEAlgorithmIdentifier',
+    'PublicKeyCredentialParameters',
+    'PublicKeyCredentialDescriptor',
+    'AuthenticatorAttachment',
+    'AttestationConveyancePreference',
+    'UserVerificationRequirement',
+    'TxAuthGenericArg',
+    'Coordinates',
+    'AAGUID',
+    'AuthenticatorSelectionList',
+    'AuthenticationExtensionsSupported',
+    'UvmEntry',
+    'UvmEntries',
+    'AuthenticatorBiometricPerfBounds',
+    'ExtensionIdentifier',
+    'AuthenticationExtensionsClientInputs',
+    'AuthenticationExtensionsClientOutputs',
+    'AuthenticatorSelectionCriteria',
+    'PublicKeyCredentialCreationOptions',
+    'PublicKeyCredentialRequestOptions',
+    'CredentialCreationOptions',
+    'CredentialMediationRequirement',
+    'CredentialRequestOptions',
+    'AuthenticatorResponse',
+    'AuthenticatorAttestationResponse',
+    'AuthenticatorAssertionResponse',
+    'Credential',
+    'PublicKeyCredential',
+    'TokenBindingStatus',
+    'TokenBinding',
+    'CollectedClientData',
+    'AuthenticatorDataFlag',
+    'COSEKeyType',
+    'COSEKeyOperation',
+    'EC2Curve',
+    'OKPCurve',
+    'CredentialPublicKey',
+    'EC2CredentialPublicKey',
+    'OKPCredentialPublicKey',
+    'AttestedCredentialData',
+    'AuthenticatorData',
+    'AttestationStatementFormatIdentifier',
+    'AttestationType',
+    'AttestationStatement',
+    'PackedAttestationStatement',
+    'PackedX509AttestationStatement',
+    'PackedECDAAAttestationStatement',
+    'TPMAttestationStatement',
+    'TPMX509AttestationStatement',
+    'TPMECDAAAttestationStatement',
+    'AndroidKeyAttestationStatement',
+    'AndroidSafetyNetAttestationStatement',
+    'FIDOU2FAttestationStatement',
+    'NoneAttestationStatement',
+    'AttestationObject',
+]
+
 EC2PublicKey = Union[EllipticCurvePublicKey]
 OKPPublicKey = Union[Ed25519PublicKey, Ed448PublicKey]
 
@@ -20,6 +92,8 @@ OKPPrivateKey = Union[Ed25519PrivateKey, Ed448PrivateKey]
 PublicKey = Union[EC2PublicKey, OKPPublicKey]
 PrivateKey = Union[EC2PrivateKey, OKPPrivateKey]
 TrustedPath = Optional[Sequence[Certificate]]
+
+JSONValue = Union[dict, list, bool, int, float, str, None]
 
 
 class Origin(NamedTuple):
@@ -216,7 +290,7 @@ class AuthenticatorTransport(Enum):
   INTERNAL = 'internal'
 
 
-class NameValueEnumsContainer(type):
+class _NameValueEnumsContainer(type):
   """
   A metaclass used to enable Enums that can take on a string and integer type
   for a name and value respectively.
@@ -224,8 +298,9 @@ class NameValueEnumsContainer(type):
   Name: Enum
   Value: Enum
 
-  def __call__(cls: 'NameValueEnumsContainer',
-               value: Union[int, str]) -> Enum:  # type: ignore
+  def __call__(
+      cls: '_NameValueEnumsContainer',  # type: ignore
+      value: Union[int, str]) -> Enum:
     if type(value) is int:
       return cls.Value(value)  # type: ignore
     elif type(value) is str:
@@ -234,7 +309,7 @@ class NameValueEnumsContainer(type):
       raise KeyError('Invalid key {}'.format(value))
 
 
-class COSEAlgorithmIdentifier(metaclass=NameValueEnumsContainer):
+class COSEAlgorithmIdentifier(metaclass=_NameValueEnumsContainer):
   """
   A COSEAlgorithmIdentifier's value is a number identifying a cryptographic
   algorithm. The algorithm identifiers SHOULD be values registered in the
@@ -1159,7 +1234,7 @@ class AuthenticatorDataFlag(Enum):
   ED = 1 << 7
 
 
-class COSEKeyType(metaclass=NameValueEnumsContainer):
+class COSEKeyType(metaclass=_NameValueEnumsContainer):
   """
   A metaclass for the COSEKeyOperation Name and Value Enums.
   
@@ -1187,7 +1262,7 @@ class COSEKeyType(metaclass=NameValueEnumsContainer):
     SYMMETRIC = 4
 
 
-class COSEKeyOperation(metaclass=NameValueEnumsContainer):
+class COSEKeyOperation(metaclass=_NameValueEnumsContainer):
   """
   A metaclass for the COSEKeyOperation Name and Value Enums.
 
@@ -1239,7 +1314,7 @@ class COSEKeyOperation(metaclass=NameValueEnumsContainer):
     MAC_VERIFY = 10
 
 
-class EC2Curve(metaclass=NameValueEnumsContainer):
+class EC2Curve(metaclass=_NameValueEnumsContainer):
   """
   A metaclass for the EC2Curve Name and Value Enums.
 
@@ -1264,7 +1339,7 @@ class EC2Curve(metaclass=NameValueEnumsContainer):
     P_521 = 3
 
 
-class OKPCurve(metaclass=NameValueEnumsContainer):
+class OKPCurve(metaclass=_NameValueEnumsContainer):
   """
   A metaclass for the OKPCurve Name and Value Enums.
 

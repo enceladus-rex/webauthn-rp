@@ -14,11 +14,19 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from webauthn_rp.errors import (JSONConversionError, PublicKeyConversionError,
                                 UnimplementedError)
 from webauthn_rp.types import (CredentialPublicKey, EC2CredentialPublicKey,
-                               EC2PublicKey, OKPCredentialPublicKey,
+                               EC2PublicKey, JSONValue, OKPCredentialPublicKey,
                                OKPPublicKey, PublicKey, PublicKeyCredential)
 from webauthn_rp.utils import snake_to_camel_case
 
-JSONValue = Union[dict, list, bool, int, float, str, None]
+__all__ = [
+    'jsonify',
+    'cryptography_public_key',
+    'cryptography_ec2_public_key',
+    'cryptography_okp_public_key',
+    'cose_key',
+    'cose_ec2_public_key',
+    'cose_okp_public_key',
+]
 
 
 @singledispatch
@@ -115,7 +123,8 @@ def cose_key(credential_public_key: CredentialPublicKey) -> bytes:
 
 
 @cose_key.register(EC2CredentialPublicKey)
-def cose_key_from_ec2(credential_public_key: EC2CredentialPublicKey) -> bytes:
+def cose_ec2_public_key(
+    credential_public_key: EC2CredentialPublicKey) -> bytes:
   d = _build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x
@@ -124,7 +133,8 @@ def cose_key_from_ec2(credential_public_key: EC2CredentialPublicKey) -> bytes:
 
 
 @cose_key.register(OKPCredentialPublicKey)
-def cose_key_from_okp(credential_public_key: OKPCredentialPublicKey) -> bytes:
+def cose_okp_public_key(
+    credential_public_key: OKPCredentialPublicKey) -> bytes:
   d = _build_base_cose_dictionary(credential_public_key)
   d[-1] = credential_public_key.crv.value
   d[-2] = credential_public_key.x

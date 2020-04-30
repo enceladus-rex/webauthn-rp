@@ -12,6 +12,12 @@ from webauthn_rp.types import (COSEAlgorithmIdentifier, CredentialPublicKey,
                                OKPCredentialPublicKey, OKPCurve, OKPPublicKey)
 from webauthn_rp.utils import ec2_hash_algorithm
 
+__all__ = [
+    'verify',
+    'verify_ec2_public_key',
+    'verify_okp_public_key',
+]
+
 
 @singledispatch
 def verify(credential_public_key: CredentialPublicKey, signature: bytes,
@@ -21,9 +27,8 @@ def verify(credential_public_key: CredentialPublicKey, signature: bytes,
 
 
 @verify.register(EC2CredentialPublicKey)
-def verify_ec2_credential_public_key(
-    credential_public_key: EC2CredentialPublicKey, signature: bytes,
-    data: bytes) -> None:
+def verify_ec2_public_key(credential_public_key: EC2CredentialPublicKey,
+                          signature: bytes, data: bytes) -> None:
   public_key = cast(EC2PublicKey,
                     cryptography_public_key(credential_public_key))
   if credential_public_key.alg is None:
@@ -38,9 +43,8 @@ def verify_ec2_credential_public_key(
 
 
 @verify.register(OKPCredentialPublicKey)
-def verify_okp_credential_public_key(
-    credential_public_key: OKPCredentialPublicKey, signature: bytes,
-    data: bytes) -> None:
+def verify_okp_public_key(credential_public_key: OKPCredentialPublicKey,
+                          signature: bytes, data: bytes) -> None:
   public_key = cast(OKPPublicKey,
                     cryptography_public_key(credential_public_key))
 

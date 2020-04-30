@@ -4,6 +4,14 @@ from pyasn1.type.tag import Tag, tagClassContext, tagFormatSimple
 from pyasn1.type.univ import (Boolean, Enumerated, Integer, Null, OctetString,
                               Sequence, SetOf)
 
+__all__ = [
+    'SecurityLevel',
+    'VerifiedBootState',
+    'RootOfTrust',
+    'AuthorizationList',
+    'KeyDescription',
+]
+
 
 class SecurityLevel(Enumerated):
   componentType = NamedValues(Software=0, TrustedEnvironment=1, StrongBox=2)

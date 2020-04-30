@@ -11,6 +11,11 @@ from webauthn_rp.types import (
     PublicKeyCredentialRpEntity, PublicKeyCredentialUserEntity,
     UserVerificationRequirement)
 
+__all__ = [
+    'CredentialCreationOptionsBuilder',
+    'CredentialRequestOptionsBuilder',
+]
+
 
 class CredentialCreationOptionsBuilder:
   def __init__(

@@ -13,7 +13,16 @@ from webauthn_rp.constants import (ED448_COORDINATE_BYTE_LENGTH,
                                    P_521_COORDINATE_BYTE_LENGTH)
 from webauthn_rp.errors import ValidationError
 
-CURVE_COORDINATE_BYTE_LENGTHS = {
+__all__ = [
+    'snake_to_camel_case',
+    'camel_to_snake_case',
+    'url_base64_encode',
+    'url_base64_decode',
+    'curve_coordinate_byte_length',
+    'ec2_hash_algorithm',
+]
+
+_CURVE_COORDINATE_BYTE_LENGTHS = {
     'P_256': P_256_COORDINATE_BYTE_LENGTH,
     'P_384': P_384_COORDINATE_BYTE_LENGTH,
     'P_521': P_521_COORDINATE_BYTE_LENGTH,
@@ -21,7 +30,7 @@ CURVE_COORDINATE_BYTE_LENGTHS = {
     'ED448': ED448_COORDINATE_BYTE_LENGTH,
 }
 
-EC2_HASH_ALGORITHMS = {
+_EC2_HASH_ALGORITHMS = {
     'ES256': SHA256,
     'ES384': SHA384,
     'ES512': SHA512,
@@ -59,13 +68,13 @@ def curve_coordinate_byte_length(
     crv: Union['types.EC2Curve.Name', 'types.EC2Curve.Value',
                'types.OKPCurve.Name', 'types.OKPCurve.Value']
 ) -> int:
-  assert crv.name in CURVE_COORDINATE_BYTE_LENGTHS, 'Unexpected curve'
-  return CURVE_COORDINATE_BYTE_LENGTHS[crv.name]
+  assert crv.name in _CURVE_COORDINATE_BYTE_LENGTHS, 'Unexpected curve'
+  return _CURVE_COORDINATE_BYTE_LENGTHS[crv.name]
 
 
 def ec2_hash_algorithm(
     alg: Union['types.COSEAlgorithmIdentifier.Name',
                'types.COSEAlgorithmIdentifier.Value']
 ) -> HashAlgorithm:
-  assert alg.name in EC2_HASH_ALGORITHMS, 'Invalid COSE algorithm'
-  return EC2_HASH_ALGORITHMS[alg.name]()
+  assert alg.name in _EC2_HASH_ALGORITHMS, 'Invalid COSE algorithm'
+  return _EC2_HASH_ALGORITHMS[alg.name]()
