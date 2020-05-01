@@ -298,7 +298,7 @@ class _NameValueEnumsContainer(type):
   Name: Enum
   Value: Enum
 
-  def __call__(
+  def __call__(  # type: ignore
       cls: '_NameValueEnumsContainer',  # type: ignore
       value: Union[int, str]) -> Enum:
     if type(value) is int:
