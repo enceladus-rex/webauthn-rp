@@ -226,4 +226,18 @@ def attest_none(
     att_stmt: NoneAttestationStatement, att_obj: AttestationObject,
     auth_data: bytes,
     client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
+  """Attest a NoneAttestationStatement.
+
+  Args:
+    att_stmt (NoneAttestationStatement): The attestation statment.
+    att_obj (AttestationObject): The attestation object.
+    auth_data (bytes): The raw authenticator data.
+    client_data_hash (bytes): The client data hash.
+
+  Returns:
+    The attestation type and trusted path.
+  
+  References:
+    * https://www.w3.org/TR/webauthn/#none-attestation
+  """
   return AttestationType.NONE, None
