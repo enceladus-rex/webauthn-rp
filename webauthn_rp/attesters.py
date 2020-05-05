@@ -39,6 +39,20 @@ __all__ = [
 def attest(att_stmt: AttestationStatement, att_obj: AttestationObject,
            auth_data: bytes,
            client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
+  """Attest an attestation object.
+
+  Args:
+    att_stmt (AttestationStatement): The attestation statment.
+    att_obj (AttestationObject): The attestation object.
+    auth_data (bytes): The raw authenticator data.
+    client_data_hash (bytes): The client data hash.
+
+  Returns:
+    The attestation type and trusted path.
+  
+  References:
+    * https://www.w3.org/TR/webauthn/#defined-attestation-formats
+  """
   raise UnimplementedError('{} attestation unimplemented'.format(
       type(att_stmt)))
 

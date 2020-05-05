@@ -49,7 +49,7 @@ __all__ = [
     'parse_client_data',
     'parse_cose_key',
     'parse_authenticator_data',
-    'parse_attestation',
+    'parse_attestation_object',
 ]
 
 _SCHEME_DEFAULT_PORT_MAPPING = {
@@ -692,7 +692,7 @@ def parse_authenticator_data(auth_data: bytes) -> AuthenticatorData:
   )
 
 
-def parse_attestation(
+def parse_attestation_object(
     attestation_object: bytes) -> Tuple[AttestationObject, Dict]:
   try:
     attestation_object_data = cbor2.loads(attestation_object)

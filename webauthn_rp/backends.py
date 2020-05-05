@@ -15,8 +15,9 @@ from webauthn_rp.errors import (
     OriginError, RegistrationError, RPIDError, RPIDHashError, RPNotFoundError,
     SignatureCountError, TokenBindingError, UserHandleError, UserIDError,
     UserPresenceError, UserVerificationError, WebAuthnRPError)
-from webauthn_rp.parsers import (parse_attestation, parse_authenticator_data,
-                                 parse_client_data, parse_origin)
+from webauthn_rp.parsers import (parse_attestation_object,
+                                 parse_authenticator_data, parse_client_data,
+                                 parse_origin)
 from webauthn_rp.registrars import CredentialsRegistrar
 from webauthn_rp.types import (
     AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
@@ -44,7 +45,7 @@ class CredentialsBackend:
     6. Parsing the JSON PublicKeyCredential using parse_public_key_credential.
     7. Finally calling CredentialsBackend.handle_credential_creation.
 
-  Attribute:
+  Attributes:
     registrar (CredentialsRegistrar): The RP credentials registrar.
   """
   def __init__(self, registrar: CredentialsRegistrar) -> None:
@@ -183,7 +184,8 @@ class CredentialsBackend:
           response.client_data_JSON).digest()
       rp_id_hash = hashlib.sha256(rp.id.encode('utf-8')).digest()
 
-      attestation, raw_att_obj = parse_attestation(response.attestation_object)
+      attestation, raw_att_obj = parse_attestation_object(
+          response.attestation_object)
       if attestation.auth_data.rp_id_hash != rp_id_hash:
         raise RPIDHashError('RP ID hash does not match')
 
@@ -234,7 +236,8 @@ class CredentialsBackend:
     """Handle options that'll be used to authenticate the user's credential.
 
     Args:
-      options (CredentialCreationOptions): The credential registration options.
+      options (CredentialRequestOptions): The credential authentication
+        options.
 
     Raises:
       RegistrationError: Could not register the options with the credentials

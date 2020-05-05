@@ -1920,7 +1920,7 @@ def test_parse_authenticator_data_error(data):
          }
      }))])
 def test_parse_attestation_success(data, expected):
-  assert_objects_equal(parse_attestation(data), expected)
+  assert_objects_equal(parse_attestation_object(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -2056,4 +2056,4 @@ def test_parse_attestation_success(data, expected):
 ])
 def test_parse_attestation_error(data):
   with pytest.raises((ParserError, DecodingError)):
-    parse_attestation(data)
+    parse_attestation_object(data)
