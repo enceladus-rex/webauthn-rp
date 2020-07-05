@@ -45,284 +45,330 @@ TEST_CREDENTIAL_PUBLIC_KEY = EC2CredentialPublicKey(
 
 
 class ExceptionCredentialsRegistrar(CredentialsRegistrar):
-  def register_creation_options(self,
-                                options: CredentialCreationOptions) -> Any:
-    raise Exception()
+    def register_creation_options(self,
+                                  options: CredentialCreationOptions) -> Any:
+        raise Exception()
 
-  def register_request_options(self, options: CredentialRequestOptions) -> Any:
-    raise Exception()
+    def register_request_options(self,
+                                 options: CredentialRequestOptions) -> Any:
+        raise Exception()
 
-  def register_credential_creation(
-      self,
-      credential: PublicKeyCredential,
-      att: AttestationObject,
-      att_type: AttestationType,
-      user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None) -> Any:
-    raise Exception()
+    def register_credential_creation(
+            self,
+            credential: PublicKeyCredential,
+            att: AttestationObject,
+            att_type: AttestationType,
+            user: PublicKeyCredentialUserEntity,
+            rp: PublicKeyCredentialRpEntity,
+            trusted_path: Optional[TrustedPath] = None) -> Any:
+        raise Exception()
 
-  def register_credential_request(self, credential: PublicKeyCredential,
-                                  authenticator_data: AuthenticatorData,
-                                  user: PublicKeyCredentialUserEntity,
-                                  rp: PublicKeyCredentialRpEntity) -> Any:
-    raise Exception()
+    def register_credential_request(self, credential: PublicKeyCredential,
+                                    authenticator_data: AuthenticatorData,
+                                    user: PublicKeyCredentialUserEntity,
+                                    rp: PublicKeyCredentialRpEntity) -> Any:
+        raise Exception()
 
-  def get_credential_data(self,
-                          credential_id: bytes) -> Optional[CredentialData]:
-    raise Exception()
+    def get_credential_data(self,
+                            credential_id: bytes) -> Optional[CredentialData]:
+        raise Exception()
 
 
 class SuccessCredentialsRegistrar(CredentialsRegistrar):
-  def register_creation_options(self,
-                                options: CredentialCreationOptions) -> Any:
-    pass
+    def register_creation_options(self,
+                                  options: CredentialCreationOptions) -> Any:
+        pass
 
-  def register_request_options(self, options: CredentialRequestOptions) -> Any:
-    pass
+    def register_request_options(self,
+                                 options: CredentialRequestOptions) -> Any:
+        pass
 
-  def register_credential_creation(
-      self,
-      credential: PublicKeyCredential,
-      att: AttestationObject,
-      att_type: AttestationType,
-      user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None) -> Any:
-    pass
+    def register_credential_creation(
+            self,
+            credential: PublicKeyCredential,
+            att: AttestationObject,
+            att_type: AttestationType,
+            user: PublicKeyCredentialUserEntity,
+            rp: PublicKeyCredentialRpEntity,
+            trusted_path: Optional[TrustedPath] = None) -> Any:
+        pass
 
-  def register_credential_request(self, credential: PublicKeyCredential,
-                                  authenticator_data: AuthenticatorData,
-                                  user: PublicKeyCredentialUserEntity,
-                                  rp: PublicKeyCredentialRpEntity) -> Any:
-    pass
+    def register_credential_request(self, credential: PublicKeyCredential,
+                                    authenticator_data: AuthenticatorData,
+                                    user: PublicKeyCredentialUserEntity,
+                                    rp: PublicKeyCredentialRpEntity) -> Any:
+        pass
 
-  def get_credential_data(self,
-                          credential_id: bytes) -> Optional[CredentialData]:
-    return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
+    def get_credential_data(self,
+                            credential_id: bytes) -> Optional[CredentialData]:
+        return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
 
 
 class ErrorCredentialsRegistrar(CredentialsRegistrar):
-  def register_creation_options(self,
-                                options: CredentialCreationOptions) -> Any:
-    return 'Error'
+    def register_creation_options(self,
+                                  options: CredentialCreationOptions) -> Any:
+        return 'Error'
 
-  def register_request_options(self, options: CredentialRequestOptions) -> Any:
-    return 'Error'
+    def register_request_options(self,
+                                 options: CredentialRequestOptions) -> Any:
+        return 'Error'
 
-  def register_credential_creation(
-      self,
-      credential: PublicKeyCredential,
-      att: AttestationObject,
-      att_type: AttestationType,
-      user: PublicKeyCredentialUserEntity,
-      rp: PublicKeyCredentialRpEntity,
-      trusted_path: Optional[TrustedPath] = None) -> Any:
-    return 'Error'
+    def register_credential_creation(
+            self,
+            credential: PublicKeyCredential,
+            att: AttestationObject,
+            att_type: AttestationType,
+            user: PublicKeyCredentialUserEntity,
+            rp: PublicKeyCredentialRpEntity,
+            trusted_path: Optional[TrustedPath] = None) -> Any:
+        return 'Error'
 
-  def register_credential_request(self, credential: PublicKeyCredential,
-                                  authenticator_data: AuthenticatorData,
-                                  user: PublicKeyCredentialUserEntity,
-                                  rp: PublicKeyCredentialRpEntity) -> Any:
-    return 'Error'
+    def register_credential_request(self, credential: PublicKeyCredential,
+                                    authenticator_data: AuthenticatorData,
+                                    user: PublicKeyCredentialUserEntity,
+                                    rp: PublicKeyCredentialRpEntity) -> Any:
+        return 'Error'
 
-  def get_credential_data(self,
-                          credential_id: bytes) -> Optional[CredentialData]:
-    return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
+    def get_credential_data(self,
+                            credential_id: bytes) -> Optional[CredentialData]:
+        return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
 
 
 def test_credentials_backend_options_registration():
-  backend = CredentialsBackend(ExceptionCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
+    backend = CredentialsBackend(ExceptionCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_creation_options(options=MagicMock())
+
+    with pytest.raises(RegistrationError):
+        backend.handle_request_options(options=MagicMock())
+
+    backend = CredentialsBackend(ErrorCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_creation_options(options=MagicMock())
+
+    with pytest.raises(RegistrationError):
+        backend.handle_request_options(options=MagicMock())
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
     backend.handle_creation_options(options=MagicMock())
-
-  with pytest.raises(RegistrationError):
     backend.handle_request_options(options=MagicMock())
-
-  backend = CredentialsBackend(ErrorCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
-    backend.handle_creation_options(options=MagicMock())
-
-  with pytest.raises(RegistrationError):
-    backend.handle_request_options(options=MagicMock())
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  backend.handle_creation_options(options=MagicMock())
-  backend.handle_request_options(options=MagicMock())
 
 
 def test_credentials_backend_creation_success():
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
 
-  challenge = b'challenge'
-  credential_id = b'credential-id'
+    challenge = b'challenge'
+    credential_id = b'credential-id'
 
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.create',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.create',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
 
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAttestationResponse(
-          client_data_JSON=client_data_JSON,
-          attestation_object=cbor2.dumps({
-              'authData':
-              authenticator_data(
-                  TEST_RP_ID_HASH, (AuthenticatorDataFlag.UP.value
-                                    | AuthenticatorDataFlag.AT.value
-                                    | AuthenticatorDataFlag.ED.value),
-                  b'\x00' * 4,
-                  attested_credential_data(
-                      b'z' * 16,
-                      len(credential_id),
-                      credential_id,
-                      cbor2.dumps({
-                          -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-                          -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-                          -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-                          1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-                          3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-                      }),
-                  ), cbor2.dumps({
-                      'appid': True,
-                  })),
-              'fmt':
-              AttestationStatementFormatIdentifier.NONE.value,
-              'attStmt': {}
-          })))
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAttestationResponse(
+            client_data_JSON=client_data_JSON,
+            attestation_object=cbor2.dumps({
+                'authData':
+                authenticator_data(
+                    TEST_RP_ID_HASH, (AuthenticatorDataFlag.UP.value
+                                      | AuthenticatorDataFlag.AT.value
+                                      | AuthenticatorDataFlag.ED.value),
+                    b'\x00' * 4,
+                    attested_credential_data(
+                        b'z' * 16,
+                        len(credential_id),
+                        credential_id,
+                        cbor2.dumps({
+                            -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                            -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                            -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                            1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                            3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+                        }),
+                    ), cbor2.dumps({
+                        'appid': True,
+                    })),
+                'fmt':
+                AttestationStatementFormatIdentifier.NONE.value,
+                'attStmt': {}
+            })))
 
-  expected_challenge = challenge
+    expected_challenge = challenge
 
-  backend.handle_credential_creation(
-      credential=public_key_credential,
-      user=TEST_USER,
-      rp=TEST_RP,
-      expected_challenge=expected_challenge,
-      expected_origin=TEST_RP_ORIGIN,
-  )
+    backend.handle_credential_creation(
+        credential=public_key_credential,
+        user=TEST_USER,
+        rp=TEST_RP,
+        expected_challenge=expected_challenge,
+        expected_origin=TEST_RP_ORIGIN,
+    )
 
 
 def test_credentials_backend_creation_error():
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
 
-  challenge = b'challenge'
-  credential_id = b'credential-id'
+    challenge = b'challenge'
+    credential_id = b'credential-id'
 
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.create',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.create',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
 
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAttestationResponse(
-          client_data_JSON=client_data_JSON,
-          attestation_object=cbor2.dumps({
-              'authData':
-              authenticator_data(
-                  TEST_RP_ID_HASH, (AuthenticatorDataFlag.UP.value
-                                    | AuthenticatorDataFlag.AT.value
-                                    | AuthenticatorDataFlag.ED.value),
-                  b'\x00' * 4,
-                  attested_credential_data(
-                      b'z' * 16,
-                      len(credential_id),
-                      credential_id,
-                      cbor2.dumps({
-                          -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-                          -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-                          -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-                          1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-                          3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-                      }),
-                  ), cbor2.dumps({
-                      'appid': True,
-                  })),
-              'fmt':
-              AttestationStatementFormatIdentifier.NONE.value,
-              'attStmt': {}
-          })))
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAttestationResponse(
+            client_data_JSON=client_data_JSON,
+            attestation_object=cbor2.dumps({
+                'authData':
+                authenticator_data(
+                    TEST_RP_ID_HASH, (AuthenticatorDataFlag.UP.value
+                                      | AuthenticatorDataFlag.AT.value
+                                      | AuthenticatorDataFlag.ED.value),
+                    b'\x00' * 4,
+                    attested_credential_data(
+                        b'z' * 16,
+                        len(credential_id),
+                        credential_id,
+                        cbor2.dumps({
+                            -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                            -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                            -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                            1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                            3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+                        }),
+                    ), cbor2.dumps({
+                        'appid': True,
+                    })),
+                'fmt':
+                AttestationStatementFormatIdentifier.NONE.value,
+                'attStmt': {}
+            })))
 
-  expected_challenge = challenge
+    expected_challenge = challenge
 
-  client_data_JSON_error = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
+    client_data_JSON_error = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
 
-  public_key_credential.response.client_data_JSON = client_data_JSON_error
-  with pytest.raises(ClientDataTypeError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    public_key_credential.response.client_data_JSON = client_data_JSON_error
+    with pytest.raises(ClientDataTypeError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  public_key_credential.response.client_data_JSON = client_data_JSON
-  with pytest.raises(ChallengeError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge + b'-altered',
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    public_key_credential.response.client_data_JSON = client_data_JSON
+    with pytest.raises(ChallengeError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge + b'-altered',
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  client_data_JSON_error = json_bytes({
-      'type': 'webauthn.create',
-      'challenge': '\x90\x91\x92',
-      'origin': TEST_RP_ORIGIN,
-  })
+    client_data_JSON_error = json_bytes({
+        'type': 'webauthn.create',
+        'challenge': '\x90\x91\x92',
+        'origin': TEST_RP_ORIGIN,
+    })
 
-  public_key_credential.response.client_data_JSON = client_data_JSON_error
-  with pytest.raises(DecodingError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    public_key_credential.response.client_data_JSON = client_data_JSON_error
+    with pytest.raises(DecodingError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  public_key_credential.response.client_data_JSON = client_data_JSON
-  with pytest.raises(OriginError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin='https://example.org/path',
-    )
+    public_key_credential.response.client_data_JSON = client_data_JSON
+    with pytest.raises(OriginError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin='https://example.org/path',
+        )
 
-  with pytest.raises(OriginError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin='https://',
-    )
+    with pytest.raises(OriginError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin='https://',
+        )
 
-  with pytest.raises(OriginError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin='https://alternative.org',
-    )
+    with pytest.raises(OriginError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin='https://alternative.org',
+        )
 
-  with pytest.raises(TokenBindingError):
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(status=TokenBindingStatus.PRESENT,
+                                       id='token-binding-id'))
+
+    client_data_JSON_token_binding = json_bytes({
+        'type': 'webauthn.create',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+        'tokenBinding': {
+            'status': 'supported'
+        }
+    })
+
+    public_key_credential.response.client_data_JSON = (
+        client_data_JSON_token_binding)
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(status=TokenBindingStatus.PRESENT,
+                                       id='token-binding-id'))
+
+    public_key_credential.response.client_data_JSON = json_bytes({
+        'type':
+        'webauthn.create',
+        'challenge':
+        base64s(challenge),
+        'origin':
+        TEST_RP_ORIGIN,
+        'tokenBinding': {
+            'status': 'present',
+            'id': 'token-binding-id'
+        }
+    })
+
     backend.handle_credential_creation(credential=public_key_credential,
                                        user=TEST_USER,
                                        rp=TEST_RP,
@@ -332,893 +378,856 @@ def test_credentials_backend_creation_error():
                                            status=TokenBindingStatus.PRESENT,
                                            id='token-binding-id'))
 
-  client_data_JSON_token_binding = json_bytes({
-      'type': 'webauthn.create',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-      'tokenBinding': {
-          'status': 'supported'
-      }
-  })
+    public_key_credential.response.client_data_JSON = json_bytes({
+        'type':
+        'webauthn.create',
+        'challenge':
+        base64s(challenge),
+        'origin':
+        TEST_RP_ORIGIN,
+        'tokenBinding': {
+            'status': 'present',
+            'id': 'token-binding-id-invalid'
+        }
+    })
 
-  public_key_credential.response.client_data_JSON = (
-      client_data_JSON_token_binding)
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_creation(credential=public_key_credential,
-                                       user=TEST_USER,
-                                       rp=TEST_RP,
-                                       expected_challenge=expected_challenge,
-                                       expected_origin=TEST_RP_ORIGIN,
-                                       token_binding=TokenBinding(
-                                           status=TokenBindingStatus.PRESENT,
-                                           id='token-binding-id'))
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(status=TokenBindingStatus.PRESENT,
+                                       id='token-binding-id'))
 
-  public_key_credential.response.client_data_JSON = json_bytes({
-      'type':
-      'webauthn.create',
-      'challenge':
-      base64s(challenge),
-      'origin':
-      TEST_RP_ORIGIN,
-      'tokenBinding': {
-          'status': 'present',
-          'id': 'token-binding-id'
-      }
-  })
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  backend.handle_credential_creation(credential=public_key_credential,
-                                     user=TEST_USER,
-                                     rp=TEST_RP,
-                                     expected_challenge=expected_challenge,
-                                     expected_origin=TEST_RP_ORIGIN,
-                                     token_binding=TokenBinding(
-                                         status=TokenBindingStatus.PRESENT,
-                                         id='token-binding-id'))
+    public_key_credential.response.client_data_JSON = client_data_JSON
 
-  public_key_credential.response.client_data_JSON = json_bytes({
-      'type':
-      'webauthn.create',
-      'challenge':
-      base64s(challenge),
-      'origin':
-      TEST_RP_ORIGIN,
-      'tokenBinding': {
-          'status': 'present',
-          'id': 'token-binding-id-invalid'
-      }
-  })
+    public_key_credential_error = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAttestationResponse(
+            client_data_JSON=client_data_JSON,
+            attestation_object=cbor2.dumps({
+                'authData':
+                authenticator_data(
+                    hashlib.sha256(b'invalid').digest(),
+                    (AuthenticatorDataFlag.UP.value
+                     | AuthenticatorDataFlag.AT.value
+                     | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
+                    attested_credential_data(
+                        b'z' * 16,
+                        len(credential_id),
+                        credential_id,
+                        cbor2.dumps({
+                            -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                            -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                            -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                            1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                            3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+                        }),
+                    ), cbor2.dumps({
+                        'appid': True,
+                    })),
+                'fmt':
+                AttestationStatementFormatIdentifier.NONE.value,
+                'attStmt': {}
+            })))
 
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_creation(credential=public_key_credential,
-                                       user=TEST_USER,
-                                       rp=TEST_RP,
-                                       expected_challenge=expected_challenge,
-                                       expected_origin=TEST_RP_ORIGIN,
-                                       token_binding=TokenBinding(
-                                           status=TokenBindingStatus.PRESENT,
-                                           id='token-binding-id'))
+    with pytest.raises(RPIDHashError):
+        backend.handle_credential_creation(
+            credential=public_key_credential_error,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    public_key_credential_error = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAttestationResponse(
+            client_data_JSON=client_data_JSON,
+            attestation_object=cbor2.dumps({
+                'authData':
+                authenticator_data(
+                    TEST_RP_ID_HASH, (AuthenticatorDataFlag.AT.value
+                                      | AuthenticatorDataFlag.ED.value),
+                    b'\x00' * 4,
+                    attested_credential_data(
+                        b'z' * 16,
+                        len(credential_id),
+                        credential_id,
+                        cbor2.dumps({
+                            -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                            -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                            -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                            1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                            3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+                        }),
+                    ), cbor2.dumps({
+                        'appid': True,
+                    })),
+                'fmt':
+                AttestationStatementFormatIdentifier.NONE.value,
+                'attStmt': {}
+            })))
 
-  public_key_credential.response.client_data_JSON = client_data_JSON
+    with pytest.raises(UserPresenceError):
+        backend.handle_credential_creation(
+            credential=public_key_credential_error,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  public_key_credential_error = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAttestationResponse(
-          client_data_JSON=client_data_JSON,
-          attestation_object=cbor2.dumps({
-              'authData':
-              authenticator_data(
-                  hashlib.sha256(b'invalid').digest(),
-                  (AuthenticatorDataFlag.UP.value
-                   | AuthenticatorDataFlag.AT.value
-                   | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
-                  attested_credential_data(
-                      b'z' * 16,
-                      len(credential_id),
-                      credential_id,
-                      cbor2.dumps({
-                          -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-                          -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-                          -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-                          1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-                          3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-                      }),
-                  ), cbor2.dumps({
-                      'appid': True,
-                  })),
-              'fmt':
-              AttestationStatementFormatIdentifier.NONE.value,
-              'attStmt': {}
-          })))
+    public_key_credential_error = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAttestationResponse(
+            client_data_JSON=client_data_JSON,
+            attestation_object=cbor2.dumps({
+                'authData':
+                authenticator_data(
+                    TEST_RP_ID_HASH, (AuthenticatorDataFlag.UP.value
+                                      | AuthenticatorDataFlag.AT.value
+                                      | AuthenticatorDataFlag.ED.value),
+                    b'\x00' * 4,
+                    attested_credential_data(
+                        b'z' * 16,
+                        len(credential_id),
+                        credential_id,
+                        cbor2.dumps({
+                            -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                            -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                            -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                            1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                            3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+                        }),
+                    ), cbor2.dumps({
+                        'appid': True,
+                    })),
+                'fmt':
+                AttestationStatementFormatIdentifier.NONE.value,
+                'attStmt': {}
+            })))
 
-  with pytest.raises(RPIDHashError):
-    backend.handle_credential_creation(
-        credential=public_key_credential_error,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    with pytest.raises(UserVerificationError):
+        backend.handle_credential_creation(
+            credential=public_key_credential_error,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            require_user_verification=True,
+        )
 
-  public_key_credential_error = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAttestationResponse(
-          client_data_JSON=client_data_JSON,
-          attestation_object=cbor2.dumps({
-              'authData':
-              authenticator_data(
-                  TEST_RP_ID_HASH, (AuthenticatorDataFlag.AT.value
-                                    | AuthenticatorDataFlag.ED.value),
-                  b'\x00' * 4,
-                  attested_credential_data(
-                      b'z' * 16,
-                      len(credential_id),
-                      credential_id,
-                      cbor2.dumps({
-                          -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-                          -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-                          -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-                          1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-                          3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-                      }),
-                  ), cbor2.dumps({
-                      'appid': True,
-                  })),
-              'fmt':
-              AttestationStatementFormatIdentifier.NONE.value,
-              'attStmt': {}
-          })))
+    with pytest.raises(ExtensionError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            expected_extensions={ExtensionIdentifier.TX_AUTH_SIMPLE})
 
-  with pytest.raises(UserPresenceError):
-    backend.handle_credential_creation(
-        credential=public_key_credential_error,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    backend = CredentialsBackend(ExceptionCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
-  public_key_credential_error = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAttestationResponse(
-          client_data_JSON=client_data_JSON,
-          attestation_object=cbor2.dumps({
-              'authData':
-              authenticator_data(
-                  TEST_RP_ID_HASH, (AuthenticatorDataFlag.UP.value
-                                    | AuthenticatorDataFlag.AT.value
-                                    | AuthenticatorDataFlag.ED.value),
-                  b'\x00' * 4,
-                  attested_credential_data(
-                      b'z' * 16,
-                      len(credential_id),
-                      credential_id,
-                      cbor2.dumps({
-                          -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-                          -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-                          -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-                          1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-                          3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-                      }),
-                  ), cbor2.dumps({
-                      'appid': True,
-                  })),
-              'fmt':
-              AttestationStatementFormatIdentifier.NONE.value,
-              'attStmt': {}
-          })))
-
-  with pytest.raises(UserVerificationError):
-    backend.handle_credential_creation(
-        credential=public_key_credential_error,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        require_user_verification=True,
-    )
-
-  with pytest.raises(ExtensionError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        expected_extensions={ExtensionIdentifier.TX_AUTH_SIMPLE})
-
-  backend = CredentialsBackend(ExceptionCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
-
-  backend = CredentialsBackend(ErrorCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
-    backend.handle_credential_creation(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    backend = CredentialsBackend(ErrorCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_credential_creation(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
 
 
 def test_credentials_backend_request_success():
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
 
-  challenge = b'challenge'
-  credential_id = b'credential-id'
-  auth_data = authenticator_data(
-      TEST_RP_ID_HASH,
-      (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
-       | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
-      attested_credential_data(
-          b'z' * 16,
-          len(credential_id),
-          credential_id,
-          cbor2.dumps({
-              -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-              -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-              -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-              1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-              3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-          }),
-      ), cbor2.dumps({
-          'appid': True,
-      }))
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
+    challenge = b'challenge'
+    credential_id = b'credential-id'
+    auth_data = authenticator_data(
+        TEST_RP_ID_HASH,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+         | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
+        attested_credential_data(
+            b'z' * 16,
+            len(credential_id),
+            credential_id,
+            cbor2.dumps({
+                -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+            }),
+        ), cbor2.dumps({
+            'appid': True,
+        }))
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
 
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
 
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
 
-  expected_challenge = challenge
+    expected_challenge = challenge
 
-  backend.handle_credential_request(
-      credential=public_key_credential,
-      user=TEST_USER,
-      rp=TEST_RP,
-      expected_challenge=expected_challenge,
-      expected_origin=TEST_RP_ORIGIN,
-  )
+    backend.handle_credential_request(
+        credential=public_key_credential,
+        user=TEST_USER,
+        rp=TEST_RP,
+        expected_challenge=expected_challenge,
+        expected_origin=TEST_RP_ORIGIN,
+    )
 
 
 def test_credentials_backend_request_error():
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
 
-  challenge = b'challenge'
-  credential_id = b'credential-id'
-  auth_data = authenticator_data(
-      TEST_RP_ID_HASH,
-      (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
-       | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
-      attested_credential_data(
-          b'z' * 16,
-          len(credential_id),
-          credential_id,
-          cbor2.dumps({
-              -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-              -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-              -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-              1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-              3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-          }),
-      ), cbor2.dumps({
-          'appid': True,
-      }))
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
+    challenge = b'challenge'
+    credential_id = b'credential-id'
+    auth_data = authenticator_data(
+        TEST_RP_ID_HASH,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+         | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
+        attested_credential_data(
+            b'z' * 16,
+            len(credential_id),
+            credential_id,
+            cbor2.dumps({
+                -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+            }),
+        ), cbor2.dumps({
+            'appid': True,
+        }))
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
 
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
 
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
 
-  expected_challenge = challenge
+    expected_challenge = challenge
 
-  with pytest.raises(CredentialNotAllowedError):
+    with pytest.raises(CredentialNotAllowedError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            allow_credentials=[
+                PublicKeyCredentialDescriptor(
+                    type=PublicKeyCredentialType.PUBLIC_KEY,
+                    id=b'cred-id',
+                )
+            ])
+
+    backend = CredentialsBackend(ExceptionCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def get_credential_data(
+                self, credential_id: bytes) -> Optional[CredentialData]:
+            return None
+
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(CredentialDataError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def get_credential_data(
+                self, credential_id: bytes) -> Optional[CredentialData]:
+            return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY,
+                                  0,
+                                  user_entity=PublicKeyCredentialUserEntity(
+                                      name='user',
+                                      id=b'user-id-mismatch',
+                                      display_name='username'))
+
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(UserIDError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(UserHandleError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(RPNotFoundError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def get_credential_data(
+                self, credential_id: bytes) -> Optional[CredentialData]:
+            return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY,
+                                  0,
+                                  TEST_USER,
+                                  rp_entity=PublicKeyCredentialRpEntity(
+                                      name='example.com', id='mismatch'))
+
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(RPIDError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def get_credential_data(
+                self, credential_id: bytes) -> Optional[CredentialData]:
+            return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER,
+                                  TEST_RP)
+
+    backend = CredentialsBackend(TestCredentialsRegistrar())
     backend.handle_credential_request(
         credential=public_key_credential,
         user=TEST_USER,
-        rp=TEST_RP,
         expected_challenge=expected_challenge,
         expected_origin=TEST_RP_ORIGIN,
-        allow_credentials=[
-            PublicKeyCredentialDescriptor(
-                type=PublicKeyCredentialType.PUBLIC_KEY,
-                id=b'cred-id',
+    )
+
+    public_key_credential_error = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+            user_handle=b'mismatch',
+        ))
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(UserHandleError):
+        backend.handle_credential_request(
+            credential=public_key_credential_error,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.create',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(ClientDataTypeError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': '\x90\x91\x92',
+        'origin': TEST_RP_ORIGIN,
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(DecodingError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': 'mismatch',
+        'origin': TEST_RP_ORIGIN,
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(ChallengeError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(OriginError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin='https://mismatch',
+        )
+
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(status=TokenBindingStatus.SUPPORTED))
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+        'tokenBinding': {
+            'status': 'supported'
+        }
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ))
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+        'tokenBinding': {
+            'status': 'present',
+            'id': 'token-binding-id-mismatch',
+        }
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ))
+
+    with pytest.raises(TokenBindingError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+        )
+
+    auth_data = authenticator_data(
+        TEST_RP_ID_HASH, (AuthenticatorDataFlag.AT.value
+                          | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
+        attested_credential_data(
+            b'z' * 16,
+            len(credential_id),
+            credential_id,
+            cbor2.dumps({
+                -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+            }),
+        ), cbor2.dumps({
+            'appid': True,
+        }))
+
+    client_data_JSON = json_bytes({
+        'type': 'webauthn.get',
+        'challenge': base64s(challenge),
+        'origin': TEST_RP_ORIGIN,
+        'tokenBinding': {
+            'status': 'present',
+            'id': 'token-binding-id',
+        }
+    })
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
+    )
+
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
+
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def get_credential_data(
+                self, credential_id: bytes) -> Optional[CredentialData]:
+            return CredentialData(
+                TEST_CREDENTIAL_PUBLIC_KEY,
+                0,
+                TEST_USER,
+                TEST_RP,
             )
-        ])
 
-  backend = CredentialsBackend(ExceptionCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(RPIDError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=PublicKeyCredentialRpEntity(name='example.com',
+                                           id='mismatch.example.com'),
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ),
+        )
+
+    backend = CredentialsBackend(SuccessCredentialsRegistrar())
+    with pytest.raises(UserPresenceError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ))
+
+    auth_data = authenticator_data(
+        TEST_RP_ID_HASH,
+        (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
+         | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
+        attested_credential_data(
+            b'z' * 16,
+            len(credential_id),
+            credential_id,
+            cbor2.dumps({
+                -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
+                -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
+                -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
+                1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
+                3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
+            }),
+        ), cbor2.dumps({
+            'appid': True,
+        }))
+
+    signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
+    signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
+        auth_data + hashlib.sha256(client_data_JSON).digest(),
+        signature_algorithm,
     )
 
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def get_credential_data(self,
-                            credential_id: bytes) -> Optional[CredentialData]:
-      return None
+    public_key_credential = PublicKeyCredential(
+        id=base64s(credential_id),
+        type='credential-type',
+        raw_id=credential_id,
+        response=AuthenticatorAssertionResponse(
+            client_data_JSON=client_data_JSON,
+            authenticator_data=auth_data,
+            signature=signature,
+        ))
 
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(CredentialDataError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    with pytest.raises(UserVerificationError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ),
+            require_user_verification=True,
+        )
 
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def get_credential_data(self,
-                            credential_id: bytes) -> Optional[CredentialData]:
-      return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY,
-                            0,
-                            user_entity=PublicKeyCredentialUserEntity(
-                                name='user',
-                                id=b'user-id-mismatch',
-                                display_name='username'))
+    with pytest.raises(ExtensionError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ),
+            expected_extensions={ExtensionIdentifier.TX_AUTH_SIMPLE},
+        )
 
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(UserIDError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def get_credential_data(
+                self, credential_id: bytes) -> Optional[CredentialData]:
+            return CredentialData(
+                TEST_CREDENTIAL_PUBLIC_KEY,
+                10,
+                TEST_USER,
+            )
 
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(UserHandleError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(SignatureCountError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ),
+        )
 
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(RPNotFoundError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def register_credential_request(
+                self, credential: PublicKeyCredential,
+                authenticator_data: AuthenticatorData,
+                user: PublicKeyCredentialUserEntity,
+                rp: PublicKeyCredentialRpEntity) -> Any:
+            raise Exception()
 
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def get_credential_data(self,
-                            credential_id: bytes) -> Optional[CredentialData]:
-      return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY,
-                            0,
-                            TEST_USER,
-                            rp_entity=PublicKeyCredentialRpEntity(
-                                name='example.com', id='mismatch'))
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ),
+        )
 
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(RPIDError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
+    class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
+        def register_credential_request(
+                self, credential: PublicKeyCredential,
+                authenticator_data: AuthenticatorData,
+                user: PublicKeyCredentialUserEntity,
+                rp: PublicKeyCredentialRpEntity) -> Any:
+            return 'Error'
 
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def get_credential_data(self,
-                            credential_id: bytes) -> Optional[CredentialData]:
-      return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER, TEST_RP)
-
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  backend.handle_credential_request(
-      credential=public_key_credential,
-      user=TEST_USER,
-      expected_challenge=expected_challenge,
-      expected_origin=TEST_RP_ORIGIN,
-  )
-
-  public_key_credential_error = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-          user_handle=b'mismatch',
-      ))
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(UserHandleError):
-    backend.handle_credential_request(
-        credential=public_key_credential_error,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.create',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(ClientDataTypeError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': '\x90\x91\x92',
-      'origin': TEST_RP_ORIGIN,
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(DecodingError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': 'mismatch',
-      'origin': TEST_RP_ORIGIN,
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(ChallengeError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(OriginError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin='https://mismatch',
-    )
-
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(status=TokenBindingStatus.SUPPORTED))
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-      'tokenBinding': {
-          'status': 'supported'
-      }
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_request(credential=public_key_credential,
-                                      user=TEST_USER,
-                                      rp=TEST_RP,
-                                      expected_challenge=expected_challenge,
-                                      expected_origin=TEST_RP_ORIGIN,
-                                      token_binding=TokenBinding(
-                                          status=TokenBindingStatus.PRESENT,
-                                          id='token-binding-id',
-                                      ))
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-      'tokenBinding': {
-          'status': 'present',
-          'id': 'token-binding-id-mismatch',
-      }
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_request(credential=public_key_credential,
-                                      user=TEST_USER,
-                                      rp=TEST_RP,
-                                      expected_challenge=expected_challenge,
-                                      expected_origin=TEST_RP_ORIGIN,
-                                      token_binding=TokenBinding(
-                                          status=TokenBindingStatus.PRESENT,
-                                          id='token-binding-id',
-                                      ))
-
-  with pytest.raises(TokenBindingError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-    )
-
-  auth_data = authenticator_data(
-      TEST_RP_ID_HASH, (AuthenticatorDataFlag.AT.value
-                        | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
-      attested_credential_data(
-          b'z' * 16,
-          len(credential_id),
-          credential_id,
-          cbor2.dumps({
-              -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-              -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-              -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-              1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-              3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-          }),
-      ), cbor2.dumps({
-          'appid': True,
-      }))
-
-  client_data_JSON = json_bytes({
-      'type': 'webauthn.get',
-      'challenge': base64s(challenge),
-      'origin': TEST_RP_ORIGIN,
-      'tokenBinding': {
-          'status': 'present',
-          'id': 'token-binding-id',
-      }
-  })
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def get_credential_data(self,
-                            credential_id: bytes) -> Optional[CredentialData]:
-      return CredentialData(
-          TEST_CREDENTIAL_PUBLIC_KEY,
-          0,
-          TEST_USER,
-          TEST_RP,
-      )
-
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(RPIDError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=PublicKeyCredentialRpEntity(name='example.com',
-                                       id='mismatch.example.com'),
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(
-            status=TokenBindingStatus.PRESENT,
-            id='token-binding-id',
-        ),
-    )
-
-  backend = CredentialsBackend(SuccessCredentialsRegistrar())
-  with pytest.raises(UserPresenceError):
-    backend.handle_credential_request(credential=public_key_credential,
-                                      user=TEST_USER,
-                                      rp=TEST_RP,
-                                      expected_challenge=expected_challenge,
-                                      expected_origin=TEST_RP_ORIGIN,
-                                      token_binding=TokenBinding(
-                                          status=TokenBindingStatus.PRESENT,
-                                          id='token-binding-id',
-                                      ))
-
-  auth_data = authenticator_data(
-      TEST_RP_ID_HASH,
-      (AuthenticatorDataFlag.UP.value | AuthenticatorDataFlag.AT.value
-       | AuthenticatorDataFlag.ED.value), b'\x00' * 4,
-      attested_credential_data(
-          b'z' * 16,
-          len(credential_id),
-          credential_id,
-          cbor2.dumps({
-              -3: TEST_CREDENTIAL_PUBLIC_KEY.y,
-              -2: TEST_CREDENTIAL_PUBLIC_KEY.x,
-              -1: TEST_CREDENTIAL_PUBLIC_KEY.crv.value,
-              1: TEST_CREDENTIAL_PUBLIC_KEY.kty.value,
-              3: TEST_CREDENTIAL_PUBLIC_KEY.alg.value,
-          }),
-      ), cbor2.dumps({
-          'appid': True,
-      }))
-
-  signature_algorithm = ECDSA(ec2_hash_algorithm(TEST_COSE_ALG))
-  signature = TEST_CRYPTOGRAPHY_PRIVATE_KEY.sign(
-      auth_data + hashlib.sha256(client_data_JSON).digest(),
-      signature_algorithm,
-  )
-
-  public_key_credential = PublicKeyCredential(
-      id=base64s(credential_id),
-      type='credential-type',
-      raw_id=credential_id,
-      response=AuthenticatorAssertionResponse(
-          client_data_JSON=client_data_JSON,
-          authenticator_data=auth_data,
-          signature=signature,
-      ))
-
-  with pytest.raises(UserVerificationError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(
-            status=TokenBindingStatus.PRESENT,
-            id='token-binding-id',
-        ),
-        require_user_verification=True,
-    )
-
-  with pytest.raises(ExtensionError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(
-            status=TokenBindingStatus.PRESENT,
-            id='token-binding-id',
-        ),
-        expected_extensions={ExtensionIdentifier.TX_AUTH_SIMPLE},
-    )
-
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def get_credential_data(self,
-                            credential_id: bytes) -> Optional[CredentialData]:
-      return CredentialData(
-          TEST_CREDENTIAL_PUBLIC_KEY,
-          10,
-          TEST_USER,
-      )
-
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(SignatureCountError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(
-            status=TokenBindingStatus.PRESENT,
-            id='token-binding-id',
-        ),
-    )
-
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def register_credential_request(self, credential: PublicKeyCredential,
-                                    authenticator_data: AuthenticatorData,
-                                    user: PublicKeyCredentialUserEntity,
-                                    rp: PublicKeyCredentialRpEntity) -> Any:
-      raise Exception()
-
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(
-            status=TokenBindingStatus.PRESENT,
-            id='token-binding-id',
-        ),
-    )
-
-  class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-    def register_credential_request(self, credential: PublicKeyCredential,
-                                    authenticator_data: AuthenticatorData,
-                                    user: PublicKeyCredentialUserEntity,
-                                    rp: PublicKeyCredentialRpEntity) -> Any:
-      return 'Error'
-
-  backend = CredentialsBackend(TestCredentialsRegistrar())
-  with pytest.raises(RegistrationError):
-    backend.handle_credential_request(
-        credential=public_key_credential,
-        user=TEST_USER,
-        rp=TEST_RP,
-        expected_challenge=expected_challenge,
-        expected_origin=TEST_RP_ORIGIN,
-        token_binding=TokenBinding(
-            status=TokenBindingStatus.PRESENT,
-            id='token-binding-id',
-        ),
-    )
+    backend = CredentialsBackend(TestCredentialsRegistrar())
+    with pytest.raises(RegistrationError):
+        backend.handle_credential_request(
+            credential=public_key_credential,
+            user=TEST_USER,
+            rp=TEST_RP,
+            expected_challenge=expected_challenge,
+            expected_origin=TEST_RP_ORIGIN,
+            token_binding=TokenBinding(
+                status=TokenBindingStatus.PRESENT,
+                id='token-binding-id',
+            ),
+        )

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+mypy --ignore-missing-imports webauthn_rp || exit
+mypy --ignore-missing-imports tests || exit
+pytest --cov=webauthn_rp || exit
+isort webauthn_rp tests examples
+yapf --recursive --in-place webauthn_rp tests examples

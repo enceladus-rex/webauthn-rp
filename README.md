@@ -8,6 +8,8 @@
 ![Travis Build](https://img.shields.io/travis/com/enceladus-rex/webauthn-rp/master.svg)
 ![Codecov](https://img.shields.io/codecov/c/github/enceladus-rex/webauthn-rp/master.svg)
 ![Read the Docs](https://img.shields.io/readthedocs/webauthn-rp/latest.svg)
+![LGTM Grade](https://img.shields.io/lgtm/grade/python/github/enceladus-rex/webauthn-rp.svg)
+![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/enceladus-rex/webauthn-rp.svg)
 
 WebAuthn-RP is a Python 3 library to manage credentials that conform to the 
 [Web Authentication specification](https://www.w3.org/TR/webauthn/).

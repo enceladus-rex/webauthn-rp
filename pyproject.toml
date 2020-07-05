@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "webauthn-rp"
+version = "0.0.7"
+description = "WebAuthn-RP is a Python 3 library to manage credentials that conform to the Web Authentication specification."
+authors = ["enceladus-rex"]
+license = "MIT"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Topic :: Security :: Cryptography",
+]
+
+[tool.poetry.dependencies]
+python = "^3.6.1"
+pyasn1 = "~=0.4.8"
+cryptography = "~=2.9.2"
+cbor2 = "~=5.1.0"
+
+[tool.poetry.dev-dependencies]
+mypy = "~=0.782"
+codecov = "~=2.0"
+yapf = "~=0.30"
+pytest-cov = "~=2.7"
+pytest = "~=5.4"
+isort = "~=5.0"
+coverage = "~=5.1"
+pre-commit = "~=2.6"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

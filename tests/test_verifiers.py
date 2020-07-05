@@ -28,29 +28,29 @@ from .common import (generate_ec2_private_key, generate_okp_private_key,
 ])
 def test_verify_ec2(crv: EC2Curve.Value, alg: COSEAlgorithmIdentifier.Value,
                     data: bytes):
-  private_key = generate_ec2_private_key(crv)
+    private_key = generate_ec2_private_key(crv)
 
-  clen = curve_coordinate_byte_length(crv)
-  public_key = private_key.public_key()
-  public_numbers = public_key.public_numbers()
+    clen = curve_coordinate_byte_length(crv)
+    public_key = private_key.public_key()
+    public_numbers = public_key.public_numbers()
 
-  ec2_public_key = EC2CredentialPublicKey(
-      kty=COSEKeyType.Value.EC2,
-      crv=crv,
-      alg=alg,
-      x=public_numbers.x.to_bytes(clen, 'big'),
-      y=public_numbers.y.to_bytes(clen, 'big'),
-  )
+    ec2_public_key = EC2CredentialPublicKey(
+        kty=COSEKeyType.Value.EC2,
+        crv=crv,
+        alg=alg,
+        x=public_numbers.x.to_bytes(clen, 'big'),
+        y=public_numbers.y.to_bytes(clen, 'big'),
+    )
 
-  signature_algorithm = ECDSA(ec2_hash_algorithm(alg))
-  signature = private_key.sign(data, signature_algorithm)
+    signature_algorithm = ECDSA(ec2_hash_algorithm(alg))
+    signature = private_key.sign(data, signature_algorithm)
 
-  verify(ec2_public_key, signature, data)
+    verify(ec2_public_key, signature, data)
 
-  errors = single_byte_errors(signature)
-  for error in errors:
-    with pytest.raises(VerificationError):
-      verify(ec2_public_key, error, data)
+    errors = single_byte_errors(signature)
+    for error in errors:
+        with pytest.raises(VerificationError):
+            verify(ec2_public_key, error, data)
 
 
 @pytest.mark.parametrize('crv, alg', [
@@ -66,23 +66,23 @@ def test_verify_ec2(crv: EC2Curve.Value, alg: COSEAlgorithmIdentifier.Value,
 ])
 def test_verify_okp(crv: OKPCurve.Value, alg: COSEAlgorithmIdentifier.Value,
                     data: bytes):
-  private_key = generate_okp_private_key(crv)
+    private_key = generate_okp_private_key(crv)
 
-  clen = curve_coordinate_byte_length(crv)
-  public_key = private_key.public_key()
+    clen = curve_coordinate_byte_length(crv)
+    public_key = private_key.public_key()
 
-  ec2_public_key = OKPCredentialPublicKey(
-      kty=COSEKeyType.Value.OKP,
-      crv=crv,
-      alg=alg,
-      x=public_key.public_bytes(Encoding.Raw, PublicFormat.Raw),
-  )
+    ec2_public_key = OKPCredentialPublicKey(
+        kty=COSEKeyType.Value.OKP,
+        crv=crv,
+        alg=alg,
+        x=public_key.public_bytes(Encoding.Raw, PublicFormat.Raw),
+    )
 
-  signature = private_key.sign(data)
+    signature = private_key.sign(data)
 
-  verify(ec2_public_key, signature, data)
+    verify(ec2_public_key, signature, data)
 
-  errors = single_byte_errors(signature)
-  for error in errors:
-    with pytest.raises(VerificationError):
-      verify(ec2_public_key, error, data)
+    errors = single_byte_errors(signature)
+    for error in errors:
+        with pytest.raises(VerificationError):
+            verify(ec2_public_key, error, data)

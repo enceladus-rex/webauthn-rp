@@ -1,118 +1,118 @@
 class WebAuthnRPError(Exception):
-  pass
+    pass
 
 
 class BackendError(WebAuthnRPError):
-  pass
+    pass
 
 
 class ClientDataTypeError(BackendError):
-  pass
+    pass
 
 
 class ChallengeError(BackendError):
-  pass
+    pass
 
 
 class TokenBindingError(BackendError):
-  pass
+    pass
 
 
 class RPIDHashError(BackendError):
-  pass
+    pass
 
 
 class UserPresenceError(BackendError):
-  pass
+    pass
 
 
 class UserVerificationError(BackendError):
-  pass
+    pass
 
 
 class ExtensionError(BackendError):
-  pass
+    pass
 
 
 class CredentialNotAllowedError(BackendError):
-  pass
+    pass
 
 
 class UserIDError(BackendError):
-  pass
+    pass
 
 
 class UserHandleError(BackendError):
-  pass
+    pass
 
 
 class RPNotFoundError(BackendError):
-  pass
+    pass
 
 
 class RPIDError(BackendError):
-  pass
+    pass
 
 
 class RegistrationError(BackendError):
-  pass
+    pass
 
 
 class CredentialDataError(BackendError):
-  pass
+    pass
 
 
 class SignatureCountError(BackendError):
-  pass
+    pass
 
 
 class ConverterError(WebAuthnRPError):
-  pass
+    pass
 
 
 class JSONConversionError(ConverterError):
-  pass
+    pass
 
 
 class PublicKeyConversionError(ConverterError):
-  pass
+    pass
 
 
 class ParserError(WebAuthnRPError):
-  pass
+    pass
 
 
 class DecodingError(ParserError):
-  pass
+    pass
 
 
 class OriginError(WebAuthnRPError):
-  pass
+    pass
 
 
 class VerificationError(WebAuthnRPError):
-  pass
+    pass
 
 
 class AuthenticationError(WebAuthnRPError):
-  pass
+    pass
 
 
 class UnimplementedError(WebAuthnRPError):
-  pass
+    pass
 
 
 class ValidationError(WebAuthnRPError):
-  pass
+    pass
 
 
 class BuilderError(WebAuthnRPError):
-  pass
+    pass
 
 
 class AttestationError(WebAuthnRPError):
-  pass
+    pass
 
 
 class InternalError(WebAuthnRPError):
-  pass
+    pass

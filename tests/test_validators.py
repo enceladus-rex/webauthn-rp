@@ -26,7 +26,7 @@ from .common import (generate_ec2_credential_public_key,
                                    ), (COSEAlgorithmIdentifier.Value.EDDSA, ))
 ])
 def test_validate_success(credential_public_key):
-  validate(credential_public_key)
+    validate(credential_public_key)
 
 
 def replace_curve(
@@ -34,8 +34,8 @@ def replace_curve(
                                  OKPCredentialPublicKey],
     crv: Union[EC2Curve.Value, OKPCurve.Value]
 ) -> Union[EC2CredentialPublicKey, OKPCredentialPublicKey]:
-  credential_public_key.crv = crv
-  return credential_public_key
+    credential_public_key.crv = crv
+    return credential_public_key
 
 
 @pytest.mark.parametrize('credential_public_key', [
@@ -68,5 +68,5 @@ def replace_curve(
                                        COSEAlgorithmIdentifier.Value.ES512))
 ])
 def test_validate_error(credential_public_key):
-  with pytest.raises(ValidationError):
-    validate(credential_public_key)
+    with pytest.raises(ValidationError):
+        validate(credential_public_key)

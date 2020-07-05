@@ -36,8 +36,8 @@ from .common import (assert_objects_equal, attested_credential_data,
     ])
 def test__parse_dictionary_field_success(field_key, valid_types, dictionary,
                                          required, expected):
-  _parse_dictionary_field(field_key, valid_types, dictionary,
-                          required) == expected
+    _parse_dictionary_field(field_key, valid_types, dictionary,
+                            required) == expected
 
 
 @pytest.mark.parametrize('field_key, valid_types, dictionary, required', [
@@ -56,8 +56,8 @@ def test__parse_dictionary_field_success(field_key, valid_types, dictionary,
 ])
 def test__parse_dictionary_field_error(field_key, valid_types, dictionary,
                                        required):
-  with pytest.raises(ParserError):
-    _parse_dictionary_field(field_key, valid_types, dictionary, required)
+    with pytest.raises(ParserError):
+        _parse_dictionary_field(field_key, valid_types, dictionary, required)
 
 
 @pytest.mark.parametrize('supported, data, valid', [
@@ -70,11 +70,11 @@ def test__parse_dictionary_field_error(field_key, valid_types, dictionary,
     ({'a', 'b'}, dict(a=1, b=1, c=1), False),
 ])
 def test__check_unsupported_keys(supported, data, valid):
-  if valid:
-    _check_unsupported_keys(supported, data)
-  else:
-    with pytest.raises(ParserError):
-      _check_unsupported_keys(supported, data)
+    if valid:
+        _check_unsupported_keys(supported, data)
+    else:
+        with pytest.raises(ParserError):
+            _check_unsupported_keys(supported, data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -82,7 +82,7 @@ def test__check_unsupported_keys(supported, data, valid):
     (base64.b64encode(b'!@#$%^&*()-+').decode('utf-8'), b'!@#$%^&*()-+'),
 ])
 def test__bytes_from_base64_success(data, expected):
-  assert _bytes_from_base64(data) == expected
+    assert _bytes_from_base64(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -90,12 +90,12 @@ def test__bytes_from_base64_success(data, expected):
     b'!@#$%^&*()-+',
 ])
 def test__bytes_from_base64_error(data):
-  with pytest.raises(ParserError):
-    _bytes_from_base64(data)
+    with pytest.raises(ParserError):
+        _bytes_from_base64(data)
 
 
 def _b64s(x: bytes) -> str:
-  return base64.b64encode(x).decode('utf-8')
+    return base64.b64encode(x).decode('utf-8')
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -126,8 +126,8 @@ def _b64s(x: bytes) -> str:
                              user_handle=b'h'))),
 ])
 def test_parse_public_key_credential_success(data, expected):
-  pkc = parse_public_key_credential(data)
-  assert_objects_equal(pkc, expected)
+    pkc = parse_public_key_credential(data)
+    assert_objects_equal(pkc, expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -212,15 +212,15 @@ def test_parse_public_key_credential_success(data, expected):
                        userHandle=4)),
 ])
 def test_parse_public_key_credential_error(data):
-  with pytest.raises(ParserError):
-    parse_public_key_credential(data)
+    with pytest.raises(ParserError):
+        parse_public_key_credential(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
     1: x.value
 }, x) for x in list(COSEKeyType.Name) + list(COSEKeyType.Value)])
 def test__parse_credential_public_key_kty_success(data, expected):
-  assert _parse_credential_public_key_kty(data) == expected
+    assert _parse_credential_public_key_kty(data) == expected
 
 
 @pytest.mark.parametrize('data', [{
@@ -235,8 +235,8 @@ def test__parse_credential_public_key_kty_success(data, expected):
     },
 ])
 def test__parse_credential_public_key_kty_error(data):
-  with pytest.raises(ParserError):
-    _parse_credential_public_key_kty(data)
+    with pytest.raises(ParserError):
+        _parse_credential_public_key_kty(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -244,7 +244,7 @@ def test__parse_credential_public_key_kty_error(data):
     list(COSEAlgorithmIdentifier.Name) + list(COSEAlgorithmIdentifier.Value)
 ])
 def test__parse_credential_public_key_alg_success(data, expected):
-  assert _parse_credential_public_key_alg(data) == expected
+    assert _parse_credential_public_key_alg(data) == expected
 
 
 @pytest.mark.parametrize('data', [{
@@ -259,8 +259,8 @@ def test__parse_credential_public_key_alg_success(data, expected):
     },
 ])
 def test__parse_credential_public_key_alg_error(data):
-  with pytest.raises(ParserError):
-    _parse_credential_public_key_alg(data)
+    with pytest.raises(ParserError):
+        _parse_credential_public_key_alg(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
@@ -274,7 +274,7 @@ def test__parse_credential_public_key_alg_error(data):
      [y for y in chain(COSEKeyOperation.Name, COSEKeyOperation.Value)]),
 ]] + [({}, None)])
 def test__parse_credential_public_key_key_ops_success(data, expected):
-  assert _parse_credential_public_key_key_ops(data) == expected
+    assert _parse_credential_public_key_key_ops(data) == expected
 
 
 @pytest.mark.parametrize('data', [{
@@ -291,8 +291,8 @@ def test__parse_credential_public_key_key_ops_success(data, expected):
     4: []
 }])
 def test__parse_credential_public_key_key_ops_error(data):
-  with pytest.raises(ParserError):
-    _parse_credential_public_key_key_ops(data)
+    with pytest.raises(ParserError):
+        _parse_credential_public_key_key_ops(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -330,7 +330,7 @@ def test__parse_credential_public_key_key_ops_error(data):
           base_IV=b'base-IV')),
 ])
 def test__parse_credential_public_key_kwargs_success(data, expected):
-  assert _parse_credential_public_key_kwargs(data) == expected
+    assert _parse_credential_public_key_kwargs(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -382,15 +382,15 @@ def test__parse_credential_public_key_kwargs_success(data, expected):
     },
 ])
 def test__parse_credential_public_key_kwargs_error(data):
-  with pytest.raises(ParserError):
-    _parse_credential_public_key_kwargs(data)
+    with pytest.raises(ParserError):
+        _parse_credential_public_key_kwargs(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
     -1: x.value
 }, x) for x in chain(EC2Curve.Name, EC2Curve.Value)])
 def test__parse_ec2_public_key_crv_success(data, expected):
-  assert _parse_ec2_public_key_crv(data) == expected
+    assert _parse_ec2_public_key_crv(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -412,15 +412,15 @@ def test__parse_ec2_public_key_crv_success(data, expected):
     },
 ])
 def test__parse_ec2_public_key_crv_error(data):
-  with pytest.raises(ParserError):
-    _parse_ec2_public_key_crv(data)
+    with pytest.raises(ParserError):
+        _parse_ec2_public_key_crv(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
     -1: x.value
 }, x) for x in chain(OKPCurve.Name, OKPCurve.Value)])
 def test__parse_okp_public_key_crv_success(data, expected):
-  assert _parse_okp_public_key_crv(data) == expected
+    assert _parse_okp_public_key_crv(data) == expected
 
 
 @pytest.mark.parametrize('data', [
@@ -442,8 +442,8 @@ def test__parse_okp_public_key_crv_success(data, expected):
     },
 ])
 def test__parse_okp_public_key_crv_error(data):
-  with pytest.raises(ParserError):
-    _parse_okp_public_key_crv(data)
+    with pytest.raises(ParserError):
+        _parse_okp_public_key_crv(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -530,7 +530,7 @@ def test__parse_okp_public_key_crv_error(data):
      )),
 ])
 def test_parse_okp_public_key_success(data, expected):
-  assert_objects_equal(parse_okp_public_key(data), expected)
+    assert_objects_equal(parse_okp_public_key(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -647,8 +647,8 @@ def test_parse_okp_public_key_success(data, expected):
     }
 ])
 def test_parse_okp_public_key_error(data):
-  with pytest.raises(ParserError):
-    parse_okp_public_key(data)
+    with pytest.raises(ParserError):
+        parse_okp_public_key(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -744,7 +744,7 @@ def test_parse_okp_public_key_error(data):
      )),
 ])
 def test_parse_ec2_public_key_success(data, expected):
-  assert_objects_equal(parse_ec2_public_key(data), expected)
+    assert_objects_equal(parse_ec2_public_key(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -928,8 +928,8 @@ def test_parse_ec2_public_key_success(data, expected):
     }
 ])
 def test_parse_ec2_public_key_error(data):
-  with pytest.raises(ParserError):
-    parse_ec2_public_key(data)
+    with pytest.raises(ParserError):
+        parse_ec2_public_key(data)
 
 
 @pytest.mark.parametrize(
@@ -973,7 +973,7 @@ def test_parse_ec2_public_key_error(data):
             ), 3)
     ])
 def test_parse_extensions_success(data, expected):
-  assert_objects_equal(parse_extensions(data), expected)
+    assert_objects_equal(parse_extensions(data), expected)
 
 
 @pytest.mark.parametrize(
@@ -1023,8 +1023,8 @@ def test_parse_extensions_success(data, expected):
         )
     ])
 def test_parse_extensions_error(data):
-  with pytest.raises(ParserError):
-    parse_extensions(data)
+    with pytest.raises(ParserError):
+        parse_extensions(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1034,7 +1034,7 @@ def test_parse_extensions_error(data):
     for x in chain(COSEAlgorithmIdentifier.Name, COSEAlgorithmIdentifier.Value)
 ])
 def test__parse_attestation_statement_alg_success(data, expected):
-  assert_objects_equal(_parse_attestation_statement_alg(data), expected)
+    assert_objects_equal(_parse_attestation_statement_alg(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1047,8 +1047,8 @@ def test__parse_attestation_statement_alg_success(data, expected):
     {},
 ])
 def test__parse_attestation_statement_alg_error(data):
-  with pytest.raises(ParserError):
-    _parse_attestation_statement_alg(data)
+    with pytest.raises(ParserError):
+        _parse_attestation_statement_alg(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1060,7 +1060,7 @@ def test__parse_attestation_statement_alg_error(data):
     }, (b'x', b'y')),
 ])
 def test__parse_attestation_statement_x5c_success(data, expected):
-  assert_objects_equal(_parse_attestation_statement_x5c(data), expected)
+    assert_objects_equal(_parse_attestation_statement_x5c(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1085,8 +1085,8 @@ def test__parse_attestation_statement_x5c_success(data, expected):
     {},
 ])
 def test__parse_attestation_statement_x5c_error(data):
-  with pytest.raises(ParserError):
-    _parse_attestation_statement_x5c(data)
+    with pytest.raises(ParserError):
+        _parse_attestation_statement_x5c(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1114,7 +1114,7 @@ def test__parse_attestation_statement_x5c_error(data):
                                      ecdaa_key_id=b'key-id')),
 ])
 def test_parse_packed_attestation_statement_success(data, expected):
-  assert_objects_equal(parse_packed_attestation_statement(data), expected)
+    assert_objects_equal(parse_packed_attestation_statement(data), expected)
 
 
 @pytest.mark.parametrize('data', [{}, {
@@ -1129,8 +1129,8 @@ def test_parse_packed_attestation_statement_success(data, expected):
     'sig': b'signature',
 }])
 def test_parse_packed_attestation_statement_error(data):
-  with pytest.raises(ParserError):
-    parse_packed_attestation_statement(data)
+    with pytest.raises(ParserError):
+        parse_packed_attestation_statement(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1176,7 +1176,7 @@ def test_parse_packed_attestation_statement_error(data):
                                   ecdaa_key_id=b'key-id')),
 ])
 def test_parse_tpm_attestation_statement_success(data, expected):
-  assert_objects_equal(parse_tpm_attestation_statement(data), expected)
+    assert_objects_equal(parse_tpm_attestation_statement(data), expected)
 
 
 @pytest.mark.parametrize('data', [{}, {
@@ -1234,8 +1234,8 @@ def test_parse_tpm_attestation_statement_success(data, expected):
     'ecdaaKeyId': b'key-id'
 }])
 def test_parse_tpm_attestation_statement_error(data):
-  with pytest.raises(ParserError):
-    parse_tpm_attestation_statement(data)
+    with pytest.raises(ParserError):
+        parse_tpm_attestation_statement(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1257,7 +1257,8 @@ def test_parse_tpm_attestation_statement_error(data):
                                     x5c=[b'x', b'y'])),
 ])
 def test_parse_android_key_attestation_statement_success(data, expected):
-  assert_objects_equal(parse_android_key_attestation_statement(data), expected)
+    assert_objects_equal(parse_android_key_attestation_statement(data),
+                         expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1285,8 +1286,8 @@ def test_parse_android_key_attestation_statement_success(data, expected):
     },
 ])
 def test_parse_android_key_attestation_statement_error(data):
-  with pytest.raises(ParserError):
-    parse_android_key_attestation_statement(data)
+    with pytest.raises(ParserError):
+        parse_android_key_attestation_statement(data)
 
 
 @pytest.mark.parametrize('data, expected', [({
@@ -1294,8 +1295,8 @@ def test_parse_android_key_attestation_statement_error(data):
     'response': b'response'
 }, AndroidSafetyNetAttestationStatement(ver='1', response=b'response'))])
 def test_parse_android_safetynet_attestation_statement_success(data, expected):
-  assert_objects_equal(parse_android_safetynet_attestation_statement(data),
-                       expected)
+    assert_objects_equal(parse_android_safetynet_attestation_statement(data),
+                         expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1315,8 +1316,8 @@ def test_parse_android_safetynet_attestation_statement_success(data, expected):
     },
 ])
 def test_parse_android_safetynet_attestation_statement_error(data):
-  with pytest.raises(ParserError):
-    parse_android_safetynet_attestation_statement(data)
+    with pytest.raises(ParserError):
+        parse_android_safetynet_attestation_statement(data)
 
 
 @pytest.mark.parametrize(
@@ -1330,7 +1331,7 @@ def test_parse_android_safetynet_attestation_statement_error(data):
          'x5c': [b'x', b'y']
      }, FIDOU2FAttestationStatement(sig=b'signature', x5c=[b'x', b'y']))])
 def test_parse_fido_u2f_attestation_statement_success(data, expected):
-  assert_objects_equal(parse_fido_u2f_attestation_statement(data), expected)
+    assert_objects_equal(parse_fido_u2f_attestation_statement(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1349,15 +1350,15 @@ def test_parse_fido_u2f_attestation_statement_success(data, expected):
     },
 ])
 def test_parse_fido_u2f_attestation_statement_error(data):
-  with pytest.raises(ParserError):
-    parse_fido_u2f_attestation_statement(data)
+    with pytest.raises(ParserError):
+        parse_fido_u2f_attestation_statement(data)
 
 
 @pytest.mark.parametrize('data, expected', [
     ({}, NoneAttestationStatement()),
 ])
 def test_parse_none_attestation_statement_success(data, expected):
-  assert_objects_equal(parse_none_attestation_statement(data), expected)
+    assert_objects_equal(parse_none_attestation_statement(data), expected)
 
 
 @pytest.mark.parametrize('data', [{
@@ -1374,8 +1375,8 @@ def test_parse_none_attestation_statement_success(data, expected):
     'invalid': '1',
 }])
 def test_parse_none_attestation_statement_error(data):
-  with pytest.raises(ParserError):
-    parse_none_attestation_statement(data)
+    with pytest.raises(ParserError):
+        parse_none_attestation_statement(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1416,7 +1417,7 @@ def test_parse_none_attestation_statement_error(data):
                              id='binding-id'))),
 ])
 def test_parse_client_data_success(data, expected):
-  assert_objects_equal(parse_client_data(data), expected)
+    assert_objects_equal(parse_client_data(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1473,8 +1474,8 @@ def test_parse_client_data_success(data, expected):
     }),
 ])
 def test_parse_client_data_error(data):
-  with pytest.raises((ParserError, TokenBindingError)):
-    parse_client_data(data)
+    with pytest.raises((ParserError, TokenBindingError)):
+        parse_client_data(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1537,7 +1538,7 @@ def test_parse_client_data_error(data):
      )),
 ])
 def test_parse_cose_key_success(data, expected):
-  assert_objects_equal(parse_cose_key(data), expected)
+    assert_objects_equal(parse_cose_key(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1591,8 +1592,8 @@ def test_parse_cose_key_success(data, expected):
     },
 ])
 def test_parse_cose_key_error(data):
-  with pytest.raises(ParserError):
-    parse_cose_key(data)
+    with pytest.raises(ParserError):
+        parse_cose_key(data)
 
 
 @pytest.mark.parametrize('data, expected', [
@@ -1726,7 +1727,7 @@ def test_parse_cose_key_error(data):
          extensions=AuthenticationExtensionsClientOutputs(appid=True))),
 ])
 def test_parse_authenticator_data_success(data, expected):
-  assert_objects_equal(parse_authenticator_data(data), expected)
+    assert_objects_equal(parse_authenticator_data(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -1811,8 +1812,8 @@ def test_parse_authenticator_data_success(data, expected):
         extensions=cbor2.dumps([1, 2, 3])),
 ])
 def test_parse_authenticator_data_error(data):
-  with pytest.raises((ParserError, DecodingError)):
-    parse_authenticator_data(data)
+    with pytest.raises((ParserError, DecodingError)):
+        parse_authenticator_data(data)
 
 
 @pytest.mark.parametrize('data, expected', [(cbor2.dumps({
@@ -1920,7 +1921,7 @@ def test_parse_authenticator_data_error(data):
          }
      }))])
 def test_parse_attestation_success(data, expected):
-  assert_objects_equal(parse_attestation_object(data), expected)
+    assert_objects_equal(parse_attestation_object(data), expected)
 
 
 @pytest.mark.parametrize('data', [
@@ -2055,5 +2056,5 @@ def test_parse_attestation_success(data, expected):
     }),
 ])
 def test_parse_attestation_error(data):
-  with pytest.raises((ParserError, DecodingError)):
-    parse_attestation_object(data)
+    with pytest.raises((ParserError, DecodingError)):
+        parse_attestation_object(data)
