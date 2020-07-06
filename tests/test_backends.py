@@ -85,7 +85,7 @@ class SuccessCredentialsRegistrar(CredentialsRegistrar):
 
     def get_credential_data(self,
                             credential_id: bytes) -> Optional[CredentialData]:
-        return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
+        return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, None, TEST_USER)
 
 
 class ErrorCredentialsRegistrar(CredentialsRegistrar):
@@ -107,7 +107,7 @@ class ErrorCredentialsRegistrar(CredentialsRegistrar):
 
     def get_credential_data(self,
                             credential_id: bytes) -> Optional[CredentialData]:
-        return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
+        return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, None, TEST_USER)
 
 
 def test_credentials_backend_creation_success():
@@ -667,7 +667,7 @@ def test_credentials_backend_request_error():
         def get_credential_data(
                 self, credential_id: bytes) -> Optional[CredentialData]:
             return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY,
-                                  0,
+                                  None,
                                   user_entity=PublicKeyCredentialUserEntity(
                                       name='user',
                                       id=b'user-id-mismatch',
@@ -705,7 +705,7 @@ def test_credentials_backend_request_error():
         def get_credential_data(
                 self, credential_id: bytes) -> Optional[CredentialData]:
             return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY,
-                                  0,
+                                  None,
                                   TEST_USER,
                                   rp_entity=PublicKeyCredentialRpEntity(
                                       name='example.com', id='mismatch'))
@@ -723,7 +723,7 @@ def test_credentials_backend_request_error():
     class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
         def get_credential_data(
                 self, credential_id: bytes) -> Optional[CredentialData]:
-            return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER,
+            return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, None, TEST_USER,
                                   TEST_RP)
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
@@ -1025,7 +1025,7 @@ def test_credentials_backend_request_error():
                 self, credential_id: bytes) -> Optional[CredentialData]:
             return CredentialData(
                 TEST_CREDENTIAL_PUBLIC_KEY,
-                0,
+                None,
                 TEST_USER,
                 TEST_RP,
             )

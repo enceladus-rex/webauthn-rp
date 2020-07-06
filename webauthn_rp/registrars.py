@@ -27,7 +27,7 @@ class CredentialData(NamedTuple):
         Party that is associated with this credential.
     """
     credential_public_key: CredentialPublicKey
-    signature_count: int
+    signature_count: Optional[int]
     user_entity: PublicKeyCredentialUserEntity
     rp_entity: Optional[PublicKeyCredentialRpEntity] = None
 

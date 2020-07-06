@@ -430,8 +430,7 @@ class CredentialsBackend:
                    verification_data)
 
             registered_sign_count = credential_data.signature_count
-
-            if auth_data.sign_count != 0 or registered_sign_count != 0:
+            if registered_sign_count is not None:
                 if auth_data.sign_count <= registered_sign_count:
                     if not ignore_clone_error:
                         raise SignatureCountError(

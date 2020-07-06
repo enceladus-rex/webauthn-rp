@@ -53,7 +53,7 @@ class User(db.Model):
 
 class Credential(db.Model):
     id = db.Column(db.String(), primary_key=True)
-    signature_count = db.Column(db.Integer, default=0)
+    signature_count = db.Column(db.Integer, nullable=True)
     credential_public_key = db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -66,7 +66,7 @@ class Challenge(db.Model):
 
 
 class RegistrarImpl(CredentialsRegistrar):
-    def register_credential_creation(
+    def register_credential_attestation(
             self,
             credential: PublicKeyCredential,
             att: AttestationObject,
@@ -83,17 +83,17 @@ class RegistrarImpl(CredentialsRegistrar):
 
         credential_model = Credential()
         credential_model.id = credential.raw_id
-        credential_model.signature_count = 0
+        credential_model.signature_count = None
         credential_model.credential_public_key = cose_key(cpk)
         credential_model.user = user_model
 
         db.session.add(credential_model)
         db.session.commit()
 
-    def register_credential_request(self, credential: PublicKeyCredential,
-                                    authenticator_data: AuthenticatorData,
-                                    user: PublicKeyCredentialUserEntity,
-                                    rp: PublicKeyCredentialRpEntity) -> Any:
+    def register_credential_assertion(self, credential: PublicKeyCredential,
+                                      authenticator_data: AuthenticatorData,
+                                      user: PublicKeyCredentialUserEntity,
+                                      rp: PublicKeyCredentialRpEntity) -> Any:
         credential_model = Credential.query.filter_by(
             id=credential.raw_id).first()
         credential_model.signature_count = authenticator_data.sign_count
