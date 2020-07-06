@@ -16,18 +16,18 @@ __all__ = [
 class SecurityLevel(Enumerated):
     """The extent to which the key pair is protected.
 
-  References:
-    * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_securitylevel
-  """
+    References:
+      * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_securitylevel
+    """
     componentType = NamedValues(Software=0, TrustedEnvironment=1, StrongBox=2)
 
 
 class VerifiedBootState(Enumerated):
     """The level of protection provided to the user and to apps after booting.
 
-  References:
-    * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_verifiedbootstate
-  """
+    References:
+      * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_verifiedbootstate
+    """
     componentType = NamedValues(Verified=0,
                                 SelfSigned=1,
                                 Unverified=2,
@@ -37,9 +37,9 @@ class VerifiedBootState(Enumerated):
 class RootOfTrust(Sequence):
     """Information about the device's status.
 
-  References:
-    * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_rootoftrust
-  """
+    References:
+      * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_rootoftrust
+    """
     componentType = NamedTypes(
         NamedType('verifiedBootKey', OctetString()),
         NamedType('deviceLocked', Boolean()),
@@ -51,9 +51,9 @@ class RootOfTrust(Sequence):
 class AuthorizationList(Sequence):
     """Properties of the key pair as in the Keymaster hardware abstraction layer.
 
-  References:
-    * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_authorizationlist
-  """
+    References:
+      * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_authorizationlist
+    """
     componentType = NamedTypes(
         OptionalNamedType(
             'purpose',
@@ -209,9 +209,9 @@ class AuthorizationList(Sequence):
 class KeyDescription(Sequence):
     """Information about the key pair being verified through key attestation.
 
-  References:
-    * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_keydescription
-  """
+    References:
+      * https://developer.android.com/training/articles/security-key-attestation#certificate_schema_keydescription
+    """
     componentType = NamedTypes(
         NamedType('attestationVersion', Integer()),
         NamedType('attestationSecurityLevel', SecurityLevel()),

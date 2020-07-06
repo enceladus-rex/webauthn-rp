@@ -36,8 +36,7 @@ def test_credential_creation_options_builder_error():
     with pytest.raises(BuilderError):
         builder.build(user=MagicMock(), challenge=MagicMock())
 
-    funcs = ('rp', 'pub_key_cred_params', 'timeout', 'authenticator_selection',
-             'extensions')
+    funcs = ('rp', 'pub_key_cred_params')
     for fn in funcs:
         with pytest.raises(AssertionError):
             getattr(builder, fn)(None)

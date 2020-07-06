@@ -13,12 +13,34 @@ __all__ = [
 
 @singledispatch
 def validate(credential_public_key: CredentialPublicKey) -> None:
+    """Validate the format of a `CredentialPublicKey`.
+
+    Args:
+      credential_public_key (CredentialPublicKey): The credential public key to
+        validate.
+
+    Raises:
+      ValidationError: If the given credential public key is invalid.
+      UnimplementedError: If the logic to validate the given type of key is not
+        implemented.
+    """
     raise UnimplementedError('Must implement credential public key validator')
 
 
 @validate.register(EC2CredentialPublicKey)
 def validate_ec2_public_key(
         credential_public_key: EC2CredentialPublicKey) -> None:
+    """Validate the format of an `EC2CredentialPublicKey`.
+
+    Args:
+      credential_public_key (EC2CredentialPublicKey): The credential public key to
+        validate.
+
+    Raises:
+      ValidationError: If the given credential public key is invalid.
+      UnimplementedError: If the logic to validate the given type of key is not
+        implemented.
+    """
     assert credential_public_key.kty.name == 'EC2'
     assert credential_public_key.crv is not None
     assert credential_public_key.alg is not None
@@ -33,6 +55,17 @@ def validate_ec2_public_key(
 @validate.register(OKPCredentialPublicKey)
 def validate_okp_public_key(
         credential_public_key: OKPCredentialPublicKey) -> None:
+    """Validate the format of an `OKPCredentialPublicKey`.
+
+    Args:
+      credential_public_key (OKPCredentialPublicKey): The credential public key to
+        validate.
+
+    Raises:
+      ValidationError: If the given credential public key is invalid.
+      UnimplementedError: If the logic to validate the given type of key is not
+        implemented.
+    """
     assert credential_public_key.kty.name == 'OKP'
     assert credential_public_key.crv is not None
     assert credential_public_key.alg is not None

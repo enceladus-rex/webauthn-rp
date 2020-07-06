@@ -40,18 +40,18 @@ def attest(att_stmt: AttestationStatement, att_obj: AttestationObject,
            client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
     """Attest an attestation object.
 
-  Args:
-    att_stmt (AttestationStatement): The attestation statment.
-    att_obj (AttestationObject): The attestation object.
-    auth_data (bytes): The raw authenticator data.
-    client_data_hash (bytes): The client data hash.
+    Args:
+      att_stmt (AttestationStatement): The attestation statment.
+      att_obj (AttestationObject): The attestation object.
+      auth_data (bytes): The raw authenticator data.
+      client_data_hash (bytes): The client data hash.
 
-  Returns:
-    The attestation type and trusted path.
-  
-  References:
-    * https://www.w3.org/TR/webauthn/#defined-attestation-formats
-  """
+    Returns:
+      The attestation type and trusted path.
+    
+    References:
+      * https://www.w3.org/TR/webauthn/#defined-attestation-formats
+    """
     raise UnimplementedError('{} attestation unimplemented'.format(
         type(att_stmt)))
 
@@ -63,18 +63,18 @@ def attest_fido_u2f(
         client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
     """Attest a FIDO U2F key.
 
-  Args:
-    att_stmt (FIDOU2FAttestationStatement): The attestation statment.
-    att_obj (AttestationObject): The attestation object.
-    auth_data (bytes): The raw authenticator data.
-    client_data_hash (bytes): The client data hash.
+    Args:
+      att_stmt (FIDOU2FAttestationStatement): The attestation statment.
+      att_obj (AttestationObject): The attestation object.
+      auth_data (bytes): The raw authenticator data.
+      client_data_hash (bytes): The client data hash.
 
-  Returns:
-    The attestation type and trusted path.
-  
-  References:
-    * https://www.w3.org/TR/webauthn/#fido-u2f-attestation
-  """
+    Returns:
+      The attestation type and trusted path.
+    
+    References:
+      * https://www.w3.org/TR/webauthn/#fido-u2f-attestation
+    """
     if len(att_stmt.x5c) != 1:
         raise AttestationError(
             'FIDO U2F attestation failed: must have a single X.509 certificate'
@@ -134,20 +134,20 @@ def attest_android_key(
         client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
     """Attest an android key.
 
-  Args:
-    att_stmt (AndroidKeyAttestationStatement): The attestation statment.
-    att_obj (AttestationObject): The attestation object.
-    auth_data (bytes): The raw authenticator data.
-    client_data_hash (bytes): The client data hash.
+    Args:
+      att_stmt (AndroidKeyAttestationStatement): The attestation statment.
+      att_obj (AttestationObject): The attestation object.
+      auth_data (bytes): The raw authenticator data.
+      client_data_hash (bytes): The client data hash.
 
-  Returns:
-    The attestation type and trusted path.
-  
-  References:
-    * https://www.w3.org/TR/webauthn/#android-key-attestation
-    * https://source.android.com/security/keystore/attestation
-    * https://developer.android.com/training/articles/security-key-attestation
-  """
+    Returns:
+      The attestation type and trusted path.
+    
+    References:
+      * https://www.w3.org/TR/webauthn/#android-key-attestation
+      * https://source.android.com/security/keystore/attestation
+      * https://developer.android.com/training/articles/security-key-attestation
+    """
     if len(att_stmt.x5c) == 0:
         raise AttestationError('Must have at least 1 X509 certificate')
 
@@ -245,18 +245,18 @@ def attest_none(
         att_stmt: NoneAttestationStatement, att_obj: AttestationObject,
         auth_data: bytes,
         client_data_hash: bytes) -> Tuple[AttestationType, TrustedPath]:
-    """Attest a NoneAttestationStatement.
+    """Don't perform any attestation.
 
-  Args:
-    att_stmt (NoneAttestationStatement): The attestation statment.
-    att_obj (AttestationObject): The attestation object.
-    auth_data (bytes): The raw authenticator data.
-    client_data_hash (bytes): The client data hash.
+    Args:
+      att_stmt (NoneAttestationStatement): The attestation statment.
+      att_obj (AttestationObject): The attestation object.
+      auth_data (bytes): The raw authenticator data.
+      client_data_hash (bytes): The client data hash.
 
-  Returns:
-    The attestation type and trusted path.
-  
-  References:
-    * https://www.w3.org/TR/webauthn/#none-attestation
-  """
+    Returns:
+      The attestation type and trusted path.
+    
+    References:
+      * https://www.w3.org/TR/webauthn/#none-attestation
+    """
     return AttestationType.NONE, None

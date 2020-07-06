@@ -45,15 +45,7 @@ TEST_CREDENTIAL_PUBLIC_KEY = EC2CredentialPublicKey(
 
 
 class ExceptionCredentialsRegistrar(CredentialsRegistrar):
-    def register_creation_options(self,
-                                  options: CredentialCreationOptions) -> Any:
-        raise Exception()
-
-    def register_request_options(self,
-                                 options: CredentialRequestOptions) -> Any:
-        raise Exception()
-
-    def register_credential_creation(
+    def register_credential_attestation(
             self,
             credential: PublicKeyCredential,
             att: AttestationObject,
@@ -63,10 +55,10 @@ class ExceptionCredentialsRegistrar(CredentialsRegistrar):
             trusted_path: Optional[TrustedPath] = None) -> Any:
         raise Exception()
 
-    def register_credential_request(self, credential: PublicKeyCredential,
-                                    authenticator_data: AuthenticatorData,
-                                    user: PublicKeyCredentialUserEntity,
-                                    rp: PublicKeyCredentialRpEntity) -> Any:
+    def register_credential_assertion(self, credential: PublicKeyCredential,
+                                      authenticator_data: AuthenticatorData,
+                                      user: PublicKeyCredentialUserEntity,
+                                      rp: PublicKeyCredentialRpEntity) -> Any:
         raise Exception()
 
     def get_credential_data(self,
@@ -75,15 +67,7 @@ class ExceptionCredentialsRegistrar(CredentialsRegistrar):
 
 
 class SuccessCredentialsRegistrar(CredentialsRegistrar):
-    def register_creation_options(self,
-                                  options: CredentialCreationOptions) -> Any:
-        pass
-
-    def register_request_options(self,
-                                 options: CredentialRequestOptions) -> Any:
-        pass
-
-    def register_credential_creation(
+    def register_credential_attestation(
             self,
             credential: PublicKeyCredential,
             att: AttestationObject,
@@ -93,10 +77,10 @@ class SuccessCredentialsRegistrar(CredentialsRegistrar):
             trusted_path: Optional[TrustedPath] = None) -> Any:
         pass
 
-    def register_credential_request(self, credential: PublicKeyCredential,
-                                    authenticator_data: AuthenticatorData,
-                                    user: PublicKeyCredentialUserEntity,
-                                    rp: PublicKeyCredentialRpEntity) -> Any:
+    def register_credential_assertion(self, credential: PublicKeyCredential,
+                                      authenticator_data: AuthenticatorData,
+                                      user: PublicKeyCredentialUserEntity,
+                                      rp: PublicKeyCredentialRpEntity) -> Any:
         pass
 
     def get_credential_data(self,
@@ -105,15 +89,7 @@ class SuccessCredentialsRegistrar(CredentialsRegistrar):
 
 
 class ErrorCredentialsRegistrar(CredentialsRegistrar):
-    def register_creation_options(self,
-                                  options: CredentialCreationOptions) -> Any:
-        return 'Error'
-
-    def register_request_options(self,
-                                 options: CredentialRequestOptions) -> Any:
-        return 'Error'
-
-    def register_credential_creation(
+    def register_credential_attestation(
             self,
             credential: PublicKeyCredential,
             att: AttestationObject,
@@ -123,35 +99,15 @@ class ErrorCredentialsRegistrar(CredentialsRegistrar):
             trusted_path: Optional[TrustedPath] = None) -> Any:
         return 'Error'
 
-    def register_credential_request(self, credential: PublicKeyCredential,
-                                    authenticator_data: AuthenticatorData,
-                                    user: PublicKeyCredentialUserEntity,
-                                    rp: PublicKeyCredentialRpEntity) -> Any:
+    def register_credential_assertion(self, credential: PublicKeyCredential,
+                                      authenticator_data: AuthenticatorData,
+                                      user: PublicKeyCredentialUserEntity,
+                                      rp: PublicKeyCredentialRpEntity) -> Any:
         return 'Error'
 
     def get_credential_data(self,
                             credential_id: bytes) -> Optional[CredentialData]:
         return CredentialData(TEST_CREDENTIAL_PUBLIC_KEY, 0, TEST_USER)
-
-
-def test_credentials_backend_options_registration():
-    backend = CredentialsBackend(ExceptionCredentialsRegistrar())
-    with pytest.raises(RegistrationError):
-        backend.handle_creation_options(options=MagicMock())
-
-    with pytest.raises(RegistrationError):
-        backend.handle_request_options(options=MagicMock())
-
-    backend = CredentialsBackend(ErrorCredentialsRegistrar())
-    with pytest.raises(RegistrationError):
-        backend.handle_creation_options(options=MagicMock())
-
-    with pytest.raises(RegistrationError):
-        backend.handle_request_options(options=MagicMock())
-
-    backend = CredentialsBackend(SuccessCredentialsRegistrar())
-    backend.handle_creation_options(options=MagicMock())
-    backend.handle_request_options(options=MagicMock())
 
 
 def test_credentials_backend_creation_success():
@@ -200,7 +156,7 @@ def test_credentials_backend_creation_success():
 
     expected_challenge = challenge
 
-    backend.handle_credential_creation(
+    backend.handle_credential_attestation(
         credential=public_key_credential,
         user=TEST_USER,
         rp=TEST_RP,
@@ -263,7 +219,7 @@ def test_credentials_backend_creation_error():
 
     public_key_credential.response.client_data_JSON = client_data_JSON_error
     with pytest.raises(ClientDataTypeError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -273,7 +229,7 @@ def test_credentials_backend_creation_error():
 
     public_key_credential.response.client_data_JSON = client_data_JSON
     with pytest.raises(ChallengeError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -289,7 +245,7 @@ def test_credentials_backend_creation_error():
 
     public_key_credential.response.client_data_JSON = client_data_JSON_error
     with pytest.raises(DecodingError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -299,7 +255,7 @@ def test_credentials_backend_creation_error():
 
     public_key_credential.response.client_data_JSON = client_data_JSON
     with pytest.raises(OriginError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -308,7 +264,7 @@ def test_credentials_backend_creation_error():
         )
 
     with pytest.raises(OriginError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -317,7 +273,7 @@ def test_credentials_backend_creation_error():
         )
 
     with pytest.raises(OriginError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -326,7 +282,7 @@ def test_credentials_backend_creation_error():
         )
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -347,7 +303,7 @@ def test_credentials_backend_creation_error():
     public_key_credential.response.client_data_JSON = (
         client_data_JSON_token_binding)
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -369,14 +325,14 @@ def test_credentials_backend_creation_error():
         }
     })
 
-    backend.handle_credential_creation(credential=public_key_credential,
-                                       user=TEST_USER,
-                                       rp=TEST_RP,
-                                       expected_challenge=expected_challenge,
-                                       expected_origin=TEST_RP_ORIGIN,
-                                       token_binding=TokenBinding(
-                                           status=TokenBindingStatus.PRESENT,
-                                           id='token-binding-id'))
+    backend.handle_credential_attestation(
+        credential=public_key_credential,
+        user=TEST_USER,
+        rp=TEST_RP,
+        expected_challenge=expected_challenge,
+        expected_origin=TEST_RP_ORIGIN,
+        token_binding=TokenBinding(status=TokenBindingStatus.PRESENT,
+                                   id='token-binding-id'))
 
     public_key_credential.response.client_data_JSON = json_bytes({
         'type':
@@ -392,7 +348,7 @@ def test_credentials_backend_creation_error():
     })
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -402,7 +358,7 @@ def test_credentials_backend_creation_error():
                                        id='token-binding-id'))
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -445,7 +401,7 @@ def test_credentials_backend_creation_error():
             })))
 
     with pytest.raises(RPIDHashError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential_error,
             user=TEST_USER,
             rp=TEST_RP,
@@ -485,7 +441,7 @@ def test_credentials_backend_creation_error():
             })))
 
     with pytest.raises(UserPresenceError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential_error,
             user=TEST_USER,
             rp=TEST_RP,
@@ -526,7 +482,7 @@ def test_credentials_backend_creation_error():
             })))
 
     with pytest.raises(UserVerificationError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential_error,
             user=TEST_USER,
             rp=TEST_RP,
@@ -536,7 +492,7 @@ def test_credentials_backend_creation_error():
         )
 
     with pytest.raises(ExtensionError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -546,7 +502,7 @@ def test_credentials_backend_creation_error():
 
     backend = CredentialsBackend(ExceptionCredentialsRegistrar())
     with pytest.raises(RegistrationError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -556,7 +512,7 @@ def test_credentials_backend_creation_error():
 
     backend = CredentialsBackend(ErrorCredentialsRegistrar())
     with pytest.raises(RegistrationError):
-        backend.handle_credential_creation(
+        backend.handle_credential_attestation(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -612,7 +568,7 @@ def test_credentials_backend_request_success():
 
     expected_challenge = challenge
 
-    backend.handle_credential_request(
+    backend.handle_credential_assertion(
         credential=public_key_credential,
         user=TEST_USER,
         rp=TEST_RP,
@@ -669,7 +625,7 @@ def test_credentials_backend_request_error():
     expected_challenge = challenge
 
     with pytest.raises(CredentialNotAllowedError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -684,7 +640,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(ExceptionCredentialsRegistrar())
     with pytest.raises(RegistrationError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -699,7 +655,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(CredentialDataError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -719,7 +675,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(UserIDError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -729,7 +685,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(UserHandleError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             rp=TEST_RP,
             expected_challenge=expected_challenge,
@@ -738,7 +694,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(RPNotFoundError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             expected_challenge=expected_challenge,
@@ -756,7 +712,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(RPIDError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -771,7 +727,7 @@ def test_credentials_backend_request_error():
                                   TEST_RP)
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
-    backend.handle_credential_request(
+    backend.handle_credential_assertion(
         credential=public_key_credential,
         user=TEST_USER,
         expected_challenge=expected_challenge,
@@ -791,7 +747,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(UserHandleError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential_error,
             user=TEST_USER,
             rp=TEST_RP,
@@ -823,7 +779,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(ClientDataTypeError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -855,7 +811,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(DecodingError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -887,7 +843,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(ChallengeError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -919,7 +875,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(OriginError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -928,7 +884,7 @@ def test_credentials_backend_request_error():
         )
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -962,7 +918,7 @@ def test_credentials_backend_request_error():
         ))
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1000,7 +956,7 @@ def test_credentials_backend_request_error():
         ))
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1012,7 +968,7 @@ def test_credentials_backend_request_error():
             ))
 
     with pytest.raises(TokenBindingError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1076,7 +1032,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(RPIDError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=PublicKeyCredentialRpEntity(name='example.com',
@@ -1091,7 +1047,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(SuccessCredentialsRegistrar())
     with pytest.raises(UserPresenceError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1138,7 +1094,7 @@ def test_credentials_backend_request_error():
         ))
 
     with pytest.raises(UserVerificationError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1152,7 +1108,7 @@ def test_credentials_backend_request_error():
         )
 
     with pytest.raises(ExtensionError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1176,7 +1132,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(SignatureCountError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1189,7 +1145,7 @@ def test_credentials_backend_request_error():
         )
 
     class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-        def register_credential_request(
+        def register_credential_assertion(
                 self, credential: PublicKeyCredential,
                 authenticator_data: AuthenticatorData,
                 user: PublicKeyCredentialUserEntity,
@@ -1198,7 +1154,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(RegistrationError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,
@@ -1211,7 +1167,7 @@ def test_credentials_backend_request_error():
         )
 
     class TestCredentialsRegistrar(SuccessCredentialsRegistrar):
-        def register_credential_request(
+        def register_credential_assertion(
                 self, credential: PublicKeyCredential,
                 authenticator_data: AuthenticatorData,
                 user: PublicKeyCredentialUserEntity,
@@ -1220,7 +1176,7 @@ def test_credentials_backend_request_error():
 
     backend = CredentialsBackend(TestCredentialsRegistrar())
     with pytest.raises(RegistrationError):
-        backend.handle_credential_request(
+        backend.handle_credential_assertion(
             credential=public_key_credential,
             user=TEST_USER,
             rp=TEST_RP,

@@ -30,6 +30,22 @@ __all__ = [
 
 @singledispatch
 def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
+    """Convert a Python object into a JSON value.
+
+    Args:
+      data (Any): The object to convert.
+      convert_case (bool): Whether to convert the attribute names of the object
+        into camel case from snake case.
+      
+    Returns:
+      A JSONValue.
+
+    Raises:
+      JSONConversionError: If the provided data cannot be converted into
+        valid JSON.
+      UnimplementedError: If the conversion logic for the given data type has
+        not been implemented.
+    """
     if not isinstance(data, Enum) and hasattr(data, '__dict__'):
         data = data.__dict__
 
@@ -60,12 +76,38 @@ def jsonify(data: Any, convert_case: bool = True) -> JSONValue:
 @singledispatch
 def cryptography_public_key(
         credential_public_key: CredentialPublicKey) -> PublicKey:
+    """Convert a `CredentialPublicKey` into a cryptography `PublicKey`.
+
+    Args:
+      credential_public_key (CredentialPublicKey): The key to convert.
+
+    Returns:
+      A cryptography `PublicKey`.
+
+    Raises:
+      UnimplementedError: If the conversion logic for the given type of
+        `CredentialPublicKey` has not been implemented.
+    """
     raise UnimplementedError('Must implement public key conversion')
 
 
 @cryptography_public_key.register(EC2CredentialPublicKey)
 def cryptography_ec2_public_key(
         credential_public_key: EC2CredentialPublicKey) -> EC2PublicKey:
+    """Convert an `EC2CredentialPublicKey` into a cryptography `EC2PublicKey`.
+
+    Args:
+      credential_public_key (EC2CredentialPublicKey): The key to convert.
+
+    Returns:
+      A cryptography `EC2PublicKey`.
+
+    Raises:
+      UnimplementedError: If the conversion logic for the given type of
+        CredentialPublicKey has not been implemented.
+      PublicKeyConversionError: If the provided key could not be converted
+        into a valid cryptography `EC2PublicKey`.
+    """
     x = int.from_bytes(credential_public_key.x, 'big')
     y = int.from_bytes(credential_public_key.y, 'big')
 
@@ -91,6 +133,20 @@ def cryptography_ec2_public_key(
 @cryptography_public_key.register(OKPCredentialPublicKey)
 def cryptography_okp_public_key(
         credential_public_key: OKPCredentialPublicKey) -> OKPPublicKey:
+    """Convert an `OKPCredentialPublicKey` into a cryptography `OKPPublicKey`.
+
+    Args:
+      credential_public_key (EC2CredentialPublicKey): The key to convert.
+
+    Returns:
+      A cryptography `EC2PublicKey`.
+
+    Raises:
+      UnimplementedError: If the conversion logic for the given type of
+        CredentialPublicKey has not been implemented.
+      PublicKeyConversionError: If the provided key could not be converted
+        into a valid cryptography `EC2PublicKey`.
+    """
     try:
         if credential_public_key.crv.name == 'ED25519':
             return Ed25519PublicKey.from_public_bytes(credential_public_key.x)
@@ -121,12 +177,28 @@ def _build_base_cose_dictionary(
 
 @singledispatch
 def cose_key(credential_public_key: CredentialPublicKey) -> bytes:
+    """Convert a `CredentialPublicKey` into a COSE key.
+
+    Args:
+      credential_public_key (CredentialPublicKey): The key to convert.
+
+    Returns:
+      The COSE-encoded key bytes.
+    """
     raise UnimplementedError('Must implement cose key conversion')
 
 
 @cose_key.register(EC2CredentialPublicKey)
 def cose_ec2_public_key(
         credential_public_key: EC2CredentialPublicKey) -> bytes:
+    """Convert an `EC2CredentialPublicKey` into a COSE key.
+
+    Args:
+      credential_public_key (EC2CredentialPublicKey): The key to convert.
+
+    Returns:
+      The COSE-encoded key bytes.
+    """
     d = _build_base_cose_dictionary(credential_public_key)
     d[-1] = credential_public_key.crv.value
     d[-2] = credential_public_key.x
@@ -137,6 +209,14 @@ def cose_ec2_public_key(
 @cose_key.register(OKPCredentialPublicKey)
 def cose_okp_public_key(
         credential_public_key: OKPCredentialPublicKey) -> bytes:
+    """Convert an `OKPCredentialPublicKey` into a COSE key.
+
+    Args:
+      credential_public_key (OKPCredentialPublicKey): The key to convert.
+
+    Returns:
+      The COSE-encoded key bytes.
+    """
     d = _build_base_cose_dictionary(credential_public_key)
     d[-1] = credential_public_key.crv.value
     d[-2] = credential_public_key.x

@@ -13,6 +13,7 @@ from webauthn_rp.errors import WebAuthnRPError
 from webauthn_rp.parsers import parse_cose_key, parse_public_key_credential
 from webauthn_rp.registrars import *
 from webauthn_rp.types import (
+    AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
     COSEAlgorithmIdentifier, CredentialCreationOptions,
     CredentialRequestOptions, PublicKeyCredentialCreationOptions,
     PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
@@ -157,8 +158,6 @@ def registration_request():
             pub_key_cred_params=example_credential_parameters,
         ))
 
-    credentials_backend.handle_creation_options(options=options)
-
     options_json = jsonify(options)
     response_json = {
         'challengeID': challenge.id,
@@ -200,7 +199,7 @@ def registration_response():
                                                 display_name=username)
 
     try:
-        credentials_backend.handle_credential_creation(
+        credentials_backend.handle_credential_attestation(
             credential=credential,
             user=user_entity,
             rp=example_rp,
@@ -255,11 +254,6 @@ def authentication_request():
     }
     response_json_str = json.dumps(response_json)
 
-    try:
-        credentials_backend.handle_request_options(options=options)
-    except WebAuthnRPError:
-        return ('Could not handle request options', 400)
-
     return (response_json_str, 200, {'Content-Type': 'application/json'})
 
 
@@ -293,7 +287,7 @@ def authentication_response():
                                                 display_name=username)
 
     try:
-        credentials_backend.handle_credential_request(
+        credentials_backend.handle_credential_assertion(
             credential=credential,
             user=user_entity,
             rp=example_rp,
