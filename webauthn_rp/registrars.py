@@ -20,7 +20,9 @@ class CredentialData(NamedTuple):
     Attributes:
       credential_public_key (CredentialPublicKey): The public key associated
         with a particular credential.
-      signature_count (int): The current signature count of a credential.
+      signature_count (Optional[int]): The current signature count of a
+        credential if one has been registered. It should be None if it has not
+        been initialized yet (right after the creation of a credential).
       user_entity (PublicKeyCredentialUserEntity): The user that owns the
         credential.
       rp_entity (Optional[PublicKeyCredentialRpEntity]): The optional Relying

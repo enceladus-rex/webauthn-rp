@@ -8,33 +8,27 @@ from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 
 from webauthn_rp.backends import CredentialsBackend
+from webauthn_rp.builders import *
 from webauthn_rp.converters import cose_key, jsonify
 from webauthn_rp.errors import WebAuthnRPError
 from webauthn_rp.parsers import parse_cose_key, parse_public_key_credential
 from webauthn_rp.registrars import *
 from webauthn_rp.types import (
-    AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
+    AttestationObject, AttestationType, AuthenticatorAssertionResponse,
+    AuthenticatorAttestationResponse, AuthenticatorData,
     COSEAlgorithmIdentifier, CredentialCreationOptions,
-    CredentialRequestOptions, PublicKeyCredentialCreationOptions,
-    PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
-    PublicKeyCredentialRequestOptions, PublicKeyCredentialType)
+    CredentialRequestOptions, PublicKeyCredential,
+    PublicKeyCredentialCreationOptions, PublicKeyCredentialDescriptor,
+    PublicKeyCredentialParameters, PublicKeyCredentialRequestOptions,
+    PublicKeyCredentialRpEntity, PublicKeyCredentialType,
+    PublicKeyCredentialUserEntity, TrustedPath)
+
+##### Flask & SQLAlchemy configuration
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/webauthn.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/webauthn_rp.db'
 
 db = SQLAlchemy(app)
-
-example_rp = PublicKeyCredentialRpEntity(name='localhost', id='localhost')
-example_origin = 'http://localhost:5000'
-example_timeout = 60000
-example_credential_parameters = [
-    PublicKeyCredentialParameters(type=PublicKeyCredentialType.PUBLIC_KEY,
-                                  alg=COSEAlgorithmIdentifier.Value.ES256)
-]
-
-
-def timestamp():
-    return int(time.mktime(datetime.now().timetuple()))
 
 
 class User(db.Model):
@@ -61,8 +55,18 @@ class Credential(db.Model):
 class Challenge(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     request = db.Column(db.String, unique=True)
-    timestamp = db.Column(db.Integer)
+    timestamp_ms = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+
+##### Utilities
+
+
+def timestamp_ms():
+    return int(time.time() * 1000)
+
+
+##### Webauthn-RP Registrar
 
 
 class RegistrarImpl(CredentialsRegistrar):
@@ -114,7 +118,30 @@ class RegistrarImpl(CredentialsRegistrar):
                 display_name=credential_model.user.username))
 
 
-credentials_backend = CredentialsBackend(RegistrarImpl())
+##### Webauthn-RP configuration
+
+APP_ORIGIN = 'http://localhost:5000'
+APP_TIMEOUT = 60000
+APP_RELYING_PARTY = PublicKeyCredentialRpEntity(name='localhost',
+                                                id='localhost')
+
+APP_CCO_BUILDER = CredentialCreationOptionsBuilder(
+    rp=APP_RELYING_PARTY,
+    pub_key_cred_params=[
+        PublicKeyCredentialParameters(type=PublicKeyCredentialType.PUBLIC_KEY,
+                                      alg=COSEAlgorithmIdentifier.Value.ES256)
+    ],
+    timeout=APP_TIMEOUT,
+)
+
+APP_CRO_BUILDER = CredentialRequestOptionsBuilder(
+    rp_id='localhost',
+    timeout=APP_TIMEOUT,
+)
+
+APP_CREDENTIALS_BACKEND = CredentialsBackend(RegistrarImpl())
+
+###### URL handlers
 
 
 @app.route('/registration/request/', methods=['POST'])
@@ -142,21 +169,18 @@ def registration_request():
     challenge_bytes = secrets.token_bytes(64)
     challenge = Challenge()
     challenge.request = challenge_bytes
-    challenge.timestamp = timestamp()
+    challenge.timestamp_ms = timestamp_ms()
     challenge.user_id = user_model.id
 
     db.session.add(challenge)
     db.session.commit()
 
-    options = CredentialCreationOptions(
-        public_key=PublicKeyCredentialCreationOptions(
-            rp=example_rp,
-            user=PublicKeyCredentialUserEntity(
-                name=username, id=user_handle, display_name=username),
-            challenge=challenge_bytes,
-            timeout=example_timeout,
-            pub_key_cred_params=example_credential_parameters,
-        ))
+    options = APP_CCO_BUILDER.build(
+        user=PublicKeyCredentialUserEntity(name=username,
+                                           id=user_handle,
+                                           display_name=username),
+        challenge=challenge_bytes,
+    )
 
     options_json = jsonify(options)
     response_json = {
@@ -190,8 +214,8 @@ def registration_response():
     if not user_model:
         return ('Invalid username', 400)
 
-    current_timestamp = timestamp()
-    if current_timestamp - challenge_model.timestamp > example_timeout:
+    current_timestamp = timestamp_ms()
+    if current_timestamp - challenge_model.timestamp_ms > APP_TIMEOUT:
         return ('Timeout', 408)
 
     user_entity = PublicKeyCredentialUserEntity(name=username,
@@ -199,12 +223,12 @@ def registration_response():
                                                 display_name=username)
 
     try:
-        credentials_backend.handle_credential_attestation(
+        APP_CREDENTIALS_BACKEND.handle_credential_attestation(
             credential=credential,
             user=user_entity,
-            rp=example_rp,
+            rp=APP_RELYING_PARTY,
             expected_challenge=challenge_model.request,
-            expected_origin=example_origin)
+            expected_origin=APP_ORIGIN)
     except WebAuthnRPError as e:
         return ('Could not handle credential creation', 400)
 
@@ -217,7 +241,6 @@ def authentication_request():
 
     user_model = User.query.filter_by(username=username).first()
     if user_model is None:
-        # User is not registered.
         return ('User not registered', 400)
 
     credential_model = Credential.query.filter_by(
@@ -228,33 +251,27 @@ def authentication_request():
     challenge_bytes = secrets.token_bytes(64)
     challenge = Challenge()
     challenge.request = challenge_bytes
-    challenge.timestamp = timestamp()
+    challenge.timestamp_ms = timestamp_ms()
     challenge.user_id = user_model.id
 
     db.session.add(challenge)
     db.session.commit()
 
-    options = CredentialRequestOptions(
-        public_key=PublicKeyCredentialRequestOptions(
-            rp_id=example_rp.id,
-            challenge=challenge_bytes,
-            timeout=example_timeout,
-            allow_credentials=[
-                PublicKeyCredentialDescriptor(
-                    id=credential_model.id,
-                    type=PublicKeyCredentialType.PUBLIC_KEY,
-                )
-            ],
-        ))
+    options = APP_CRO_BUILDER.allow_credentials(allow_credentials=[
+        PublicKeyCredentialDescriptor(
+            id=credential_model.id,
+            type=PublicKeyCredentialType.PUBLIC_KEY,
+        )
+    ]).build(challenge=challenge_bytes)
 
     options_json = jsonify(options)
     response_json = {
         'challengeID': challenge.id,
-        'getOptions': options_json,
+        'requestOptions': options_json,
     }
-    response_json_str = json.dumps(response_json)
+    response_json_string = json.dumps(response_json)
 
-    return (response_json_str, 200, {'Content-Type': 'application/json'})
+    return (response_json_string, 200, {'Content-Type': 'application/json'})
 
 
 @app.route('/authentication/response/', methods=['POST'])
@@ -268,7 +285,7 @@ def authentication_response():
         return ('Could not parse input data', 400)
 
     if type(credential.response) is not AuthenticatorAssertionResponse:
-        return HttpResponse('Invalid response type', status=400)
+        return ('Invalid response type', 400)
 
     challenge_model = Challenge.query.filter_by(id=challengeID).first()
     if not challenge_model:
@@ -278,8 +295,8 @@ def authentication_response():
     if not user_model:
         return ('Invalid username', 400)
 
-    current_timestamp = timestamp()
-    if current_timestamp - challenge_model.timestamp > example_timeout:
+    current_timestamp = timestamp_ms()
+    if current_timestamp - challenge_model.timestamp_ms > APP_TIMEOUT:
         return ('Timeout', 408)
 
     user_entity = PublicKeyCredentialUserEntity(name=username,
@@ -287,12 +304,12 @@ def authentication_response():
                                                 display_name=username)
 
     try:
-        credentials_backend.handle_credential_assertion(
+        APP_CREDENTIALS_BACKEND.handle_credential_assertion(
             credential=credential,
             user=user_entity,
-            rp=example_rp,
+            rp=APP_RELYING_PARTY,
             expected_challenge=challenge_model.request,
-            expected_origin=example_origin)
+            expected_origin=APP_ORIGIN)
     except WebAuthnRPError as e:
         return ('Could not handle credential creation', 400)
 
@@ -303,6 +320,8 @@ def authentication_response():
 def index():
     return render_template('app.html')
 
+
+##### Main
 
 if __name__ == '__main__':
     db.create_all()

@@ -43,7 +43,7 @@ function parseCreationOptions(opts) {
   return pOpts;
 }
 
-function parseGetOptions(opts) {
+function parseRequestOptions(opts) {
   let pOpts = Object.assign({}, opts);
   if ('challenge' in pOpts.publicKey) {
     pOpts.publicKey.challenge = base64decode(opts.publicKey.challenge);
@@ -164,7 +164,7 @@ async function requestAuthentication() {
   }
 
   authenticationRequest = await response.json();
-  cro = parseGetOptions(authenticationRequest.getOptions);
+  cro = parseRequestOptions(authenticationRequest.requestOptions);
   authenticatingUsername = username;
   assertion = await navigator.credentials.get(cro);
 }
