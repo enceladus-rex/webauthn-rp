@@ -23,13 +23,13 @@ The JavaScript utilities:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 13-24,96-99
+   :lines: 13-24,98-101
 
 The HTML body:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: html
-   :lines: 182-191
+   :lines: 184-193
 
 Registration
 ------------
@@ -38,19 +38,19 @@ Getting the credential creation options:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 33-45,118-134
+   :lines: 33-45,119-136
 
 Sending the attestation:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 66-77,101-116
+   :lines: 66-77,102-118
 
 Combined:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 170-173
+   :lines: 172-175
 
 Authentication
 --------------
@@ -59,16 +59,16 @@ Getting the credential request options:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 46-65,153-168
+   :lines: 46-65,154-170
 
 Sending the assertion:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 78-95,136-151
+   :lines: 78-95,137-153
 
 Combined:
 
 .. literalinclude:: ../../../examples/flask/templates/app.html
    :language: javascript
-   :lines: 175-178
+   :lines: 177-180

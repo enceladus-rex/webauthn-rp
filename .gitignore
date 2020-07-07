@@ -2,6 +2,7 @@
 *.pyc
 **/.mypy_cache
 docs/build/
+docs/source/_build/
 *.egg-info/
 notes/
 .coverage
@@ -9,3 +10,6 @@ notes/
 build/
 dist/
 MANIFEST
+.tox/
+.DS_Store
+README.html

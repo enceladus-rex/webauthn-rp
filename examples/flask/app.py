@@ -135,7 +135,7 @@ APP_CCO_BUILDER = CredentialCreationOptionsBuilder(
 )
 
 APP_CRO_BUILDER = CredentialRequestOptionsBuilder(
-    rp_id='localhost',
+    rp_id=APP_RELYING_PARTY.id,
     timeout=APP_TIMEOUT,
 )
 
@@ -229,8 +229,8 @@ def registration_response():
             rp=APP_RELYING_PARTY,
             expected_challenge=challenge_model.request,
             expected_origin=APP_ORIGIN)
-    except WebAuthnRPError as e:
-        return ('Could not handle credential creation', 400)
+    except WebAuthnRPError:
+        return ('Could not handle credential attestation', 400)
 
     return ('Success', 200)
 
@@ -257,18 +257,21 @@ def authentication_request():
     db.session.add(challenge)
     db.session.commit()
 
-    options = APP_CRO_BUILDER.allow_credentials(allow_credentials=[
-        PublicKeyCredentialDescriptor(
-            id=credential_model.id,
-            type=PublicKeyCredentialType.PUBLIC_KEY,
-        )
-    ]).build(challenge=challenge_bytes)
+    options = APP_CRO_BUILDER.build(
+        challenge=challenge_bytes,
+        allow_credentials=[
+            PublicKeyCredentialDescriptor(
+                id=credential_model.id,
+                type=PublicKeyCredentialType.PUBLIC_KEY,
+            )
+        ])
 
     options_json = jsonify(options)
     response_json = {
         'challengeID': challenge.id,
         'requestOptions': options_json,
     }
+
     response_json_string = json.dumps(response_json)
 
     return (response_json_string, 200, {'Content-Type': 'application/json'})
@@ -310,8 +313,8 @@ def authentication_response():
             rp=APP_RELYING_PARTY,
             expected_challenge=challenge_model.request,
             expected_origin=APP_ORIGIN)
-    except WebAuthnRPError as e:
-        return ('Could not handle credential creation', 400)
+    except WebAuthnRPError:
+        return ('Could not handle credential assertion', 400)
 
     return ('Success', 200)
 

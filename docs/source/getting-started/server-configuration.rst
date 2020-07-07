@@ -34,15 +34,15 @@ store and retrieve.
 .. literalinclude:: ../../../webauthn_rp/registrars.py
    :pyobject: CredentialsRegistrar
 
-Focusing on the get functions, you'll first notice that you'll need to be able to
+Focusing on the `get_credential_data` function, notice that you'll need to be able to
 retrieve a number of fields related to a particular credential. 
 
 .. note::
   
   Each credential can be identified using a byte string that is at least 16 bytes
   long and is probabilistically unique. The specific data you'll want to retrieve is
-  enumerated in the `CredentialData` NamedTuple shown below. Only the first two
-  fields, `credential_public_key` and `signature_count`, are required.
+  enumerated in the `CredentialData` NamedTuple shown below. The first three
+  fields, `credential_public_key`, `signature_count`, and `user_entity` are required.
 
 .. literalinclude:: ../../../webauthn_rp/registrars.py
    :pyobject: CredentialData
@@ -54,17 +54,13 @@ compact format that is recommended, especially if you just want to store a binar
 blob. This library also contains some utility functions to convert to and from this
 particular encoding (used below).
 
-Finally, there is the `check_user_owns_credential` function which doesn't need to
-retrieve any information but must ensure that the user with the provided user handle
-owns a credential with the given ID.
-
 .. note::
   
   A user handle is a byte string that the Relying Party uses to identify the user
   but should contain no personally identifiable information, i.e. not a username or
   email address.
 
-The data to be stored is provided in the four `register` functions. In particular you
+The data to be stored is provided in the two `register` functions. In particular you
 can find the `credential_public_key` using the `att` parameter under
 `att.auth_data.attested_credential_data.credential_public_key` and the
 `signature_count` under `att.auth_data.sign_count`. Additionally, the `credential_id`

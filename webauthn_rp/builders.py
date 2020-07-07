@@ -260,8 +260,6 @@ class CredentialRequestOptionsBuilder:
         timeout: Optional[int] = None,
         rp_id: Optional[str] = None,
         extensions: Optional[AuthenticationExtensionsClientInputs] = None,
-        allow_credentials: Optional[
-            Sequence[PublicKeyCredentialDescriptor]] = None,
         user_verification: Optional[UserVerificationRequirement] = (
             UserVerificationRequirement.PREFERRED)
     ) -> None:
@@ -275,9 +273,6 @@ class CredentialRequestOptionsBuilder:
           rp_id (Optional[str]): The Relying Party ID to use.
           extensions (Optional[AuthenticationExtensionsClientInputs]): Any
             extension inputs to provide to the authenticator.
-          allow_credentials (Optional[
-            Sequence[PublicKeyCredentialDescriptor]]): A optional list of
-            allowed credentials ordered from most preferred to least preferred.
           user_verification (Optional[UserVerificationRequirement]): An
             optional specification of whether or not a user's verification is
             required.
@@ -286,7 +281,6 @@ class CredentialRequestOptionsBuilder:
         self._timeout = timeout
         self._rp_id = rp_id
         self._extensions = extensions
-        self._allow_credentials = allow_credentials
         self._user_verification = user_verification
 
     def _copy(self) -> 'CredentialRequestOptionsBuilder':
@@ -353,24 +347,6 @@ class CredentialRequestOptionsBuilder:
         c._extensions = extensions
         return c
 
-    def allow_credentials(
-        self,
-        allow_credentials: Optional[Sequence[PublicKeyCredentialDescriptor]]
-    ) -> 'CredentialRequestOptionsBuilder':
-        """Set the allowed credentials.
-
-        Args:
-          allow_credentials (Optional[
-            Sequence[PublicKeyCredentialDescriptor]]): A optional list of
-            allowed credentials ordered from most preferred to least preferred.
-
-        Returns:
-          A new `CredentialRequestOptionsBuilder` copy.
-        """
-        c = self._copy()
-        c._allow_credentials = allow_credentials
-        return c
-
     def user_verification(
         self, user_verification: Optional[UserVerificationRequirement]
     ) -> 'CredentialRequestOptionsBuilder':
@@ -388,11 +364,20 @@ class CredentialRequestOptionsBuilder:
         c._user_verification = user_verification
         return c
 
-    def build(self, *, challenge: bytes) -> CredentialRequestOptions:
+    def build(
+        self,
+        *,
+        challenge: bytes,
+        allow_credentials: Optional[
+            Sequence[PublicKeyCredentialDescriptor]] = None
+    ) -> CredentialRequestOptions:
         """Build a CredentialRequestOptions instance.
 
         Args:
           challenge (bytes): The challenge to provide to the user's credential.
+          allow_credentials (Optional[
+            Sequence[PublicKeyCredentialDescriptor]]): A optional list of
+            allowed credentials ordered from most preferred to least preferred.
 
         Returns:
           An instance of `CredentialRequestOptions`.
@@ -413,5 +398,5 @@ class CredentialRequestOptionsBuilder:
                 timeout=self._timeout,
                 rp_id=self._rp_id,
                 extensions=self._extensions,
-                allow_credentials=self._allow_credentials,
+                allow_credentials=allow_credentials,
                 user_verification=self._user_verification))

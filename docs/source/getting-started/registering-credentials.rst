@@ -1,5 +1,5 @@
 ========
-Registering Credential
+Registering Credentials
 ========
 
 Now that everything has been setup, we can register a credential for an examle username, `test`.

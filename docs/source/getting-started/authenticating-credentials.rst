@@ -1,5 +1,5 @@
 ========
-Authenticating Credential
+Authenticating Credentials
 ========
 
 To authenticate the same user, `test`, that was registered previously we can do the following.

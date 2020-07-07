@@ -51,22 +51,24 @@ def test_credential_request_options_builder_success():
         timeout=MagicMock(),
         rp_id=MagicMock(),
         extensions=MagicMock(),
-        allow_credentials=MagicMock(),
         user_verification=MagicMock(),
     )
 
-    assert isinstance(builder.build(challenge=MagicMock()),
-                      CredentialRequestOptions)
+    assert isinstance(
+        builder.build(challenge=MagicMock(), allow_credentials=MagicMock()),
+        CredentialRequestOptions)
 
     builder = CredentialRequestOptionsBuilder()
     assert isinstance(builder.build(challenge=MagicMock()),
                       CredentialRequestOptions)
 
     funcs = ('mediation', 'timeout', 'rp_id', 'extensions',
-             'allow_credentials', 'user_verification')
+             'user_verification')
     for fn in funcs:
         b = getattr(builder, fn)(MagicMock())
-        isinstance(b.build(challenge=MagicMock()), CredentialRequestOptions)
+        isinstance(
+            b.build(challenge=MagicMock(), allow_credentials=MagicMock()),
+            CredentialRequestOptions)
 
 
 def test_credential_request_options_builder_error():

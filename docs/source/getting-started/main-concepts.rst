@@ -71,9 +71,9 @@ that is signed by the authenticator using its private key. Therefore each respon
 should be probabilistically unique (extremely low chance of using the same challenge).
 The signed data is then verified using the public key that the Relying Party has
 registered for the user. In order to register a public key, the Relying Party can
-specify whether or not the user must provided an attestation, which can be for example
+specify whether or not the user must provide an attestation, which can be for example
 a certificate chain for the authenticator's public key. Attestations enable one to
-ensure that at the time of use, a particular hardware certificate is trusted by
+ensure that at the time of registration, a particular hardware certificate is trusted by
 validating its chain of trust (checking that there haven't been any revocations).
 Furthermore, due to the nature of asymmetric encryption, gaining access to the public
 key (which is shared with the Relying Party) does not allow one to authenticate as
