@@ -108,10 +108,6 @@ when performing user registration and user authentication.
     | *WebAuthn-RP Public Key Credential Parser* | webauthn_rp.parsers.parse_public_key_credential       |
     +--------------------------------------------+-------------------------------------------------------+
 
-.. raw:: html
-
-    <br />
-
 .. table:: **User Authentication Ceremony**
     :align: center
 
