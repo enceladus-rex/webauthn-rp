@@ -3,6 +3,7 @@ name = "webauthn-rp"
 version = "0.0.8"
 description = "WebAuthn-RP is a Python 3 library to manage credentials that conform to the Web Authentication specification."
 authors = ["enceladus-rex"]
+readme = "README.rst"
 license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
