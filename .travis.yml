@@ -5,7 +5,7 @@ python:
   - "3.8"
 install:
   - pip install .
-  - pip install pytest pytest-cov mypy yapf codecov
+  - pip install pytest==5.4 pytest-cov==2.7 mypy==0.782 yapf==0.30 codecov==2.0
 script:
   - mypy --ignore-missing-imports webauthn_rp
   - pytest --cov=webauthn_rp
