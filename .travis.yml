@@ -1,12 +1,15 @@
 language: python
 python:
-  - "3.6"
+  - "3.6.2"
+  - "3.7"
+  - "3.8"
 install:
-  - pip install .[test]
+  - pip install .
+  - pip install pytest pytest-cov mypy yapf codecov
 script:
   - mypy --ignore-missing-imports webauthn_rp
   - pytest --cov=webauthn_rp
   - yapf --recursive webauthn_rp --diff
   - yapf --recursive tests --diff
-  - yapf setup.py --diff
+  - yapf --recursive examples --diff
   - codecov
