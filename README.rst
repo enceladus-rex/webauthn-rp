@@ -144,6 +144,7 @@ after cloning this project locally:
     
     $ poetry shell
     $ poetry install
+    $ pip install Flask Flask-SQLAlchemy
 
 4. Run the Flask example from the root using::
     
