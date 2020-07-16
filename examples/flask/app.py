@@ -16,10 +16,8 @@ from webauthn_rp.registrars import *
 from webauthn_rp.types import (
     AttestationObject, AttestationType, AuthenticatorAssertionResponse,
     AuthenticatorAttestationResponse, AuthenticatorData,
-    COSEAlgorithmIdentifier, CredentialCreationOptions,
-    CredentialRequestOptions, PublicKeyCredential,
-    PublicKeyCredentialCreationOptions, PublicKeyCredentialDescriptor,
-    PublicKeyCredentialParameters, PublicKeyCredentialRequestOptions,
+    COSEAlgorithmIdentifier, PublicKeyCredential,
+    PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
     PublicKeyCredentialRpEntity, PublicKeyCredentialType,
     PublicKeyCredentialUserEntity, TrustedPath)
 
@@ -328,4 +326,4 @@ def index():
 
 if __name__ == '__main__':
     db.create_all()
-    app.run(debug=True)
+    app.run()

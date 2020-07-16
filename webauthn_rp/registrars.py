@@ -2,8 +2,7 @@ from typing import Any, NamedTuple, Optional
 
 from webauthn_rp.errors import UnimplementedError
 from webauthn_rp.types import (AttestationObject, AttestationType,
-                               AuthenticatorData, CredentialCreationOptions,
-                               CredentialPublicKey, CredentialRequestOptions,
+                               AuthenticatorData, CredentialPublicKey,
                                PublicKeyCredential,
                                PublicKeyCredentialRpEntity,
                                PublicKeyCredentialUserEntity, TrustedPath)

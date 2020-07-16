@@ -14,8 +14,7 @@ from webauthn_rp.parsers import (parse_attestation_object,
 from webauthn_rp.registrars import CredentialsRegistrar
 from webauthn_rp.types import (
     AuthenticatorAssertionResponse, AuthenticatorAttestationResponse,
-    AuthenticatorDataFlag, CredentialCreationOptions, CredentialRequestOptions,
-    ExtensionIdentifier, Origin, PublicKeyCredential,
+    AuthenticatorDataFlag, ExtensionIdentifier, Origin, PublicKeyCredential,
     PublicKeyCredentialDescriptor, PublicKeyCredentialRpEntity,
     PublicKeyCredentialUserEntity, TokenBinding)
 from webauthn_rp.utils import url_base64_decode

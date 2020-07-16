@@ -31,8 +31,10 @@ features of Python 3 such as built-in type hinting and static type checking with
 
 The general flow diagram for web authentication is shown in the diagrams below (from the spec):
 
-<img src="docs/source/_static/webauthn-registration-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
-<h4 align="center">WebAuthn Registration Flow (Figure 1 of WebAuthn Standard)</h4>
+<p align="center">
+    <img src="docs/source/_static/webauthn-registration-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
+    <h4 align="center">WebAuthn Registration Flow (Figure 1 of WebAuthn Standard)</h4>
+</p>
 
 In the case of registration, the Relying Party server must send a challenge along with
 information about the user that is to be registered and the specific Relying Party to
@@ -48,8 +50,10 @@ Authentication is very much like registration, however some of the message forma
 different and consequently the parsing and validation operations as well. The steps
 and how they are handled mirror those of the registration flow:
 
-<img src="docs/source/_static/webauthn-authentication-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
-<h4 align="center">WebAuthn Authentication Flow (Figure 2 of WebAuthn Standard)</h4>
+<p align="center">
+    <img src="docs/source/_static/webauthn-authentication-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
+    <h4 align="center">WebAuthn Authentication Flow (Figure 2 of WebAuthn Standard)</h4>
+</p>
 
 The WebAuthn specification is designed for modern browsers and so most of the data
 types and functions have JavaScript and JSON in mind. Although all of the necessary
