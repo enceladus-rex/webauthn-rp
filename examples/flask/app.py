@@ -1,4 +1,5 @@
 import json
+import os
 import secrets
 import time
 from datetime import datetime
@@ -23,8 +24,10 @@ from webauthn_rp.types import (
 
 ##### Flask & SQLAlchemy configuration
 
+DATABASE_PATH = '/tmp/webauthn_rp.db'
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/webauthn_rp.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(DATABASE_PATH)
 
 db = SQLAlchemy(app)
 
@@ -325,5 +328,9 @@ def index():
 ##### Main
 
 if __name__ == '__main__':
-    db.create_all()
-    app.run()
+    try:
+        db.create_all()
+        app.run()
+    finally:
+        if os.path.exists(DATABASE_PATH):
+            os.remove(DATABASE_PATH)

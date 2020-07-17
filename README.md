@@ -165,7 +165,7 @@ after cloning this project locally:
 
 5. Open a browser to `localhost:5000` and register a credential to a username.
 6. Authenticate using the same username and credential.
-7. Remove the temporary database `/tmp/webauthn_rp.db`.
+7. Exit the example program.
 
 
 ### References
