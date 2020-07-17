@@ -151,13 +151,17 @@ after cloning this project locally:
 2. Install poetry by following the [guide](https://python-poetry.org/docs/#installation).
 3. Open a poetry shell and install the dependencies from the project root using::
     
+    ```bash
     $ poetry shell
     $ poetry install
     $ pip install Flask Flask-SQLAlchemy
+    ```
 
 4. Run the Flask example from the root using::
     
+    ```bash
     $ python -m examples.flask.app
+    ```
 
 5. Open a browser to `localhost:5000` and register a credential to a username.
 6. Authenticate using the same username and credential.
