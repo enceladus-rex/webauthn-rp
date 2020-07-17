@@ -108,8 +108,6 @@ when performing user registration and user authentication.
     </tr>
 </table>
 
-<br />
-
 <table align="center">
     <caption>
         <strong>User Authentication Ceremony</strong>
@@ -144,7 +142,7 @@ see how this conversion is done in JavaScript.
 
 ### Examples
 
-As mentioned, the `readthedocs <https://webauthn-rp.readthedocs.io/en/latest/>`_ page has
+As mentioned, the [readthedocs](https://webauthn-rp.readthedocs.io/en/latest/) page has
 a getting started guide that goes into depth with the Flask example, however, if you want
 to be able to directly run the example from this GitHub repository follow these steps
 after cloning this project locally:
