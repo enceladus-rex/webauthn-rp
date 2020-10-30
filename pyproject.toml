@@ -15,8 +15,8 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.6.1"
 pyasn1 = "~=0.4.8"
-cryptography = "~=2.9.2"
-cbor2 = "~=5.1.0"
+cryptography = "~=3.2.1"
+cbor2 = "~=5.2.0"
 
 [tool.poetry.extras]
 examples = ["Flask~=1.1.2", "Flask-SQLAlchemy~=2.4.3"]
