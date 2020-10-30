@@ -151,9 +151,6 @@ def registration_request():
 
     user_model = User.query.filter_by(username=username).first()
     if user_model is not None:
-        credential_model = Credential.query.filter_by(
-            user_id=user_model.id).first()
-
         user_handle = user_model.user_handle
     else:
         user_handle = secrets.token_bytes(64)
