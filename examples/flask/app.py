@@ -151,12 +151,6 @@ def registration_request():
 
     user_model = User.query.filter_by(username=username).first()
     if user_model is not None:
-        credential_model = Credential.query.filter_by(
-            user_id=user_model.id).first()
-
-        if credential_model is not None:
-            return ('User already registered', 400, {})
-
         user_handle = user_model.user_handle
     else:
         user_handle = secrets.token_bytes(64)
@@ -244,9 +238,9 @@ def authentication_request():
     if user_model is None:
         return ('User not registered', 400)
 
-    credential_model = Credential.query.filter_by(
-        user_id=user_model.id).first()
-    if credential_model is None:
+    credential_models = Credential.query.filter_by(user_id=user_model.id).all()
+    print('found models', len(credential_models))
+    if credential_models is None:
         return ('User without credential', 400)
 
     challenge_bytes = secrets.token_bytes(64)
@@ -264,7 +258,7 @@ def authentication_request():
             PublicKeyCredentialDescriptor(
                 id=credential_model.id,
                 type=PublicKeyCredentialType.PUBLIC_KEY,
-            )
+            ) for credential_model in credential_models
         ])
 
     options_json = jsonify(options)

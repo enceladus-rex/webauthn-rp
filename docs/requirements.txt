@@ -6,7 +6,7 @@ attrs==19.3.0
 Babel==2.8.0
 backcall==0.2.0
 bleach==3.1.5
-cbor2==5.1.1
+cbor2==5.2.0
 certifi==2020.6.20
 cffi==1.14.0
 cfgv==3.1.0
@@ -15,7 +15,7 @@ click==7.1.2
 codecov==2.1.7
 colorama==0.4.3
 coverage==5.2
-cryptography==2.9.2
+cryptography==3.2
 decorator==4.4.2
 distlib==0.3.1
 docutils==0.16

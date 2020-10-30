@@ -111,7 +111,7 @@ def test_attest_fido_u2f():
     with pytest.raises(AttestationError):
         attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
 
-    invalid_pk = rsa.generate_private_key(931, 4096, default_backend())
+    invalid_pk = rsa.generate_private_key(65537, 4096, default_backend())
     invalid_pubk = invalid_pk.public_key()
     invalid_certificate = generate_x509_certificate(invalid_pubk, invalid_pk,
                                                     hashes.SHA256())
@@ -201,7 +201,7 @@ def test_attest_android_key():
     with pytest.raises(AttestationError):
         attest(unverified_att_stmt, att_obj, auth_data, client_data_hash)
 
-    invalid_pk = rsa.generate_private_key(931, 4096, default_backend())
+    invalid_pk = rsa.generate_private_key(65537, 4096, default_backend())
     invalid_pubk = invalid_pk.public_key()
     invalid_certificate = generate_x509_certificate(invalid_pubk, invalid_pk,
                                                     hashes.SHA256())
