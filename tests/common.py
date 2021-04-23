@@ -92,9 +92,10 @@ def generate_x509_certificate(
         public_key=public_key,
         extensions=extensions)
 
-    return builder.sign(private_key=private_key,
-                        algorithm=algorithm,
-                        backend=default_backend())
+    return builder.sign(
+        private_key=private_key,
+        algorithm=algorithm,  # type: ignore
+        backend=default_backend())
 
 
 def generate_elliptic_curve_x509_certificate(

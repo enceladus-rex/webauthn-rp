@@ -28,6 +28,7 @@ DATABASE_PATH = '/tmp/webauthn_rp.db'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(DATABASE_PATH)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
@@ -324,7 +325,7 @@ def index():
 if __name__ == '__main__':
     try:
         db.create_all()
-        app.run()
+        app.run(host='localhost', port='5000')
     finally:
         if os.path.exists(DATABASE_PATH):
             os.remove(DATABASE_PATH)

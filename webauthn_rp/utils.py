@@ -1,6 +1,6 @@
 import base64
 import re
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Dict, Type, Union
 
 from cryptography.hazmat.primitives.hashes import (SHA256, SHA384, SHA512,
                                                    HashAlgorithm)
@@ -31,7 +31,7 @@ _CURVE_COORDINATE_BYTE_LENGTHS = {
     'ED448': ED448_COORDINATE_BYTE_LENGTH,
 }
 
-_EC2_HASH_ALGORITHMS = {
+_EC2_HASH_ALGORITHMS: Dict[str, Type[HashAlgorithm]] = {
     'ES256': SHA256,
     'ES384': SHA384,
     'ES512': SHA512,

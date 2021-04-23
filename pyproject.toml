@@ -14,25 +14,25 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.6.1"
-pyasn1 = "~=0.4.8"
-cryptography = "~=3.2.1"
-cbor2 = "~=5.2.0"
+pyasn1 = ">=0.4.8, ==0.*"
+cryptography = ">=3.4.7, ==3.*"
+cbor2 = ">=5.2.0, ==5.*"
 
 [tool.poetry.extras]
-examples = ["Flask~=1.1.2", "Flask-SQLAlchemy~=2.4.3"]
+examples = ["Flask", "Flask-SQLAlchemy"]
 
 [tool.poetry.dev-dependencies]
-mypy = "~=0.782"
-codecov = "~=2.0"
-yapf = "~=0.30"
-pytest-cov = "~=2.7"
-pytest = "~=5.4"
-isort = "~=5.0"
-coverage = "~=5.1"
-pre-commit = "~=2.6"
-Sphinx = "~=3.1.2"
-sphinx_rtd_theme = "~=0.5.0"
-tox = "~=3.16.1"
+mypy = ">=0.782"
+codecov = ">=2.0"
+yapf = ">=0.30"
+pytest-cov = ">=2.7"
+pytest = ">=5.4"
+isort = ">=5.0"
+coverage = ">=5.1"
+pre-commit = ">=2.6"
+Sphinx = ">=3.1.2"
+sphinx_rtd_theme = ">=0.5.0"
+tox = ">=3.16.1"
 
 [build-system]
 requires = ["poetry>=0.12"]
