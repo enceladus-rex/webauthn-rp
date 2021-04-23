@@ -149,7 +149,7 @@ after cloning this project locally:
 
 1. Make sure you have a version of Python >= 3.6.1.
 2. Install poetry by following the [guide](https://python-poetry.org/docs/#installation).
-3. Open a poetry shell and install the dependencies from the project root using::
+3. Open a poetry shell and install the dependencies from the project root using:
     
     ```bash
     $ poetry shell
