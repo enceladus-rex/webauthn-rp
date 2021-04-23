@@ -1,6 +1,6 @@
 <p align="center">
 <br />
-<img src="docs/source/_static/webauthn-rp-logo.png" />
+<img src="https://raw.githubusercontent.com/enceladus-rex/webauthn-rp/master/docs/source/_static/webauthn-rp-logo.png" />
 </p>
 <br />
 <hr />
@@ -32,7 +32,7 @@ features of Python 3 such as built-in type hinting and static type checking with
 The general flow diagram for web authentication is shown in the diagrams below (from the spec):
 
 <p align="center">
-    <img src="docs/source/_static/webauthn-registration-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
+    <img src="https://raw.githubusercontent.com/enceladus-rex/webauthn-rp/master/docs/source/_static/webauthn-registration-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
     <h4 align="center">WebAuthn Registration Flow (Figure 1 of WebAuthn Standard)</h4>
 </p>
 
@@ -51,7 +51,7 @@ different and consequently the parsing and validation operations as well. The st
 and how they are handled mirror those of the registration flow:
 
 <p align="center">
-    <img src="docs/source/_static/webauthn-authentication-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
+    <img src="https://raw.githubusercontent.com/enceladus-rex/webauthn-rp/master/docs/source/_static/webauthn-authentication-flow-01.svg" align="center" width="750px" alt="WebAuthn Registration Flow" />
     <h4 align="center">WebAuthn Authentication Flow (Figure 2 of WebAuthn Standard)</h4>
 </p>
 

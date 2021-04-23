@@ -3,7 +3,7 @@ python:
   - "3.6.2"
 install:
   - pip install .
-  - pip install pytest pytest-cov mypy yapf codecov
+  - pip install pytest pytest-cov mypy yapf codecov toml
 script:
   - mypy --ignore-missing-imports webauthn_rp
   - pytest --cov=webauthn_rp
